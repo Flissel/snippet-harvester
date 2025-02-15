@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Params } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -13,10 +13,10 @@ import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configurati
 
 type AnalysisParams = {
   snippetId: string;
-};
+} & Params;
 
 export function Analysis() {
-  const params = useParams();
+  const params = useParams() as AnalysisParams;
   const snippetId = params.snippetId;
   const navigate = useNavigate();
   const { toast } = useToast();
