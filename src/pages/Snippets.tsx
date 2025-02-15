@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -8,14 +9,17 @@ import { SnippetFormModal } from "@/components/SnippetFormModal";
 import { SnippetViewModal } from "@/components/SnippetViewModal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Maximize2, X } from "lucide-react";
+import { Copy, Maximize2, X, Check } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { toast } from "sonner";
 
 const Snippets = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSnippet, setSelectedSnippet] = useState<any>(null);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [focusedSnippet, setFocusedSnippet] = useState<any>(null);
+  const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null);
 
   const { data: snippets, isLoading, error } = useQuery({
     queryKey: ["snippets"],
@@ -51,6 +55,17 @@ const Snippets = () => {
   const handleCardClick = (snippet: any) => {
     setFocusedSnippet(focusedSnippet?.id === snippet.id ? null : snippet);
     setExpandedCardId(expandedCardId === snippet.id ? null : snippet.id);
+  };
+
+  const handleCopyCode = async (code: string, snippetId: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedSnippetId(snippetId);
+      toast.success("Code copied to clipboard!");
+      setTimeout(() => setCopiedSnippetId(null), 2000);
+    } catch (err) {
+      toast.error("Failed to copy code");
+    }
   };
 
   if (error) {
@@ -113,25 +128,45 @@ const Snippets = () => {
                   <CardHeader>
                     <CardTitle>{snippet.title}</CardTitle>
                     <CardDescription>{snippet.description}</CardDescription>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedSnippet(snippet);
-                      }}
-                    >
-                      <Maximize2 className="h-4 w-4" />
-                    </Button>
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyCode(snippet.code_content, snippet.id);
+                        }}
+                      >
+                        {copiedSnippetId === snippet.id ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSnippet(snippet);
+                        }}
+                      >
+                        <Maximize2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardHeader>
                   {expandedCardId === snippet.id && (
                     <CardContent className="border-t pt-4 space-y-4 animate-slide-up">
                       <div className="bg-muted/50 p-4 rounded-md overflow-hidden">
                         <ScrollArea className="h-[200px]">
-                          <pre className="font-mono text-sm whitespace-pre-wrap">
+                          <SyntaxHighlighter
+                            language={snippet.language || 'text'}
+                            className="!bg-transparent !m-0 !p-0"
+                          >
                             {snippet.code_content}
-                          </pre>
+                          </SyntaxHighlighter>
                         </ScrollArea>
                       </div>
                       {snippet.teams && (
@@ -202,9 +237,12 @@ const Snippets = () => {
             <CardContent className="space-y-4">
               <div className="bg-muted/50 p-4 rounded-md overflow-hidden">
                 <ScrollArea className="h-[400px]">
-                  <pre className="font-mono text-sm whitespace-pre-wrap">
+                  <SyntaxHighlighter
+                    language={focusedSnippet.language || 'text'}
+                    className="!bg-transparent !m-0 !p-0"
+                  >
                     {focusedSnippet.code_content}
-                  </pre>
+                  </SyntaxHighlighter>
                 </ScrollArea>
               </div>
               {focusedSnippet.teams && (
