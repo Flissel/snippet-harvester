@@ -9,14 +9,15 @@ import { useState } from "react";
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: snippets, isLoading } = useQuery({
+  const { data: snippets, isLoading, error } = useQuery({
     queryKey: ["snippets"],
     queryFn: async () => {
+      console.log("Fetching snippets...");
       const { data, error } = await supabase
         .from("snippets")
         .select(`
           *,
-          profiles:created_by(username, avatar_url),
+          profiles:created_by(username, avatar_url, is_admin),
           teams:team_id(name),
           snippet_label_associations(
             snippet_labels:label_id(name, color)
@@ -25,7 +26,11 @@ const Index = () => {
         .eq("is_public", true)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching snippets:", error);
+        throw error;
+      }
+      console.log("Fetched snippets:", data);
       return data;
     },
   });
@@ -34,6 +39,25 @@ const Index = () => {
     snippet.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     snippet.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  console.log("Filtered snippets:", filteredSnippets);
+  console.log("Error state:", error);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex bg-background">
+        <Sidebar />
+        <div className="flex-1 ml-64">
+          <Header />
+          <main className="p-6">
+            <div className="text-red-500">
+              Error loading snippets: {error.message}
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-background">
