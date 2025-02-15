@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -15,11 +14,7 @@ import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configurati
 export function Analysis() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedCode, setSelectedCode] = useState<{
-    start: number;
-    end: number;
-    text: string;
-  } | null>(null);
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
 
   const { data: snippets, isLoading: isLoadingSnippets } = useQuery({
     queryKey: ['snippets'],
@@ -105,8 +100,8 @@ export function Analysis() {
     },
   });
 
-  const handleCodeSelection = (start: number, end: number, text: string) => {
-    setSelectedCode({ start, end, text });
+  const handleCodeSelection = (text: string) => {
+    setSelectedCode(text);
   };
 
   if (isLoadingSnippets || isLoadingConfig) {
@@ -133,7 +128,7 @@ export function Analysis() {
         <Card className="p-4">
           <CodeViewer
             code={snippet.code_content}
-            language={snippet.language || 'text'}
+            language="python"
             configPoints={configPoints}
             onSelectionChange={handleCodeSelection}
           />
@@ -153,7 +148,7 @@ export function Analysis() {
             {selectedCode && (
               <div className="mb-4 p-2 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">Selected text:</p>
-                <p className="font-mono text-sm">{selectedCode.text}</p>
+                <p className="font-mono text-sm">{selectedCode}</p>
               </div>
             )}
             <ConfigurationPointForm

@@ -13,8 +13,6 @@ import { Snippet } from '@/types/snippets';
 
 const configPointSchema = z.object({
   label: z.string().min(1, 'Label is required'),
-  start_position: z.number().min(0, 'Start position must be positive'),
-  end_position: z.number().min(0, 'End position must be positive'),
   config_type: z.enum(['string', 'number', 'boolean', 'array', 'object']),
   default_value: z.string().optional(),
   description: z.string().optional(),
@@ -25,11 +23,7 @@ const configPointSchema = z.object({
 interface ConfigurationPointFormProps {
   snippet: Snippet;
   onSubmit: (data: ConfigurationPointInput) => void;
-  selectedCode?: {
-    start: number;
-    end: number;
-    text: string;
-  };
+  selectedCode?: string;
 }
 
 export function ConfigurationPointForm({ 
@@ -42,10 +36,8 @@ export function ConfigurationPointForm({
     defaultValues: {
       snippet_id: snippet.id,
       label: '',
-      start_position: selectedCode?.start ?? 0,
-      end_position: selectedCode?.end ?? 0,
       config_type: 'string',
-      default_value: selectedCode?.text ?? '',
+      default_value: selectedCode ?? '',
       description: '',
       template_placeholder: '',
       is_required: true,
@@ -53,7 +45,6 @@ export function ConfigurationPointForm({
   });
 
   const handleSubmit = (data: ConfigurationPointInput) => {
-    // Generate a template placeholder if none provided
     if (!data.template_placeholder) {
       data.template_placeholder = `{${data.label}}`;
     }
@@ -77,46 +68,6 @@ export function ConfigurationPointForm({
             </FormItem>
           )}
         />
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="start_position"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Start Position</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="end_position"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>End Position</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
 
         <FormField
           control={form.control}
@@ -148,9 +99,14 @@ export function ConfigurationPointForm({
           name="default_value"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Default Value</FormLabel>
+              <FormLabel>Selected Code</FormLabel>
               <FormControl>
-                <Input placeholder="Enter default value" {...field} />
+                <Textarea 
+                  placeholder="Selected code will appear here" 
+                  {...field} 
+                  value={selectedCode || field.value}
+                  className="font-mono"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
