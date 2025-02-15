@@ -74,39 +74,8 @@ export function SnippetCard({
               </SyntaxHighlighter>
             </ScrollArea>
           </div>
-          {snippet.teams && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Team:</span>
-              <span className="text-sm text-muted-foreground bg-primary/10 px-2 py-1 rounded">
-                {snippet.teams.name}
-              </span>
-            </div>
-          )}
-          {snippet.snippet_label_associations?.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {snippet.snippet_label_associations.map(({ snippet_labels }) => (
-                <span
-                  key={snippet_labels.name}
-                  className="text-xs px-2 py-1 rounded"
-                  style={{
-                    backgroundColor: `${snippet_labels.color}20`,
-                    color: snippet_labels.color,
-                  }}
-                >
-                  {snippet_labels.name}
-                </span>
-              ))}
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <img
-              src={snippet.profiles?.avatar_url || "/placeholder.svg"}
-              alt={snippet.profiles?.username || "Anonymous"}
-              className="w-6 h-6 rounded-full"
-            />
-            <span className="text-sm text-muted-foreground">
-              {snippet.profiles?.username || "Anonymous"}
-            </span>
+          <div className="text-sm text-muted-foreground">
+            Created: {new Date(snippet.created_at).toLocaleDateString()}
           </div>
         </CardContent>
       )}

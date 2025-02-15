@@ -1,18 +1,12 @@
 
-import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OrganizationList } from "@/components/organizations/OrganizationList";
-import { TeamList } from "@/components/teams/TeamList";
-import { CreateOrganizationModal } from "@/components/organizations/CreateOrganizationModal";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Navigate } from "react-router-dom";
 
 export default function Profile() {
   const { user, loading, initialized } = useAuth();
-  const [isCreateOrgModalOpen, setIsCreateOrgModalOpen] = useState(false);
 
   console.log("Profile page auth state:", {
     user,
@@ -39,36 +33,25 @@ export default function Profile() {
         <Header />
         <main className="p-6">
           <div className="max-w-4xl mx-auto">
-            <Tabs defaultValue="organizations" className="w-full">
-              <div className="flex items-center justify-between mb-6">
-                <TabsList>
-                  <TabsTrigger value="organizations">Organizations</TabsTrigger>
-                  <TabsTrigger value="teams">Teams</TabsTrigger>
-                  <TabsTrigger value="profile">Profile Settings</TabsTrigger>
-                </TabsList>
-                <Button onClick={() => setIsCreateOrgModalOpen(true)}>
-                  Create Organization
-                </Button>
-              </div>
-
-              <TabsContent value="organizations" className="space-y-4">
-                <OrganizationList />
-              </TabsContent>
-
-              <TabsContent value="teams" className="space-y-4">
-                <TeamList />
-              </TabsContent>
-
-              <TabsContent value="profile" className="space-y-4">
-                Coming soon...
-              </TabsContent>
-            </Tabs>
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Email</label>
+                    <p className="text-muted-foreground">{user.email}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">User ID</label>
+                    <p className="text-muted-foreground">{user.id}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </main>
-        <CreateOrganizationModal 
-          open={isCreateOrgModalOpen}
-          onOpenChange={setIsCreateOrgModalOpen}
-        />
       </div>
     </div>
   );
