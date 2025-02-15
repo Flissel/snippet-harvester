@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { ConfigurationPointInput } from '@/types/configuration';
 import { Snippet } from '@/types/snippets';
 
@@ -17,28 +18,45 @@ const configPointSchema = z.object({
   config_type: z.enum(['string', 'number', 'boolean', 'array', 'object']),
   default_value: z.string().optional(),
   description: z.string().optional(),
+  template_placeholder: z.string().optional(),
+  is_required: z.boolean().default(true),
 });
 
 interface ConfigurationPointFormProps {
   snippet: Snippet;
   onSubmit: (data: ConfigurationPointInput) => void;
+  selectedCode?: {
+    start: number;
+    end: number;
+    text: string;
+  };
 }
 
-export function ConfigurationPointForm({ snippet, onSubmit }: ConfigurationPointFormProps) {
+export function ConfigurationPointForm({ 
+  snippet, 
+  onSubmit,
+  selectedCode 
+}: ConfigurationPointFormProps) {
   const form = useForm<ConfigurationPointInput>({
     resolver: zodResolver(configPointSchema),
     defaultValues: {
       snippet_id: snippet.id,
       label: '',
-      start_position: 0,
-      end_position: 0,
+      start_position: selectedCode?.start ?? 0,
+      end_position: selectedCode?.end ?? 0,
       config_type: 'string',
-      default_value: '',
+      default_value: selectedCode?.text ?? '',
       description: '',
+      template_placeholder: '',
+      is_required: true,
     },
   });
 
   const handleSubmit = (data: ConfigurationPointInput) => {
+    // Generate a template placeholder if none provided
+    if (!data.template_placeholder) {
+      data.template_placeholder = `{${data.label}}`;
+    }
     onSubmit(data);
     form.reset();
   };
@@ -130,9 +148,40 @@ export function ConfigurationPointForm({ snippet, onSubmit }: ConfigurationPoint
           name="default_value"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Default Value (Optional)</FormLabel>
+              <FormLabel>Default Value</FormLabel>
               <FormControl>
                 <Input placeholder="Enter default value" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="template_placeholder"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Template Placeholder (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. {label}" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="is_required"
+          render={({ field }) => (
+            <FormItem className="flex items-center gap-2">
+              <FormLabel>Required</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -144,7 +193,7 @@ export function ConfigurationPointForm({ snippet, onSubmit }: ConfigurationPoint
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description (Optional)</FormLabel>
+              <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea placeholder="Enter description" {...field} />
               </FormControl>

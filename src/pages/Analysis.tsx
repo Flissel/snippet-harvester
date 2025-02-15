@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +16,11 @@ export function Analysis() {
   const { snippetId } = useParams<{ snippetId: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedCode, setSelectedCode] = useState<{
+    start: number;
+    end: number;
+    text: string;
+  } | null>(null);
 
   const { data: snippet, isLoading: isLoadingSnippet } = useQuery({
     queryKey: ['snippets', snippetId],
@@ -30,7 +36,7 @@ export function Analysis() {
       if (error) throw error;
       return data as Snippet;
     },
-    enabled: !!snippetId, // Only run query if snippetId exists
+    enabled: !!snippetId,
   });
 
   const { data: configPoints = [], isLoading: isLoadingConfig } = useQuery({
@@ -47,7 +53,7 @@ export function Analysis() {
       if (error) throw error;
       return data as ConfigurationPoint[];
     },
-    enabled: !!snippetId, // Only run query if snippetId exists
+    enabled: !!snippetId,
   });
 
   const createConfigPoint = useMutation({
@@ -67,6 +73,7 @@ export function Analysis() {
         title: 'Configuration point created',
         description: 'The configuration point has been added successfully.',
       });
+      setSelectedCode(null);
     },
     onError: (error) => {
       toast({
@@ -102,6 +109,10 @@ export function Analysis() {
     },
   });
 
+  const handleCodeSelection = (start: number, end: number, text: string) => {
+    setSelectedCode({ start, end, text });
+  };
+
   if (!snippetId) {
     return <div>Invalid snippet ID</div>;
   }
@@ -129,6 +140,7 @@ export function Analysis() {
             code={snippet.code_content}
             language={snippet.language || 'text'}
             configPoints={configPoints}
+            onSelectionChange={handleCodeSelection}
           />
         </Card>
 
@@ -143,9 +155,16 @@ export function Analysis() {
 
           <Card className="p-4">
             <h2 className="text-xl font-semibold mb-4">Add Configuration Point</h2>
+            {selectedCode && (
+              <div className="mb-4 p-2 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">Selected text:</p>
+                <p className="font-mono text-sm">{selectedCode.text}</p>
+              </div>
+            )}
             <ConfigurationPointForm
               snippet={snippet}
               onSubmit={(data) => createConfigPoint.mutate(data)}
+              selectedCode={selectedCode}
             />
           </Card>
         </div>

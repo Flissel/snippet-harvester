@@ -8,6 +8,8 @@ export interface ConfigurationPoint {
   config_type: 'string' | 'number' | 'boolean' | 'array' | 'object';
   default_value?: string;
   description?: string;
+  template_placeholder?: string;
+  is_required: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -20,4 +22,6 @@ export interface ConfigurationPointInput {
   config_type: ConfigurationPoint['config_type'];
   default_value?: string;
   description?: string;
+  template_placeholder?: string;
+  is_required?: boolean;
 }

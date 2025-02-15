@@ -17,9 +17,11 @@ export type Database = {
           description: string | null
           end_position: number
           id: string
+          is_required: boolean | null
           label: string
           snippet_id: string
           start_position: number
+          template_placeholder: string | null
           updated_at: string
         }
         Insert: {
@@ -29,9 +31,11 @@ export type Database = {
           description?: string | null
           end_position: number
           id?: string
+          is_required?: boolean | null
           label: string
           snippet_id: string
           start_position: number
+          template_placeholder?: string | null
           updated_at?: string
         }
         Update: {
@@ -41,9 +45,11 @@ export type Database = {
           description?: string | null
           end_position?: number
           id?: string
+          is_required?: boolean | null
           label?: string
           snippet_id?: string
           start_position?: number
+          template_placeholder?: string | null
           updated_at?: string
         }
         Relationships: [
