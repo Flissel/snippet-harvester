@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { useParams, useNavigate, Params } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -11,14 +12,7 @@ import { ConfigurationPointList } from '@/components/analysis/ConfigurationPoint
 import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
 
-type AnalysisParams = {
-  snippetId: string;
-} & Params;
-
 export function Analysis() {
-  const params = useParams() as AnalysisParams;
-  const snippetId = params.snippetId;
-  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCode, setSelectedCode] = useState<{
@@ -27,51 +21,35 @@ export function Analysis() {
     text: string;
   } | null>(null);
 
-  console.log('Current snippetId:', snippetId); // Debug log
-
-  const { data: snippet, isLoading: isLoadingSnippet } = useQuery({
-    queryKey: ['snippets', snippetId],
+  const { data: snippets, isLoading: isLoadingSnippets } = useQuery({
+    queryKey: ['snippets'],
     queryFn: async () => {
-      if (!snippetId) throw new Error('Snippet ID is required');
-      
-      console.log('Fetching snippet with ID:', snippetId); // Debug log
-      
       const { data, error } = await supabase
         .from('snippets')
-        .select('*')
-        .eq('id', snippetId)
-        .maybeSingle();
+        .select('*');
 
       if (error) {
-        console.error('Snippet fetch error:', error); // Debug log
+        console.error('Snippets fetch error:', error);
         throw error;
       }
-      if (!data) throw new Error('Snippet not found');
-      return data as Snippet;
+      return data as Snippet[];
     },
-    enabled: Boolean(snippetId),
   });
 
   const { data: configPoints = [], isLoading: isLoadingConfig } = useQuery({
-    queryKey: ['configuration_points', snippetId],
+    queryKey: ['configuration_points'],
     queryFn: async () => {
-      if (!snippetId) throw new Error('Snippet ID is required');
-      
-      console.log('Fetching config points for snippet:', snippetId); // Debug log
-      
       const { data, error } = await supabase
         .from('configuration_points')
         .select('*')
-        .eq('snippet_id', snippetId)
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Config points fetch error:', error); // Debug log
+        console.error('Config points fetch error:', error);
         throw error;
       }
       return data as ConfigurationPoint[];
     },
-    enabled: Boolean(snippetId),
   });
 
   const createConfigPoint = useMutation({
@@ -86,7 +64,7 @@ export function Analysis() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['configuration_points', snippetId] });
+      queryClient.invalidateQueries({ queryKey: ['configuration_points'] });
       toast({
         title: 'Configuration point created',
         description: 'The configuration point has been added successfully.',
@@ -112,7 +90,7 @@ export function Analysis() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['configuration_points', snippetId] });
+      queryClient.invalidateQueries({ queryKey: ['configuration_points'] });
       toast({
         title: 'Configuration point deleted',
         description: 'The configuration point has been removed successfully.',
@@ -131,29 +109,22 @@ export function Analysis() {
     setSelectedCode({ start, end, text });
   };
 
-  if (!snippetId) {
-    toast({
-      title: "Error",
-      description: "No snippet ID provided",
-      variant: "destructive",
-    });
-    navigate('/snippets');
-    return null;
-  }
-
-  if (isLoadingSnippet || isLoadingConfig) {
+  if (isLoadingSnippets || isLoadingConfig) {
     return <div>Loading...</div>;
   }
 
-  if (!snippet) {
-    return <div>Snippet not found</div>;
+  if (!snippets || snippets.length === 0) {
+    return <div>No snippets found</div>;
   }
+
+  // Use the first snippet for demonstration
+  const snippet = snippets[0];
 
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Analyze Snippet: {snippet.title}</h1>
-        <Button variant="outline" onClick={() => navigate('/snippets')}>
+        <Button variant="outline" onClick={() => window.history.back()}>
           Back
         </Button>
       </div>
