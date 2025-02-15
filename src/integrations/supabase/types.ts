@@ -72,31 +72,45 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          display_name: string | null
           full_name: string | null
           id: string
           is_admin: boolean | null
+          last_used_organization_id: string | null
           updated_at: string
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          display_name?: string | null
           full_name?: string | null
           id: string
           is_admin?: boolean | null
+          last_used_organization_id?: string | null
           updated_at?: string
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          display_name?: string | null
           full_name?: string | null
           id?: string
           is_admin?: boolean | null
+          last_used_organization_id?: string | null
           updated_at?: string
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_last_used_organization_id_fkey"
+            columns: ["last_used_organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       snippet_configurations: {
         Row: {

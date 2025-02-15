@@ -1,45 +1,30 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { UserRegistration } from "@/types/auth";
 
 interface UserRegistrationStepProps {
-  email: string;
-  setEmail: (email: string) => void;
-  password: string;
-  setPassword: (password: string) => void;
-  username: string;
-  setUsername: (username: string) => void;
+  data: UserRegistration;
+  onChange: (data: UserRegistration) => void;
 }
 
-export function UserRegistrationStep({
-  email,
-  setEmail,
-  password,
-  setPassword,
-  username,
-  setUsername,
-}: UserRegistrationStepProps) {
+export function UserRegistrationStep({ data, onChange }: UserRegistrationStepProps) {
+  const handleChange = (field: keyof UserRegistration) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    onChange({ ...data, [field]: e.target.value });
+  };
+
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="username">Username</Label>
-        <Input
-          id="username"
-          type="text"
-          placeholder="johndoe"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-      </div>
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
           type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter your email"
+          value={data.email}
+          onChange={handleChange("email")}
           required
         />
       </div>
@@ -48,11 +33,26 @@ export function UserRegistrationStep({
         <Input
           id="password"
           type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Create a password"
+          value={data.password}
+          onChange={handleChange("password")}
           required
         />
       </div>
+      {data.displayName !== undefined && (
+        <div className="space-y-2">
+          <Label htmlFor="displayName">Display Name</Label>
+          <Input
+            id="displayName"
+            type="text"
+            placeholder="Enter your display name"
+            value={data.displayName}
+            onChange={handleChange("displayName")}
+            required
+          />
+        </div>
+      )}
     </div>
   );
 }
+

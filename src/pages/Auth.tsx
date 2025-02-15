@@ -8,22 +8,24 @@ import { useNavigate } from "react-router-dom";
 import { UserRegistrationStep } from "@/components/auth/UserRegistrationStep";
 import { OrganizationSetupStep } from "@/components/auth/OrganizationSetupStep";
 import { TeamInviteStep } from "@/components/auth/TeamInviteStep";
-import type { RegistrationStep, OrganizationSetup, TeamInvite } from "@/types/auth";
+import type { RegistrationStep, OrganizationSetup, UserRegistration, TeamInvite } from "@/types/auth";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const [currentStep, setCurrentStep] = useState<RegistrationStep>("user");
-  
-  // User registration data
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
+  const [currentStep, setCurrentStep] = useState<RegistrationStep>("organization");
   
   // Organization setup data
   const [orgData, setOrgData] = useState<OrganizationSetup>({
     name: "",
     description: "",
+  });
+  
+  // User registration data
+  const [userData, setUserData] = useState<UserRegistration>({
+    email: "",
+    password: "",
+    displayName: "",
   });
   
   // Team invite data
@@ -36,8 +38,8 @@ const Auth = () => {
   const handleSignIn = async () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: userData.email,
+        password: userData.password,
       });
       if (error) {
         if (error.message.includes("Email not confirmed") || error.message.includes("Invalid login credentials")) {
@@ -53,26 +55,15 @@ const Auth = () => {
 
   const handleSignUp = async () => {
     try {
-      // Step 1: Create user account
-      const { error: signUpError, data } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username,
-          },
-        },
-      });
-      if (signUpError) throw signUpError;
+      setIsLoading(true);
 
-      // Step 2: Create organization
-      const { error: orgError } = await supabase
+      // Step 1: Create organization
+      const { data: orgResult, error: orgError } = await supabase
         .from("organizations")
         .insert([
           {
             name: orgData.name,
             description: orgData.description,
-            created_by: data.user?.id,
           },
         ])
         .select()
@@ -80,21 +71,57 @@ const Auth = () => {
 
       if (orgError) throw orgError;
 
+      // Step 2: Create user account with metadata
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            display_name: userData.displayName,
+          },
+        },
+      });
+
+      if (signUpError) throw signUpError;
+
+      // Step 3: Create organization member entry (admin role)
+      if (data.user) {
+        const { error: memberError } = await supabase
+          .from("organization_members")
+          .insert([
+            {
+              organization_id: orgResult.id,
+              user_id: data.user.id,
+              role: "admin",
+            },
+          ]);
+
+        if (memberError) throw memberError;
+
+        // Step 4: Update profile with last used organization
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ last_used_organization_id: orgResult.id })
+          .eq("id", data.user.id);
+
+        if (profileError) throw profileError;
+      }
+
       toast.success("Account created successfully! Please check your email to confirm your account.");
       setIsSignUp(false);
       resetForm();
     } catch (error: any) {
       toast.error(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const resetForm = () => {
-    setEmail("");
-    setPassword("");
-    setUsername("");
+    setUserData({ email: "", password: "", displayName: "" });
     setOrgData({ name: "", description: "" });
     setInviteData({ emails: [] });
-    setCurrentStep("user");
+    setCurrentStep("organization");
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -103,9 +130,9 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
-        if (currentStep === "user" && email && password && username) {
-          setCurrentStep("organization");
-        } else if (currentStep === "organization" && orgData.name) {
+        if (currentStep === "organization" && orgData.name) {
+          setCurrentStep("user");
+        } else if (currentStep === "user" && userData.email && userData.password && userData.displayName) {
           setCurrentStep("invite");
         } else if (currentStep === "invite") {
           await handleSignUp();
@@ -121,10 +148,10 @@ const Auth = () => {
   };
 
   const handleBack = () => {
-    if (currentStep === "organization") {
-      setCurrentStep("user");
-    } else if (currentStep === "invite") {
+    if (currentStep === "user") {
       setCurrentStep("organization");
+    } else if (currentStep === "invite") {
+      setCurrentStep("user");
     }
   };
 
@@ -134,19 +161,19 @@ const Auth = () => {
         <CardHeader>
           <CardTitle>
             {isSignUp
-              ? currentStep === "user"
-                ? "Create an account"
-                : currentStep === "organization"
-                ? "Set up your organization"
+              ? currentStep === "organization"
+                ? "Create your organization"
+                : currentStep === "user"
+                ? "Create your account"
                 : "Invite team members"
               : "Welcome back"}
           </CardTitle>
           <CardDescription>
             {isSignUp
-              ? currentStep === "user"
-                ? "Enter your details to create a new account"
-                : currentStep === "organization"
-                ? "Tell us about your organization"
+              ? currentStep === "organization"
+                ? "First, tell us about your organization"
+                : currentStep === "user"
+                ? "Now, set up your account"
                 : "Invite your team members to join (optional)"
               : "Enter your credentials to sign in"}
           </CardDescription>
@@ -155,20 +182,16 @@ const Auth = () => {
           <form onSubmit={handleAuth} className="space-y-4">
             {isSignUp ? (
               <>
-                {currentStep === "user" && (
-                  <UserRegistrationStep
-                    email={email}
-                    setEmail={setEmail}
-                    password={password}
-                    setPassword={setPassword}
-                    username={username}
-                    setUsername={setUsername}
-                  />
-                )}
                 {currentStep === "organization" && (
                   <OrganizationSetupStep
                     data={orgData}
                     onChange={setOrgData}
+                  />
+                )}
+                {currentStep === "user" && (
+                  <UserRegistrationStep
+                    data={userData}
+                    onChange={setUserData}
                   />
                 )}
                 {currentStep === "invite" && (
@@ -178,7 +201,7 @@ const Auth = () => {
                   />
                 )}
                 <div className="flex gap-2">
-                  {currentStep !== "user" && (
+                  {currentStep !== "organization" && (
                     <Button
                       type="button"
                       variant="outline"
@@ -203,12 +226,8 @@ const Auth = () => {
             ) : (
               <>
                 <UserRegistrationStep
-                  email={email}
-                  setEmail={setEmail}
-                  password={password}
-                  setPassword={setPassword}
-                  username={username}
-                  setUsername={setUsername}
+                  data={userData}
+                  onChange={setUserData}
                 />
                 <Button
                   type="submit"
@@ -240,3 +259,4 @@ const Auth = () => {
 };
 
 export default Auth;
+
