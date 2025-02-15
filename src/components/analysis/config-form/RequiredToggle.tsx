@@ -1,5 +1,5 @@
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { FormField, FormItem, FormControl, FormMessage } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { UseFormReturn } from 'react-hook-form';
 
@@ -14,7 +14,6 @@ export function RequiredToggle({ form }: RequiredToggleProps) {
       name="is_required"
       render={({ field }) => (
         <FormItem className="flex items-center gap-2">
-          <FormLabel>Required</FormLabel>
           <FormControl>
             <Switch
               checked={field.value}
