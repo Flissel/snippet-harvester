@@ -34,7 +34,11 @@ export const useSnippetForm = (onSuccess: () => void) => {
   });
 
   const createSnippet = async (values: SnippetFormValues) => {
+    console.log("Starting snippet creation...");
+    console.log("Current user:", user);
+    
     if (!user?.id) {
+      console.log("No user ID found!");
       toast({
         title: "Error",
         description: "You must be logged in to create snippets.",
@@ -44,7 +48,10 @@ export const useSnippetForm = (onSuccess: () => void) => {
     }
 
     try {
-      console.log("Creating snippet with user ID:", user.id);
+      console.log("Creating snippet with data:", {
+        ...values,
+        created_by: user.id
+      });
       
       const snippetData = {
         title: values.title,
@@ -55,14 +62,18 @@ export const useSnippetForm = (onSuccess: () => void) => {
         created_by: user.id,
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("snippets")
-        .insert(snippetData);
+        .insert(snippetData)
+        .select()
+        .single();
 
       if (error) {
-        console.error("Error creating snippet:", error);
+        console.error("Supabase error details:", error);
         throw error;
       }
+
+      console.log("Snippet created successfully:", data);
 
       toast({
         title: "Success",
@@ -73,7 +84,7 @@ export const useSnippetForm = (onSuccess: () => void) => {
       queryClient.invalidateQueries({ queryKey: ["snippets"] });
       onSuccess();
     } catch (error: any) {
-      console.error("Error creating snippet:", error);
+      console.error("Full error object:", error);
       toast({
         title: "Error",
         description: error?.message || "Failed to create snippet. Please try again.",
