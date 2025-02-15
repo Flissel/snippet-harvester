@@ -33,8 +33,8 @@ const Auth = () => {
         });
         if (error) throw error;
         toast({
-          title: "Success!",
-          description: "Account created successfully. Please sign in with your credentials.",
+          title: "Check your email!",
+          description: "We've sent you a confirmation email. Please check your inbox and confirm your email before signing in.",
         });
         // Only reset password and username, keep email for convenience
         setPassword("");
@@ -45,7 +45,13 @@ const Auth = () => {
           email,
           password,
         });
-        if (error) throw error;
+        if (error) {
+          // Check if the error is related to email confirmation
+          if (error.message.includes("Email not confirmed") || error.message.includes("Invalid login credentials")) {
+            throw new Error("Please check your email and confirm your account before signing in. If you've already confirmed, make sure your credentials are correct.");
+          }
+          throw error;
+        }
         navigate("/");
       }
     } catch (error: any) {
