@@ -54,21 +54,23 @@ export function SnippetFormModal() {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button className="ml-4">New Snippet</Button>
+          <Button>New Snippet</Button>
         </DialogTrigger>
-        <DialogContent className="max-w-4xl h-[90vh]">
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-6">
           <DialogHeader>
             <DialogTitle>Create New Snippet</DialogTitle>
           </DialogHeader>
-          <SnippetForm
-            form={form}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setOpen(false)}
-            zoom={zoom}
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onResetZoom={handleResetZoom}
-          />
+          <div className="flex-1 overflow-hidden">
+            <SnippetForm
+              form={form}
+              onSubmit={handleFormSubmit}
+              onCancel={() => setOpen(false)}
+              zoom={zoom}
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onResetZoom={handleResetZoom}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 

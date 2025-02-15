@@ -18,7 +18,7 @@ interface CodeEditorFieldProps {
 
 export function CodeEditorField({ form, zoom, onZoomIn, onZoomOut, onResetZoom }: CodeEditorFieldProps) {
   return (
-    <div className="space-y-4">
+    <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-2">
         <FormLabel>Code Content</FormLabel>
         <div className="flex items-center gap-2">
@@ -56,13 +56,13 @@ export function CodeEditorField({ form, zoom, onZoomIn, onZoomOut, onResetZoom }
         control={form.control}
         name="code_content"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="flex-1">
             <FormControl>
-              <ScrollArea className="h-[400px] border rounded-md">
+              <ScrollArea className="h-[calc(100vh-380px)] border rounded-md">
                 <div className="p-4">
                   <Textarea
                     placeholder="Enter your code here"
-                    className="font-mono min-h-[380px] border-0 focus-visible:ring-0 resize-none"
+                    className="font-mono min-h-[300px] border-0 focus-visible:ring-0 resize-none"
                     style={{
                       transform: `scale(${zoom / 100})`,
                       transformOrigin: 'top left',
