@@ -14,7 +14,7 @@ export function SnippetPreview({ snippet }: SnippetPreviewProps) {
       <div className="space-y-4">
         <div>
           <h4 className="font-medium mb-1">Title</h4>
-          <p>{snippet.title}</p>
+          <p className="text-foreground">{snippet.title}</p>
         </div>
         {snippet.description && (
           <div>
@@ -30,8 +30,8 @@ export function SnippetPreview({ snippet }: SnippetPreviewProps) {
         </div>
         <div>
           <h4 className="font-medium mb-1">Code Content</h4>
-          <div className="bg-muted/50 p-4 rounded-md">
-            <pre className="font-mono text-sm whitespace-pre-wrap">
+          <div className="bg-muted/50 p-4 rounded-md overflow-x-auto">
+            <pre className="font-mono text-sm whitespace-pre-wrap break-words max-w-full">
               {snippet.code_content}
             </pre>
           </div>
