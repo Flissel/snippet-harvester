@@ -8,6 +8,11 @@ import { Snippet } from "@/types/snippets";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useState } from "react";
+import { SnippetForm } from "./SnippetForm";
+import { useForm } from "react-hook-form";
+import { snippetFormSchema } from "./hooks/useSnippetForm";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useUpdateSnippet } from "./hooks/useUpdateSnippet";
 
 interface SnippetDetailModalProps {
   snippet: Snippet;
@@ -16,7 +21,24 @@ interface SnippetDetailModalProps {
 
 export function SnippetDetailModal({ snippet, onClose }: SnippetDetailModalProps) {
   const [isCopied, setIsCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [zoom, setZoom] = useState(100);
   const { user } = useAuth();
+
+  const form = useForm({
+    resolver: zodResolver(snippetFormSchema),
+    defaultValues: {
+      title: snippet.title,
+      description: snippet.description || "",
+      code_content: snippet.code_content,
+      language: snippet.language || "text",
+      is_public: snippet.is_public || false,
+    },
+  });
+
+  const { updateSnippet } = useUpdateSnippet(snippet.id, () => {
+    setIsEditing(false);
+  });
 
   const copyToClipboard = async () => {
     try {
@@ -29,7 +51,44 @@ export function SnippetDetailModal({ snippet, onClose }: SnippetDetailModalProps
     }
   };
 
+  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 10, 200));
+  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
+  const handleResetZoom = () => setZoom(100);
+
   const canModify = user?.id === snippet.created_by;
+
+  if (isEditing) {
+    return (
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-4xl max-h-[90vh] flex flex-col animate-fade-in">
+          <CardHeader className="relative border-b">
+            <div className="absolute right-2 top-2">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="hover:bg-destructive/20 hover:text-destructive transition-colors"
+                onClick={() => setIsEditing(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <CardTitle>Edit Snippet</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <SnippetForm
+              form={form}
+              onSubmit={updateSnippet}
+              onCancel={() => setIsEditing(false)}
+              zoom={zoom}
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onResetZoom={handleResetZoom}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -54,7 +113,7 @@ export function SnippetDetailModal({ snippet, onClose }: SnippetDetailModalProps
                 variant="secondary"
                 size="icon"
                 className="hover:bg-primary/20 hover:text-primary transition-colors"
-                onClick={() => toast.info("Edit functionality coming soon!")}
+                onClick={() => setIsEditing(true)}
                 title="Edit snippet"
               >
                 <Edit className="h-4 w-4" />
