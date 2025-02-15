@@ -12,8 +12,12 @@ import { ConfigurationPointList } from '@/components/analysis/ConfigurationPoint
 import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
 
+type AnalysisParams = {
+  snippetId: string;
+};
+
 export function Analysis() {
-  const { snippetId } = useParams();
+  const { snippetId } = useParams<AnalysisParams>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCode, setSelectedCode] = useState<{
