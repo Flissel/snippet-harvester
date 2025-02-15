@@ -29,6 +29,13 @@ const Snippets = () => {
     }
   }, [user, loading, initialized, navigate]);
 
+  console.log("Snippets component state:", {
+    userExists: !!user,
+    authLoading: loading,
+    authInitialized: initialized,
+    userId: user?.id
+  });
+
   const { data: snippets, isLoading, error } = useQuery({
     queryKey: ["snippets"],
     queryFn: async () => {
@@ -57,11 +64,12 @@ const Snippets = () => {
       console.log("Fetched snippets:", data);
       return data;
     },
-    enabled: !!user && initialized && !loading, // Only run query when auth is fully initialized
+    enabled: !!user && initialized && !loading,
   });
 
   // Only show loading state during initial auth check
   if (!initialized) {
+    console.log("Auth not initialized yet");
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
