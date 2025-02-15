@@ -112,6 +112,162 @@ export type Database = {
           },
         ]
       }
+      snippet_access_control: {
+        Row: {
+          created_at: string
+          id: string
+          permission_level: string
+          snippet_id: string
+          team_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission_level: string
+          snippet_id: string
+          team_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission_level?: string
+          snippet_id?: string
+          team_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snippet_access_control_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snippet_access_control_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snippet_access_control_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      snippet_categories: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          organization_id: string | null
+          parent_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          organization_id?: string | null
+          parent_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string | null
+          parent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snippet_categories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snippet_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snippet_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "snippet_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      snippet_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_resolved: boolean | null
+          parent_comment_id: string | null
+          snippet_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          parent_comment_id?: string | null
+          snippet_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          parent_comment_id?: string | null
+          snippet_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snippet_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "snippet_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snippet_comments_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snippet_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       snippet_configurations: {
         Row: {
           created_at: string
@@ -295,45 +451,114 @@ export type Database = {
           },
         ]
       }
-      snippets: {
+      snippet_versions: {
         Row: {
+          change_summary: string | null
           code_content: string
           created_at: string
           created_by: string | null
-          description: string | null
           id: string
-          is_public: boolean | null
-          language: string | null
-          organization_id: string | null
-          team_id: string | null
-          title: string
-          updated_at: string
+          snippet_id: string
+          version: string
         }
         Insert: {
+          change_summary?: string | null
           code_content: string
           created_at?: string
           created_by?: string | null
-          description?: string | null
           id?: string
-          is_public?: boolean | null
-          language?: string | null
-          organization_id?: string | null
-          team_id?: string | null
-          title: string
-          updated_at?: string
+          snippet_id: string
+          version: string
         }
         Update: {
+          change_summary?: string | null
           code_content?: string
           created_at?: string
           created_by?: string | null
+          id?: string
+          snippet_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snippet_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snippet_versions_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      snippets: {
+        Row: {
+          category: string | null
+          code_content: string
+          complexity_level: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          documentation: string | null
+          framework: string[] | null
+          id: string
+          is_public: boolean | null
+          language: string | null
+          metadata: Json | null
+          organization_id: string | null
+          tags: string[] | null
+          team_id: string | null
+          title: string
+          updated_at: string
+          usage_examples: string[] | null
+          version: string | null
+        }
+        Insert: {
+          category?: string | null
+          code_content: string
+          complexity_level?: string | null
+          created_at?: string
+          created_by?: string | null
           description?: string | null
+          documentation?: string | null
+          framework?: string[] | null
           id?: string
           is_public?: boolean | null
           language?: string | null
+          metadata?: Json | null
           organization_id?: string | null
+          tags?: string[] | null
+          team_id?: string | null
+          title: string
+          updated_at?: string
+          usage_examples?: string[] | null
+          version?: string | null
+        }
+        Update: {
+          category?: string | null
+          code_content?: string
+          complexity_level?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          documentation?: string | null
+          framework?: string[] | null
+          id?: string
+          is_public?: boolean | null
+          language?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          tags?: string[] | null
           team_id?: string | null
           title?: string
           updated_at?: string
+          usage_examples?: string[] | null
+          version?: string | null
         }
         Relationships: [
           {
