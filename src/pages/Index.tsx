@@ -2,7 +2,7 @@
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 
-const Index = () => {
+export default function Index() {
   return (
     <div className="min-h-screen flex bg-background">
       <Sidebar />
@@ -15,6 +15,4 @@ const Index = () => {
       </div>
     </div>
   );
-};
-
-export default Index;
+}
