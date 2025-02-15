@@ -45,17 +45,7 @@ const Snippets = () => {
 
       console.log("Fetching snippets for user:", user.id);
       
-      // First, get the teams the user belongs to
-      const { data: teamMemberships, error: teamError } = await supabase
-        .from('team_members')
-        .select('team_id')
-        .eq('user_id', user.id);
-
-      if (teamError) throw teamError;
-      
-      const teamIds = teamMemberships?.map(tm => tm.team_id) || [];
-
-      // Then fetch snippets with a simplified query
+      // Fetch snippets with RLS policies applied
       const { data, error } = await supabase
         .from("snippets")
         .select(`
@@ -66,7 +56,6 @@ const Snippets = () => {
             snippet_labels:label_id(name, color)
           )
         `)
-        .or(`created_by.eq.${user.id},is_public.eq.true,team_id.in.(${teamIds.join(',')})`)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -86,20 +75,6 @@ const Snippets = () => {
     },
     enabled: !!user && initialized && !loading,
   });
-
-  // Only show loading state during initial auth check
-  if (!initialized) {
-    console.log("Auth not initialized yet");
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null; // Don't render anything while redirecting
-  }
 
   const filteredSnippets = snippets?.filter((snippet) =>
     snippet.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
