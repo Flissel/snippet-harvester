@@ -1,12 +1,6 @@
 
-import { useRef, useEffect, useState } from 'react';
-import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vs2015 } from 'react-syntax-highlighter/dist/esm/styles/hljs';
-import python from 'react-syntax-highlighter/dist/esm/languages/hljs/python';
+import { useRef } from 'react';
 import { ConfigurationPoint } from '@/types/configuration';
-
-// Register Python language for syntax highlighting
-SyntaxHighlighter.registerLanguage('python', python);
 
 interface CodeViewerProps {
   code: string;
@@ -41,19 +35,9 @@ export function CodeViewer({
       className="relative group"
       onMouseUp={handleMouseUp}
     >
-      <SyntaxHighlighter
-        language="python"
-        style={vs2015}
-        className="!bg-transparent !m-0 !rounded-lg"
-        customStyle={{
-          background: 'transparent',
-          padding: '1rem',
-        }}
-        showLineNumbers
-        wrapLongLines
-      >
+      <pre className="p-4 overflow-auto font-mono text-sm whitespace-pre-wrap">
         {code}
-      </SyntaxHighlighter>
+      </pre>
       {configPoints.map((point, index) => (
         <div
           key={point.id}
