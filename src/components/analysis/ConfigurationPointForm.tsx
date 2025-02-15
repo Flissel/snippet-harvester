@@ -43,9 +43,13 @@ export function ConfigurationPointForm({
 
   const handleSubmit = (data: ConfigPointFormValues) => {
     const configPoint: ConfigurationPointInput = {
-      ...data,
       snippet_id: snippet.id,
+      label: data.label,
+      config_type: data.config_type,
+      default_value: data.default_value,
+      description: data.description,
       template_placeholder: data.template_placeholder || `{${data.label}}`,
+      is_required: data.is_required,
       start_position: selectedCode?.start ?? 0,
       end_position: selectedCode?.end ?? 0,
     };

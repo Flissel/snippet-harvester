@@ -104,8 +104,13 @@ export function Analysis() {
     },
   });
 
-  const handleCodeSelection = (text: string, start: number, end: number) => {
-    setSelectedCode({ text, start, end });
+  const handleCodeSelection = (text: string) => {
+    const startIndex = text ? snippet.code_content.indexOf(text) : 0;
+    setSelectedCode({
+      text,
+      start: startIndex,
+      end: startIndex + text.length
+    });
   };
 
   if (isLoadingSnippets || isLoadingConfig) {
