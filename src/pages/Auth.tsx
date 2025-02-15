@@ -35,8 +35,13 @@ const Auth = () => {
         if (error) throw error;
         toast({
           title: "Success!",
-          description: "Please check your email to confirm your account.",
+          description: "Account created successfully. Please sign in.",
         });
+        // Reset form and switch to login view
+        setEmail("");
+        setPassword("");
+        setUsername("");
+        setIsSignUp(false);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
