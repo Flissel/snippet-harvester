@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
+import { SnippetFormModal } from "@/components/SnippetFormModal";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,14 +66,17 @@ const Index = () => {
       <div className="flex-1 ml-64">
         <Header />
         <main className="p-6">
-          <div className="mb-6">
-            <input
-              type="text"
-              placeholder="Search snippets..."
-              className="w-full px-4 py-2 rounded-lg border border-border bg-background"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex-1 max-w-2xl">
+              <input
+                type="text"
+                placeholder="Search snippets..."
+                className="w-full px-4 py-2 rounded-lg border border-border bg-background"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <SnippetFormModal />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
