@@ -57,11 +57,19 @@ export function SnippetFormModal() {
   });
 
   const onSubmit = async (values: SnippetFormValues) => {
+    if (!user?.id) return;
+
     try {
-      const { error } = await supabase.from("snippets").insert({
-        ...values,
-        created_by: user?.id,
-      });
+      const snippetData = {
+        title: values.title,
+        description: values.description || null,
+        code_content: values.code_content,
+        language: values.language,
+        is_public: values.is_public,
+        created_by: user.id,
+      };
+
+      const { error } = await supabase.from("snippets").insert(snippetData);
 
       if (error) throw error;
 
