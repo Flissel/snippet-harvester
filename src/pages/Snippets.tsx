@@ -62,7 +62,14 @@ const Snippets = () => {
       }
       
       console.log("Fetched snippets:", data);
-      return data;
+
+      // Transform the data to ensure complexity_level is of the correct type
+      const typedData = data?.map(snippet => ({
+        ...snippet,
+        complexity_level: (snippet.complexity_level || 'beginner') as Snippet['complexity_level']
+      })) as Snippet[];
+
+      return typedData;
     },
     enabled: !!user && initialized && !loading,
   });
