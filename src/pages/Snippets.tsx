@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -55,8 +54,7 @@ const Snippets = () => {
           snippet_label_associations(
             snippet_labels:label_id(name, color)
           )
-        `)
-        .order("created_at", { ascending: false });
+        `);
 
       if (error) {
         console.error("Error fetching snippets:", error);
