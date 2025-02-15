@@ -1,12 +1,12 @@
 
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
-import Snippets from "@/pages/Snippets"; // Add this import
+import Snippets from "@/pages/Snippets";
 
 const queryClient = new QueryClient();
 
@@ -20,7 +20,7 @@ const router = createBrowserRouter([
     element: <Auth />,
   },
   {
-    path: "/snippets", // Add this route
+    path: "/snippets",
     element: <Snippets />,
   },
   {
@@ -32,7 +32,7 @@ const router = createBrowserRouter([
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
         <RouterProvider router={router} />
         <Toaster />
       </ThemeProvider>
