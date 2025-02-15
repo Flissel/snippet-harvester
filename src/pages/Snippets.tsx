@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -18,15 +19,15 @@ const Snippets = () => {
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [focusedSnippet, setFocusedSnippet] = useState<Snippet | null>(null);
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null);
-  const { user, loading } = useAuth();
+  const { user, loading, initialized } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (initialized && !loading && !user) {
       console.log("No authenticated user, redirecting to auth");
       navigate("/auth");
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, initialized, navigate]);
 
   const { data: snippets, isLoading, error } = useQuery({
     queryKey: ["snippets"],
@@ -56,8 +57,20 @@ const Snippets = () => {
       console.log("Fetched snippets:", data);
       return data;
     },
-    enabled: !!user, // Only run query when user is authenticated
+    enabled: !!user && !loading, // Only run query when user is authenticated and not loading
   });
+
+  if (!initialized || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Don't render anything while redirecting
+  }
 
   const filteredSnippets = snippets?.filter((snippet) =>
     snippet.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -79,10 +92,6 @@ const Snippets = () => {
       toast.error("Failed to copy code");
     }
   };
-
-  if (!user) {
-    return null; // Don't render anything while redirecting
-  }
 
   if (error) {
     return (

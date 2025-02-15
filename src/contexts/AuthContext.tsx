@@ -7,74 +7,88 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  initialized: boolean;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
+  initialized: false,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // Check active sessions and set up auth state
+    let mounted = true;
+
     const initializeAuth = async () => {
       try {
         // Get the initial session
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting initial session:", error);
+          return;
+        }
+
         console.log("Initial session:", initialSession);
         
-        if (initialSession) {
-          setSession(initialSession);
-          setUser(initialSession.user);
+        if (mounted) {
+          if (initialSession) {
+            setSession(initialSession);
+            setUser(initialSession.user);
+          }
+          setLoading(false);
+          setInitialized(true);
         }
-        
-        setLoading(false);
       } catch (error) {
         console.error("Error initializing auth:", error);
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
       }
     };
 
     initializeAuth();
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       console.log("Auth state changed:", event, currentSession?.user);
       
-      // Handle specific auth events
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-      } else if (event === 'SIGNED_OUT') {
-        setSession(null);
-        setUser(null);
+      if (mounted) {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+        } else if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+        }
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
-    // Cleanup subscription
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  // Debug logs
   console.log("AuthContext state:", {
-    user: user?.id,
+    userId: user?.id,
     sessionExists: !!session,
     loading,
+    initialized,
   });
 
   return (
-    <AuthContext.Provider value={{ user, session, loading }}>
+    <AuthContext.Provider value={{ user, session, loading, initialized }}>
       {children}
     </AuthContext.Provider>
   );
