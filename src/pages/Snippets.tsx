@@ -42,7 +42,7 @@ const Snippets = () => {
         .from("snippets")
         .select(`
           *,
-          profiles:created_by(username, avatar_url),
+          profiles:created_by(username, avatar_url, is_admin),
           teams:team_id(name),
           snippet_label_associations(
             snippet_labels:label_id(name, color)
@@ -58,9 +58,18 @@ const Snippets = () => {
       console.log("Fetched snippets:", data);
 
       // Transform the data to ensure complexity_level is of the correct type
+      // and ensure all required fields are present
       const typedData = data?.map(snippet => ({
         ...snippet,
-        complexity_level: (snippet.complexity_level || 'beginner') as Snippet['complexity_level']
+        complexity_level: (snippet.complexity_level || 'beginner') as Snippet['complexity_level'],
+        profiles: snippet.profiles ? {
+          username: snippet.profiles.username,
+          avatar_url: snippet.profiles.avatar_url,
+          is_admin: snippet.profiles.is_admin ?? false
+        } : null,
+        teams: snippet.teams ? {
+          name: snippet.teams.name
+        } : null
       })) as Snippet[];
 
       return typedData;
