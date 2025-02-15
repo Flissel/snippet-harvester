@@ -75,7 +75,7 @@ export function SnippetFormModal() {
       </Dialog>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <AlertDialogContent className="max-w-4xl h-[90vh] flex flex-col overflow-hidden">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Snippet Creation</AlertDialogTitle>
             <AlertDialogDescription>

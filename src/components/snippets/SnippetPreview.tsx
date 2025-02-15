@@ -10,8 +10,8 @@ interface SnippetPreviewProps {
 
 export function SnippetPreview({ snippet }: SnippetPreviewProps) {
   return (
-    <ScrollArea className="flex-1 mt-4">
-      <div className="space-y-4">
+    <ScrollArea className="flex-1 h-[calc(80vh-200px)]">
+      <div className="space-y-4 p-4">
         <div>
           <h4 className="font-medium mb-1">Title</h4>
           <p className="text-foreground">{snippet.title}</p>
