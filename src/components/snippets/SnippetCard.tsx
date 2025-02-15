@@ -30,14 +30,12 @@ export function SnippetCard({
       }`}
       onClick={() => onExpand(snippet)}
     >
-      <CardHeader>
-        <CardTitle>{snippet.title}</CardTitle>
-        <CardDescription>{snippet.description}</CardDescription>
-        <div className="absolute top-2 right-2 flex gap-2">
+      <CardHeader className="relative">
+        <div className="absolute top-2 right-2 flex gap-2 z-50">
           <Button
             variant="ghost"
             size="icon"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            className="opacity-0 group-hover:opacity-100 transition-opacity bg-background/95 hover:bg-background shadow-sm"
             onClick={(e) => {
               e.stopPropagation();
               onCopy(snippet.code_content, snippet.id);
@@ -52,7 +50,7 @@ export function SnippetCard({
           <Button
             variant="ghost"
             size="icon"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            className="opacity-0 group-hover:opacity-100 transition-opacity bg-background/95 hover:bg-background shadow-sm"
             onClick={(e) => {
               e.stopPropagation();
               onExpand(snippet);
@@ -61,6 +59,8 @@ export function SnippetCard({
             <Maximize2 className="h-4 w-4" />
           </Button>
         </div>
+        <CardTitle>{snippet.title}</CardTitle>
+        <CardDescription>{snippet.description}</CardDescription>
       </CardHeader>
       {isExpanded && (
         <CardContent className="border-t pt-4 space-y-4 animate-slide-up">
