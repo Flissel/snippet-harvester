@@ -32,7 +32,6 @@ const Snippets = () => {
             snippet_labels:label_id(name, color)
           )
         `)
-        .eq("is_public", true)
         .order("created_at", { ascending: false });
 
       if (error) {
