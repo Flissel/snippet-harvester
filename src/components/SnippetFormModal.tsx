@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Minus, Plus, RotateCcw } from "lucide-react";
 
 const snippetFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -44,6 +46,31 @@ export function SnippetFormModal() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = React.useState(false);
+  const [zoom, setZoom] = React.useState(100);
+
+  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 10, 200));
+  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
+  const handleResetZoom = () => setZoom(100);
+
+  React.useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === '=') {
+          e.preventDefault();
+          handleZoomIn();
+        } else if (e.key === '-') {
+          e.preventDefault();
+          handleZoomOut();
+        } else if (e.key === '0') {
+          e.preventDefault();
+          handleResetZoom();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
 
   const form = useForm<SnippetFormValues>({
     resolver: zodResolver(snippetFormSchema),
@@ -96,86 +123,133 @@ export function SnippetFormModal() {
       <DialogTrigger asChild>
         <Button className="ml-4">New Snippet</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl h-[90vh]">
         <DialogHeader>
           <DialogTitle>Create New Snippet</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter snippet title" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter snippet description (optional)"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="language"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Language</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a language" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {LANGUAGE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="code_content"
-              render={({ field }) => (
-                <FormItem>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 h-full">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter snippet title" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Enter snippet description (optional)"
+                          className="h-20"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="language"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Language</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a language" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {LANGUAGE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-2">
                   <FormLabel>Code Content</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter your code here"
-                      className="font-mono min-h-[200px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">{zoom}%</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleZoomOut}
+                      disabled={zoom <= 50}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleZoomIn}
+                      disabled={zoom >= 200}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleResetZoom}
+                      disabled={zoom === 100}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="code_content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <ScrollArea className="h-[400px] border rounded-md">
+                          <div className="p-4">
+                            <Textarea
+                              placeholder="Enter your code here"
+                              className="font-mono min-h-[380px] border-0 focus-visible:ring-0 resize-none"
+                              style={{
+                                transform: `scale(${zoom / 100})`,
+                                transformOrigin: 'top left',
+                              }}
+                              {...field}
+                            />
+                          </div>
+                        </ScrollArea>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
