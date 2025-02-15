@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -124,6 +123,13 @@ const Index = () => {
                   </CardHeader>
                   {expandedCardId === snippet.id && (
                     <CardContent className="border-t pt-4 space-y-4 animate-slide-up">
+                      <div className="bg-muted/50 p-4 rounded-md overflow-hidden">
+                        <ScrollArea className="h-[200px]">
+                          <pre className="font-mono text-sm whitespace-pre-wrap">
+                            {snippet.code_content}
+                          </pre>
+                        </ScrollArea>
+                      </div>
                       {snippet.teams && (
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">Team:</span>
