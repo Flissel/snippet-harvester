@@ -7,13 +7,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrganizationList } from "@/components/organizations/OrganizationList";
 import { CreateOrganizationModal } from "@/components/organizations/CreateOrganizationModal";
 import { Button } from "@/components/ui/button";
+import { Navigate } from "react-router-dom";
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, loading, initialized } = useAuth();
   const [isCreateOrgModalOpen, setIsCreateOrgModalOpen] = useState(false);
 
-  if (!user) {
-    return null;
+  console.log("Profile page auth state:", {
+    user,
+    loading,
+    initialized,
+    userId: user?.id,
+  });
+
+  // Show loading state while authentication is initializing
+  if (loading || !initialized) {
+    return <div>Loading...</div>;
+  }
+
+  // Redirect to auth page if not authenticated
+  if (!user && initialized) {
+    console.log("No user found, redirecting to auth page");
+    return <Navigate to="/auth" replace />;
   }
 
   return (
