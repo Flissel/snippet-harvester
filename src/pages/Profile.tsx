@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrganizationList } from "@/components/organizations/OrganizationList";
+import { TeamList } from "@/components/teams/TeamList";
 import { CreateOrganizationModal } from "@/components/organizations/CreateOrganizationModal";
 import { Button } from "@/components/ui/button";
 import { Navigate } from "react-router-dom";
@@ -55,7 +56,7 @@ export default function Profile() {
               </TabsContent>
 
               <TabsContent value="teams" className="space-y-4">
-                Coming soon...
+                <TeamList />
               </TabsContent>
 
               <TabsContent value="profile" className="space-y-4">
