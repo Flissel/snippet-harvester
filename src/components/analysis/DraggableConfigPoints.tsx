@@ -5,12 +5,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { predefinedConfigPoints } from './config-form/schema';
 
 interface DraggableConfigPointsProps {
-  onDrop: (point: typeof predefinedConfigPoints[0], start: number, end: number) => void;
+  onConfigPointSelected: (point: typeof predefinedConfigPoints[0]) => void;
 }
 
-export function DraggableConfigPoints({ onDrop }: DraggableConfigPointsProps) {
-  const handleDragStart = (e: React.DragEvent, point: typeof predefinedConfigPoints[0]) => {
-    e.dataTransfer.setData('application/json', JSON.stringify(point));
+export function DraggableConfigPoints({ onConfigPointSelected }: DraggableConfigPointsProps) {
+  const handleClick = (point: typeof predefinedConfigPoints[0]) => {
+    onConfigPointSelected(point);
   };
 
   return (
@@ -19,9 +19,8 @@ export function DraggableConfigPoints({ onDrop }: DraggableConfigPointsProps) {
         {predefinedConfigPoints.map((point, index) => (
           <Card
             key={index}
-            className="p-2 cursor-move bg-muted hover:bg-muted/80 transition-colors shrink-0 w-48"
-            draggable
-            onDragStart={(e) => handleDragStart(e, point)}
+            className="p-2 cursor-pointer bg-muted hover:bg-muted/80 transition-colors shrink-0 w-48"
+            onClick={() => handleClick(point)}
           >
             <div className="text-sm font-medium">{point.label}</div>
             <div className="text-xs text-muted-foreground truncate">{point.template_placeholder}</div>

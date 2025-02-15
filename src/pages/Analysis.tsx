@@ -20,6 +20,7 @@ export function Analysis() {
     start: number;
     end: number;
   } | null>(null);
+  const [activeConfigPoint, setActiveConfigPoint] = useState<typeof predefinedConfigPoints[0] | null>(null);
 
   const { data: snippets, isLoading: isLoadingSnippets } = useQuery({
     queryKey: ['snippets'],
@@ -129,6 +130,10 @@ export function Analysis() {
     createConfigPoint.mutate(configPoint);
   };
 
+  const handleConfigPointSelect = (config: typeof predefinedConfigPoints[0]) => {
+    setActiveConfigPoint(config);
+  };
+
   if (isLoadingSnippets || isLoadingConfig) {
     return <div>Loading...</div>;
   }
@@ -151,13 +156,14 @@ export function Analysis() {
 
       <div className="grid grid-cols-2 gap-6">
         <Card className="p-4">
-          <DraggableConfigPoints onDrop={(point, start, end) => handleConfigPointDrop(point, start, end)} />
+          <DraggableConfigPoints onConfigPointSelected={handleConfigPointSelect} />
           <CodeViewer
             code={snippet.code_content}
             language={snippet.language || 'python'}
             configPoints={configPoints}
             onSelectionChange={handleCodeSelection}
             onConfigPointDrop={handleConfigPointDrop}
+            activeConfig={activeConfigPoint}
           />
         </Card>
 
