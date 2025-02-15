@@ -24,77 +24,58 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      try {
-        // Get the initial session
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Error getting initial session:", error);
-          if (mounted) {
-            setLoading(false);
-            setInitialized(true);
-          }
-          return;
-        }
-
-        console.log("Initial session:", initialSession);
-        
-        if (mounted) {
-          if (initialSession) {
-            setSession(initialSession);
-            setUser(initialSession.user);
-          }
-          // Set initialized first, then remove loading state
-          setInitialized(true);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Error initializing auth:", error);
-        if (mounted) {
-          setInitialized(true);
-          setLoading(false);
-        }
-      }
-    };
-
-    initializeAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      console.log("Auth state changed:", event, currentSession?.user);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session: initialSession }, error }) => {
+      console.log("Initial auth check:", { initialSession, error });
       
-      if (mounted) {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
-        } else if (event === 'SIGNED_OUT') {
-          setSession(null);
-          setUser(null);
-        }
-        setInitialized(true);
+      if (error) {
+        console.error("Error getting initial session:", error);
         setLoading(false);
+        setInitialized(true);
+        return;
       }
+
+      if (initialSession) {
+        setUser(initialSession.user);
+        setSession(initialSession);
+      }
+      
+      setInitialized(true);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      console.log("Auth state changed:", { event, user: currentSession?.user });
+      
+      if (event === 'SIGNED_IN') {
+        setUser(currentSession?.user ?? null);
+        setSession(currentSession);
+        setInitialized(true);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setSession(null);
+      }
+      
+      setLoading(false);
     });
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  console.log("AuthContext state:", {
-    userId: user?.id,
-    sessionExists: !!session,
+  const value = {
+    user,
+    session,
     loading,
-    initialized,
-  });
+    initialized
+  };
+
+  console.log("Auth context value:", value);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, initialized }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
