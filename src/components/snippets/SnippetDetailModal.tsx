@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { snippetFormSchema } from "./hooks/useSnippetForm";
+import { snippetFormSchema, SnippetFormValues } from "./hooks/useSnippetForm";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUpdateSnippet } from "./hooks/useUpdateSnippet";
 import { SnippetViewMode } from "./SnippetViewMode";
@@ -22,14 +22,14 @@ export function SnippetDetailModal({ snippet, onClose }: SnippetDetailModalProps
   const [zoom, setZoom] = useState(100);
   const { user } = useAuth();
 
-  const form = useForm({
+  const form = useForm<SnippetFormValues>({
     resolver: zodResolver(snippetFormSchema),
     defaultValues: {
-      title: snippet.title,
-      description: snippet.description || "",
-      code_content: snippet.code_content,
-      language: snippet.language || "text",
-      is_public: snippet.is_public || false,
+      title: snippet.title ?? "",
+      description: snippet.description ?? "",
+      code_content: snippet.code_content ?? "",
+      language: snippet.language ?? "text",
+      is_public: snippet.is_public ?? true,
     },
   });
 

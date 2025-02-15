@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, Copy, Check, Edit } from "lucide-react";
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Snippet } from "@/types/snippets";
+import { SnippetMetadata } from "./SnippetMetadata";
 
 interface SnippetViewModeProps {
   snippet: Snippet;
