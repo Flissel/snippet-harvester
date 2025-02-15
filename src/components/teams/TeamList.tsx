@@ -13,15 +13,14 @@ export function TeamList() {
     queryFn: async () => {
       if (!user) throw new Error("User must be authenticated");
       
-      // Simplified query to avoid recursion
+      // Simple query that relies on RLS policies
       const { data, error } = await supabase
         .from("team_members")
         .select(`
-          teams:team_id (
+          teams (
             id,
             name,
-            description,
-            organization_id
+            description
           )
         `)
         .eq("user_id", user.id);
