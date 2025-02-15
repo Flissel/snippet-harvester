@@ -13,7 +13,7 @@ import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
 
 export function Analysis() {
-  const { snippetId } = useParams<{ snippetId: string }>();
+  const { snippetId } = useParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCode, setSelectedCode] = useState<{
@@ -31,9 +31,10 @@ export function Analysis() {
         .from('snippets')
         .select('*')
         .eq('id', snippetId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error('Snippet not found');
       return data as Snippet;
     },
     enabled: !!snippetId,
