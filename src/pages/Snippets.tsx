@@ -3,13 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SnippetFormModal } from "@/components/SnippetFormModal";
 import { SnippetViewModal } from "@/components/SnippetViewModal";
 import { SnippetList } from "@/components/snippets/SnippetList";
 import { SnippetDetailModal } from "@/components/snippets/SnippetDetailModal";
 import { toast } from "sonner";
 import { Snippet } from "@/types/snippets";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Snippets = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -17,6 +19,14 @@ const Snippets = () => {
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [focusedSnippet, setFocusedSnippet] = useState<Snippet | null>(null);
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+    }
+  }, [user, navigate]);
 
   const { data: snippets, isLoading, error } = useQuery({
     queryKey: ["snippets"],
@@ -63,6 +73,10 @@ const Snippets = () => {
       toast.error("Failed to copy code");
     }
   };
+
+  if (!user) {
+    return null; // Don't render anything while redirecting
+  }
 
   if (error) {
     return (
