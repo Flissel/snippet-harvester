@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +19,8 @@ export function Analysis() {
   const { data: snippet, isLoading: isLoadingSnippet } = useQuery({
     queryKey: ['snippets', snippetId],
     queryFn: async () => {
+      if (!snippetId) throw new Error('Snippet ID is required');
+      
       const { data, error } = await supabase
         .from('snippets')
         .select('*')
@@ -27,11 +30,14 @@ export function Analysis() {
       if (error) throw error;
       return data as Snippet;
     },
+    enabled: !!snippetId, // Only run query if snippetId exists
   });
 
   const { data: configPoints = [], isLoading: isLoadingConfig } = useQuery({
     queryKey: ['configuration_points', snippetId],
     queryFn: async () => {
+      if (!snippetId) throw new Error('Snippet ID is required');
+      
       const { data, error } = await supabase
         .from('configuration_points')
         .select('*')
@@ -41,6 +47,7 @@ export function Analysis() {
       if (error) throw error;
       return data as ConfigurationPoint[];
     },
+    enabled: !!snippetId, // Only run query if snippetId exists
   });
 
   const createConfigPoint = useMutation({
@@ -94,6 +101,10 @@ export function Analysis() {
       });
     },
   });
+
+  if (!snippetId) {
+    return <div>Invalid snippet ID</div>;
+  }
 
   if (isLoadingSnippet || isLoadingConfig) {
     return <div>Loading...</div>;
