@@ -10,6 +10,7 @@ import { SnippetViewModal } from "@/components/SnippetViewModal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Maximize2 } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -83,33 +84,23 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="p-6 rounded-lg glass card-shadow">
-                  <Skeleton className="h-64 mb-4" />
-                  <Skeleton className="h-6 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
+                <Card key={i} className="shadow-sm">
+                  <CardHeader>
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-full" />
+                  </CardHeader>
+                </Card>
               ))
             ) : filteredSnippets?.length === 0 ? (
               <div className="col-span-full text-center py-12">
                 <p className="text-muted-foreground">No snippets found</p>
               </div>
             ) : (
-              filteredSnippets?.map((snippet, i) => (
-                <div
-                  key={snippet.id}
-                  className="p-6 rounded-lg glass card-shadow animate-in group flex flex-col h-[600px]"
-                  style={{
-                    animationDelay: `${i * 0.1}s`,
-                  }}
-                >
-                  <div className="relative flex-1 min-h-0">
-                    <ScrollArea className="absolute inset-0 rounded-md border">
-                      <div className="p-4">
-                        <pre className="font-mono text-sm text-primary/80 whitespace-pre-wrap break-all">
-                          {snippet.code_content}
-                        </pre>
-                      </div>
-                    </ScrollArea>
+              filteredSnippets?.map((snippet) => (
+                <Card key={snippet.id} className="group relative">
+                  <CardHeader>
+                    <CardTitle>{snippet.title}</CardTitle>
+                    <CardDescription>{snippet.description}</CardDescription>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -118,43 +109,8 @@ const Index = () => {
                     >
                       <Maximize2 className="h-4 w-4" />
                     </Button>
-                  </div>
-                  <div className="mt-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-medium">{snippet.title}</h3>
-                      {snippet.teams && (
-                        <span className="text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded">
-                          {snippet.teams.name}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {snippet.description}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {snippet.snippet_label_associations?.map(({ snippet_labels }) => (
-                        <span
-                          key={snippet_labels.name}
-                          className="text-xs px-2 py-1 rounded"
-                          style={{
-                            backgroundColor: `${snippet_labels.color}20`,
-                            color: snippet_labels.color,
-                          }}
-                        >
-                          {snippet_labels.name}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex items-center text-sm text-muted-foreground">
-                      <img
-                        src={snippet.profiles?.avatar_url || "/placeholder.svg"}
-                        alt={snippet.profiles?.username || "Anonymous"}
-                        className="w-6 h-6 rounded-full mr-2"
-                      />
-                      <span>{snippet.profiles?.username || "Anonymous"}</span>
-                    </div>
-                  </div>
-                </div>
+                  </CardHeader>
+                </Card>
               ))
             )}
           </div>
