@@ -9,6 +9,53 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      configuration_points: {
+        Row: {
+          config_type: string
+          created_at: string
+          default_value: string | null
+          description: string | null
+          end_position: number
+          id: string
+          label: string
+          snippet_id: string
+          start_position: number
+          updated_at: string
+        }
+        Insert: {
+          config_type: string
+          created_at?: string
+          default_value?: string | null
+          description?: string | null
+          end_position: number
+          id?: string
+          label: string
+          snippet_id: string
+          start_position: number
+          updated_at?: string
+        }
+        Update: {
+          config_type?: string
+          created_at?: string
+          default_value?: string | null
+          description?: string | null
+          end_position?: number
+          id?: string
+          label?: string
+          snippet_id?: string
+          start_position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuration_points_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       snippets: {
         Row: {
           code_content: string
