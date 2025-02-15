@@ -1,5 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ const Snippets = () => {
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null);
   const { user, loading, initialized } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (initialized && !loading && !user) {
@@ -52,6 +53,9 @@ const Snippets = () => {
       return data as Snippet[];
     },
     enabled: !!user && initialized && !loading,
+    staleTime: 1000, // Consider data fresh for 1 second
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const filteredSnippets = snippets?.filter((snippet) =>
@@ -60,8 +64,14 @@ const Snippets = () => {
   );
 
   const handleCardClick = (snippet: Snippet) => {
-    setFocusedSnippet(focusedSnippet?.id === snippet.id ? null : snippet);
-    setExpandedCardId(expandedCardId === snippet.id ? null : snippet.id);
+    // Get the latest data from the query cache
+    const currentSnippets = queryClient.getQueryData<Snippet[]>(["snippets"]);
+    const updatedSnippet = currentSnippets?.find(s => s.id === snippet.id);
+    
+    if (updatedSnippet) {
+      setFocusedSnippet(focusedSnippet?.id === updatedSnippet.id ? null : updatedSnippet);
+      setExpandedCardId(expandedCardId === updatedSnippet.id ? null : updatedSnippet.id);
+    }
   };
 
   const handleCopyCode = async (code: string, snippetId: string) => {

@@ -75,13 +75,18 @@ export const useSnippetForm = (onSuccess: () => void) => {
 
       console.log("Snippet created successfully:", data);
 
+      // Optimistically update the cache
+      queryClient.setQueryData<any[]>(["snippets"], (old = []) => [data, ...old]);
+
+      // Then invalidate to ensure we have the latest data
+      await queryClient.invalidateQueries({ queryKey: ["snippets"] });
+
       toast({
         title: "Success",
         description: "Snippet created successfully",
       });
 
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ["snippets"] });
       onSuccess();
     } catch (error: any) {
       console.error("Full error object:", error);
