@@ -510,7 +510,6 @@ export type Database = {
           is_public: boolean | null
           language: string | null
           metadata: Json | null
-          organization_id: string | null
           tags: string[] | null
           team_id: string | null
           title: string
@@ -531,7 +530,6 @@ export type Database = {
           is_public?: boolean | null
           language?: string | null
           metadata?: Json | null
-          organization_id?: string | null
           tags?: string[] | null
           team_id?: string | null
           title: string
@@ -552,7 +550,6 @@ export type Database = {
           is_public?: boolean | null
           language?: string | null
           metadata?: Json | null
-          organization_id?: string | null
           tags?: string[] | null
           team_id?: string | null
           title?: string
@@ -566,13 +563,6 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "snippets_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
