@@ -129,11 +129,11 @@ const Index = () => {
                   </div>
                   <div className="mt-4 flex items-center text-sm text-muted-foreground">
                     <img
-                      src={snippet.profiles.avatar_url || "/placeholder.svg"}
-                      alt={snippet.profiles.username}
+                      src={snippet.profiles?.avatar_url || "/placeholder.svg"}
+                      alt={snippet.profiles?.username || "Anonymous"}
                       className="w-6 h-6 rounded-full mr-2"
                     />
-                    <span>{snippet.profiles.username}</span>
+                    <span>{snippet.profiles?.username || "Anonymous"}</span>
                   </div>
                 </div>
               ))
