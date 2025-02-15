@@ -8,6 +8,8 @@ export const configPointSchema = z.object({
   description: z.string().optional(),
   template_placeholder: z.string().optional(),
   is_required: z.boolean().default(true),
+  start_position: z.number(),
+  end_position: z.number(),
 });
 
 export type ConfigPointFormValues = z.infer<typeof configPointSchema>;

@@ -15,7 +15,11 @@ import { configPointSchema, ConfigPointFormValues } from './config-form/schema';
 interface ConfigurationPointFormProps {
   snippet: Snippet;
   onSubmit: (data: ConfigurationPointInput) => void;
-  selectedCode?: string;
+  selectedCode?: {
+    text: string;
+    start: number;
+    end: number;
+  } | null;
 }
 
 export function ConfigurationPointForm({ 
@@ -28,10 +32,12 @@ export function ConfigurationPointForm({
     defaultValues: {
       label: '',
       config_type: 'string',
-      default_value: selectedCode ?? '',
+      default_value: selectedCode?.text ?? '',
       description: '',
       template_placeholder: '',
       is_required: true,
+      start_position: selectedCode?.start ?? 0,
+      end_position: selectedCode?.end ?? 0,
     },
   });
 
@@ -40,6 +46,8 @@ export function ConfigurationPointForm({
       ...data,
       snippet_id: snippet.id,
       template_placeholder: data.template_placeholder || `{${data.label}}`,
+      start_position: selectedCode?.start ?? 0,
+      end_position: selectedCode?.end ?? 0,
     };
     onSubmit(configPoint);
     form.reset();
@@ -63,7 +71,7 @@ export function ConfigurationPointForm({
         />
 
         <TypeSelector form={form} />
-        <CodeInput form={form} selectedCode={selectedCode} />
+        <CodeInput form={form} selectedCode={selectedCode?.text} />
 
         <FormField
           control={form.control}

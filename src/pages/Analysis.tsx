@@ -14,7 +14,11 @@ import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configurati
 export function Analysis() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [selectedCode, setSelectedCode] = useState<{
+    text: string;
+    start: number;
+    end: number;
+  } | null>(null);
 
   const { data: snippets, isLoading: isLoadingSnippets } = useQuery({
     queryKey: ['snippets'],
@@ -100,8 +104,8 @@ export function Analysis() {
     },
   });
 
-  const handleCodeSelection = (text: string) => {
-    setSelectedCode(text);
+  const handleCodeSelection = (text: string, start: number, end: number) => {
+    setSelectedCode({ text, start, end });
   };
 
   if (isLoadingSnippets || isLoadingConfig) {
@@ -128,7 +132,7 @@ export function Analysis() {
         <Card className="p-4">
           <CodeViewer
             code={snippet.code_content}
-            language="python"
+            language={snippet.language || 'python'}
             configPoints={configPoints}
             onSelectionChange={handleCodeSelection}
           />
@@ -148,7 +152,7 @@ export function Analysis() {
             {selectedCode && (
               <div className="mb-4 p-2 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">Selected text:</p>
-                <p className="font-mono text-sm">{selectedCode}</p>
+                <p className="font-mono text-sm">{selectedCode.text}</p>
               </div>
             )}
             <ConfigurationPointForm
