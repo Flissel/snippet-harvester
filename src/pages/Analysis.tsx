@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,9 +9,10 @@ import { useToast } from '@/components/ui/use-toast';
 import { ConfigurationPointForm } from '@/components/analysis/ConfigurationPointForm';
 import { CodeViewer } from '@/components/analysis/CodeViewer';
 import { ConfigurationPointList } from '@/components/analysis/ConfigurationPointList';
+import { DraggableConfigPoints } from '@/components/analysis/DraggableConfigPoints';
 import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
-import { DraggableConfigPoints } from '@/components/analysis/DraggableConfigPoints';
+import { predefinedConfigPoints } from './config-form/schema';
 
 export function Analysis() {
   const { toast } = useToast();
@@ -163,7 +165,6 @@ export function Analysis() {
             configPoints={configPoints}
             onSelectionChange={handleCodeSelection}
             onConfigPointDrop={handleConfigPointDrop}
-            activeConfig={activeConfigPoint}
           />
         </Card>
 
