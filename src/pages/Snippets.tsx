@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -19,19 +18,24 @@ const Snippets = () => {
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [focusedSnippet, setFocusedSnippet] = useState<Snippet | null>(null);
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
+      console.log("No authenticated user, redirecting to auth");
       navigate("/auth");
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   const { data: snippets, isLoading, error } = useQuery({
     queryKey: ["snippets"],
     queryFn: async () => {
-      console.log("Fetching snippets...");
+      if (!user) {
+        throw new Error("User must be authenticated to fetch snippets");
+      }
+
+      console.log("Fetching snippets for user:", user.id);
       const { data, error } = await supabase
         .from("snippets")
         .select(`
@@ -48,9 +52,11 @@ const Snippets = () => {
         console.error("Error fetching snippets:", error);
         throw error;
       }
+      
       console.log("Fetched snippets:", data);
       return data;
     },
+    enabled: !!user, // Only run query when user is authenticated
   });
 
   const filteredSnippets = snippets?.filter((snippet) =>
