@@ -3,22 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { SnippetFormModal } from "@/components/SnippetFormModal";
 import { SnippetViewModal } from "@/components/SnippetViewModal";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Copy, Maximize2, X, Check } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { SnippetList } from "@/components/snippets/SnippetList";
+import { SnippetDetailModal } from "@/components/snippets/SnippetDetailModal";
 import { toast } from "sonner";
+import { Snippet } from "@/types/snippets";
 
 const Snippets = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSnippet, setSelectedSnippet] = useState<any>(null);
+  const [selectedSnippet, setSelectedSnippet] = useState<Snippet | null>(null);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
-  const [focusedSnippet, setFocusedSnippet] = useState<any>(null);
+  const [focusedSnippet, setFocusedSnippet] = useState<Snippet | null>(null);
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null);
 
   const { data: snippets, isLoading, error } = useQuery({
@@ -52,7 +49,7 @@ const Snippets = () => {
     snippet.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCardClick = (snippet: any) => {
+  const handleCardClick = (snippet: Snippet) => {
     setFocusedSnippet(focusedSnippet?.id === snippet.id ? null : snippet);
     setExpandedCardId(expandedCardId === snippet.id ? null : snippet.id);
   };
@@ -103,111 +100,15 @@ const Snippets = () => {
             <SnippetFormModal />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="shadow-sm">
-                  <CardHeader>
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-full" />
-                  </CardHeader>
-                </Card>
-              ))
-            ) : filteredSnippets?.length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <p className="text-muted-foreground">No snippets found</p>
-              </div>
-            ) : (
-              filteredSnippets?.map((snippet) => (
-                <Card 
-                  key={snippet.id} 
-                  className={`group relative transition-all duration-200 cursor-pointer hover:shadow-md ${
-                    focusedSnippet?.id === snippet.id ? 'ring-2 ring-primary' : ''
-                  }`}
-                  onClick={() => handleCardClick(snippet)}
-                >
-                  <CardHeader>
-                    <CardTitle>{snippet.title}</CardTitle>
-                    <CardDescription>{snippet.description}</CardDescription>
-                    <div className="absolute top-2 right-2 flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCopyCode(snippet.code_content, snippet.id);
-                        }}
-                      >
-                        {copiedSnippetId === snippet.id ? (
-                          <Check className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedSnippet(snippet);
-                        }}
-                      >
-                        <Maximize2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  {expandedCardId === snippet.id && (
-                    <CardContent className="border-t pt-4 space-y-4 animate-slide-up">
-                      <div className="bg-muted/50 p-4 rounded-md overflow-hidden">
-                        <ScrollArea className="h-[200px]">
-                          <SyntaxHighlighter
-                            language={snippet.language || 'text'}
-                            className="!bg-transparent !m-0 !p-0"
-                          >
-                            {snippet.code_content}
-                          </SyntaxHighlighter>
-                        </ScrollArea>
-                      </div>
-                      {snippet.teams && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">Team:</span>
-                          <span className="text-sm text-muted-foreground bg-primary/10 px-2 py-1 rounded">
-                            {snippet.teams.name}
-                          </span>
-                        </div>
-                      )}
-                      {snippet.snippet_label_associations?.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {snippet.snippet_label_associations.map(({ snippet_labels }) => (
-                            <span
-                              key={snippet_labels.name}
-                              className="text-xs px-2 py-1 rounded"
-                              style={{
-                                backgroundColor: `${snippet_labels.color}20`,
-                                color: snippet_labels.color,
-                              }}
-                            >
-                              {snippet_labels.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={snippet.profiles?.avatar_url || "/placeholder.svg"}
-                          alt={snippet.profiles?.username || "Anonymous"}
-                          className="w-6 h-6 rounded-full"
-                        />
-                        <span className="text-sm text-muted-foreground">
-                          {snippet.profiles?.username || "Anonymous"}
-                        </span>
-                      </div>
-                    </CardContent>
-                  )}
-                </Card>
-              ))
-            )}
+            <SnippetList
+              snippets={filteredSnippets}
+              isLoading={isLoading}
+              expandedCardId={expandedCardId}
+              copiedSnippetId={copiedSnippetId}
+              focusedSnippetId={focusedSnippet?.id || null}
+              onSnippetExpand={handleCardClick}
+              onSnippetCopy={handleCopyCode}
+            />
           </div>
           {selectedSnippet && (
             <SnippetViewModal
@@ -216,73 +117,14 @@ const Snippets = () => {
               snippet={selectedSnippet}
             />
           )}
+          {focusedSnippet && (
+            <SnippetDetailModal
+              snippet={focusedSnippet}
+              onClose={() => setFocusedSnippet(null)}
+            />
+          )}
         </main>
       </div>
-      
-      {focusedSnippet && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-3xl max-h-[80vh] overflow-hidden animate-fade-in">
-            <CardHeader className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-2"
-                onClick={() => setFocusedSnippet(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <CardTitle>{focusedSnippet.title}</CardTitle>
-              <CardDescription>{focusedSnippet.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-muted/50 p-4 rounded-md overflow-hidden">
-                <ScrollArea className="h-[400px]">
-                  <SyntaxHighlighter
-                    language={focusedSnippet.language || 'text'}
-                    className="!bg-transparent !m-0 !p-0"
-                  >
-                    {focusedSnippet.code_content}
-                  </SyntaxHighlighter>
-                </ScrollArea>
-              </div>
-              {focusedSnippet.teams && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Team:</span>
-                  <span className="text-sm text-muted-foreground bg-primary/10 px-2 py-1 rounded">
-                    {focusedSnippet.teams.name}
-                  </span>
-                </div>
-              )}
-              {focusedSnippet.snippet_label_associations?.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {focusedSnippet.snippet_label_associations.map(({ snippet_labels }) => (
-                    <span
-                      key={snippet_labels.name}
-                      className="text-xs px-2 py-1 rounded"
-                      style={{
-                        backgroundColor: `${snippet_labels.color}20`,
-                        color: snippet_labels.color,
-                      }}
-                    >
-                      {snippet_labels.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <img
-                  src={focusedSnippet.profiles?.avatar_url || "/placeholder.svg"}
-                  alt={focusedSnippet.profiles?.username || "Anonymous"}
-                  className="w-6 h-6 rounded-full"
-                />
-                <span className="text-sm text-muted-foreground">
-                  {focusedSnippet.profiles?.username || "Anonymous"}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 };
