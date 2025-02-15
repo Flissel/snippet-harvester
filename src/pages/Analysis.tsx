@@ -10,6 +10,7 @@ import { CodeViewer } from '@/components/analysis/CodeViewer';
 import { ConfigurationPointList } from '@/components/analysis/ConfigurationPointList';
 import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
+import { DraggableConfigPoints } from '@/components/analysis/DraggableConfigPoints';
 
 export function Analysis() {
   const { toast } = useToast();
@@ -113,6 +114,21 @@ export function Analysis() {
     });
   };
 
+  const handleConfigPointDrop = (config: any, start: number, end: number) => {
+    const configPoint: ConfigurationPointInput = {
+      snippet_id: snippet.id,
+      label: config.label,
+      config_type: config.config_type,
+      default_value: snippet.code_content.substring(start, end),
+      description: config.description,
+      template_placeholder: config.template_placeholder,
+      is_required: true,
+      start_position: start,
+      end_position: end,
+    };
+    createConfigPoint.mutate(configPoint);
+  };
+
   if (isLoadingSnippets || isLoadingConfig) {
     return <div>Loading...</div>;
   }
@@ -135,11 +151,13 @@ export function Analysis() {
 
       <div className="grid grid-cols-2 gap-6">
         <Card className="p-4">
+          <DraggableConfigPoints onDrop={(point, start, end) => handleConfigPointDrop(point, start, end)} />
           <CodeViewer
             code={snippet.code_content}
             language={snippet.language || 'python'}
             configPoints={configPoints}
             onSelectionChange={handleCodeSelection}
+            onConfigPointDrop={handleConfigPointDrop}
           />
         </Card>
 
