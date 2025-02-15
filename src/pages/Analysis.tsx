@@ -1,114 +1,21 @@
 
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { ConfigurationPointForm } from '@/components/analysis/ConfigurationPointForm';
-import { CodeViewer } from '@/components/analysis/CodeViewer';
-import { ConfigurationPointList } from '@/components/analysis/ConfigurationPointList';
-import { DraggableConfigPoints } from '@/components/analysis/DraggableConfigPoints';
-import { Snippet } from '@/types/snippets';
-import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
-import { predefinedConfigPoints } from '@/components/analysis/config-form/schema';
+import { useAnalysisData } from '@/components/analysis/hooks/useAnalysisData';
+import { AnalysisCodeSection } from '@/components/analysis/AnalysisCodeSection';
+import { ConfigurationSection } from '@/components/analysis/ConfigurationSection';
+import { ConfigurationPointInput } from '@/types/configuration';
 
 export function Analysis() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { snippets, configPoints, isLoading, createConfigPoint, deleteConfigPoint } = useAnalysisData();
   const [selectedCode, setSelectedCode] = useState<{
     text: string;
     start: number;
     end: number;
   } | null>(null);
-  const [activeConfigPoint, setActiveConfigPoint] = useState<typeof predefinedConfigPoints[0] | null>(null);
-
-  const { data: snippets, isLoading: isLoadingSnippets } = useQuery({
-    queryKey: ['snippets'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('snippets')
-        .select('*');
-
-      if (error) {
-        console.error('Snippets fetch error:', error);
-        throw error;
-      }
-      return data as Snippet[];
-    },
-  });
-
-  const { data: configPoints = [], isLoading: isLoadingConfig } = useQuery({
-    queryKey: ['configuration_points'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('configuration_points')
-        .select('*')
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Config points fetch error:', error);
-        throw error;
-      }
-      return data as ConfigurationPoint[];
-    },
-  });
-
-  const createConfigPoint = useMutation({
-    mutationFn: async (newPoint: ConfigurationPointInput) => {
-      const { data, error } = await supabase
-        .from('configuration_points')
-        .insert([newPoint])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['configuration_points'] });
-      toast({
-        title: 'Configuration point created',
-        description: 'The configuration point has been added successfully.',
-      });
-      setSelectedCode(null);
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to create configuration point: ' + error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const deleteConfigPoint = useMutation({
-    mutationFn: async (pointId: string) => {
-      const { error } = await supabase
-        .from('configuration_points')
-        .delete()
-        .eq('id', pointId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['configuration_points'] });
-      toast({
-        title: 'Configuration point deleted',
-        description: 'The configuration point has been removed successfully.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete configuration point: ' + error.message,
-        variant: 'destructive',
-      });
-    },
-  });
 
   const handleCodeSelection = (text: string) => {
+    if (!snippet) return;
     const startIndex = text ? snippet.code_content.indexOf(text) : 0;
     setSelectedCode({
       text,
@@ -118,6 +25,7 @@ export function Analysis() {
   };
 
   const handleConfigPointDrop = (config: any, start: number, end: number) => {
+    if (!snippet) return;
     const configPoint: ConfigurationPointInput = {
       snippet_id: snippet.id,
       label: config.label,
@@ -130,13 +38,10 @@ export function Analysis() {
       end_position: end,
     };
     createConfigPoint.mutate(configPoint);
+    setSelectedCode(null);
   };
 
-  const handleConfigPointSelect = (config: typeof predefinedConfigPoints[0]) => {
-    setActiveConfigPoint(config);
-  };
-
-  if (isLoadingSnippets || isLoadingConfig) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
@@ -157,41 +62,20 @@ export function Analysis() {
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <Card className="p-4">
-          <DraggableConfigPoints onConfigPointSelected={handleConfigPointSelect} />
-          <CodeViewer
-            code={snippet.code_content}
-            language={snippet.language || 'python'}
-            configPoints={configPoints}
-            onSelectionChange={handleCodeSelection}
-            onConfigPointDrop={handleConfigPointDrop}
-          />
-        </Card>
-
-        <div className="space-y-6">
-          <Card className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Configuration Points</h2>
-            <ConfigurationPointList
-              configPoints={configPoints}
-              onDelete={(id) => deleteConfigPoint.mutate(id)}
-            />
-          </Card>
-
-          <Card className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Add Configuration Point</h2>
-            {selectedCode && (
-              <div className="mb-4 p-2 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">Selected text:</p>
-                <p className="font-mono text-sm">{selectedCode.text}</p>
-              </div>
-            )}
-            <ConfigurationPointForm
-              snippet={snippet}
-              onSubmit={(data) => createConfigPoint.mutate(data)}
-              selectedCode={selectedCode}
-            />
-          </Card>
-        </div>
+        <AnalysisCodeSection
+          snippet={snippet}
+          configPoints={configPoints}
+          onConfigPointCreate={handleConfigPointDrop}
+          onCodeSelection={handleCodeSelection}
+        />
+        
+        <ConfigurationSection
+          snippet={snippet}
+          configPoints={configPoints}
+          selectedCode={selectedCode}
+          onDelete={(id) => deleteConfigPoint.mutate(id)}
+          onSubmit={(data) => createConfigPoint.mutate(data)}
+        />
       </div>
     </div>
   );
