@@ -73,7 +73,15 @@ export type Database = {
           updated_at?: string
           version?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "snippet_configurations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       snippet_label_associations: {
         Row: {
@@ -184,7 +192,15 @@ export type Database = {
           updated_at?: string
           variables?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "snippet_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       snippets: {
         Row: {
