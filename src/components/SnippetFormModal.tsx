@@ -41,6 +41,8 @@ export function SnippetFormModal() {
     setOpen(false);
     setConfirmOpen(false);
     setFormData(null);
+    // Force a page refresh after successful creation
+    window.location.reload();
   };
 
   const { form, createSnippet } = useSnippetForm(handleSuccess);
