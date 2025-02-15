@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -28,13 +29,6 @@ const Snippets = () => {
     }
   }, [user, loading, initialized, navigate]);
 
-  console.log("Snippets component state:", {
-    userExists: !!user,
-    authLoading: loading,
-    authInitialized: initialized,
-    userId: user?.id
-  });
-
   const { data: snippets, isLoading, error } = useQuery({
     queryKey: ["snippets"],
     queryFn: async () => {
@@ -44,17 +38,34 @@ const Snippets = () => {
 
       console.log("Fetching snippets for user:", user.id);
       
-      // Fetch snippets with RLS policies applied
       const { data, error } = await supabase
         .from("snippets")
         .select(`
-          *,
-          profiles:created_by(username, avatar_url, is_admin),
-          teams:team_id(name),
+          id,
+          title,
+          description,
+          code_content,
+          language,
+          complexity_level,
+          created_at,
+          is_public,
+          team_id,
+          created_by,
+          profiles:created_by(
+            username,
+            avatar_url
+          ),
+          teams:team_id(
+            name
+          ),
           snippet_label_associations(
-            snippet_labels:label_id(name, color)
+            snippet_labels:label_id(
+              name,
+              color
+            )
           )
-        `);
+        `)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching snippets:", error);

@@ -29,7 +29,6 @@ export function TeamList() {
         throw error;
       }
       
-      // Transform the data to get just the teams
       const transformedData = data.map(item => item.teams).filter(Boolean);
       console.log("Fetched teams:", transformedData);
       return transformedData;
