@@ -13,19 +13,19 @@ export type Database = {
         Row: {
           joined_at: string
           organization_id: string
-          role: Database["public"]["Enums"]["organization_role"]
+          role: string
           user_id: string
         }
         Insert: {
           joined_at?: string
           organization_id: string
-          role: Database["public"]["Enums"]["organization_role"]
+          role: string
           user_id: string
         }
         Update: {
           joined_at?: string
           organization_id?: string
-          role?: Database["public"]["Enums"]["organization_role"]
+          role?: string
           user_id?: string
         }
         Relationships: [
@@ -36,130 +36,8 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      organizations: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          name: string
-          settings: Json | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          name: string
-          settings?: Json | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          name?: string
-          settings?: Json | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          display_name: string | null
-          full_name: string | null
-          id: string
-          is_admin: boolean | null
-          last_used_organization_id: string | null
-          updated_at: string
-          username: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          display_name?: string | null
-          full_name?: string | null
-          id: string
-          is_admin?: boolean | null
-          last_used_organization_id?: string | null
-          updated_at?: string
-          username?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          display_name?: string | null
-          full_name?: string | null
-          id?: string
-          is_admin?: boolean | null
-          last_used_organization_id?: string | null
-          updated_at?: string
-          username?: string | null
-        }
-        Relationships: [
           {
-            foreignKeyName: "profiles_last_used_organization_id_fkey"
-            columns: ["last_used_organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      snippet_comments: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          is_resolved: boolean | null
-          parent_comment_id: string | null
-          snippet_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          is_resolved?: boolean | null
-          parent_comment_id?: string | null
-          snippet_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          is_resolved?: boolean | null
-          parent_comment_id?: string | null
-          snippet_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "snippet_comments_parent_comment_id_fkey"
-            columns: ["parent_comment_id"]
-            isOneToOne: false
-            referencedRelation: "snippet_comments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "snippet_comments_snippet_id_fkey"
-            columns: ["snippet_id"]
-            isOneToOne: false
-            referencedRelation: "snippets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "snippet_comments_user_id_fkey"
+            foreignKeyName: "organization_members_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -167,147 +45,69 @@ export type Database = {
           },
         ]
       }
-      snippet_label_associations: {
+      organizations: {
         Row: {
-          label_id: string
-          snippet_id: string
-        }
-        Insert: {
-          label_id: string
-          snippet_id: string
-        }
-        Update: {
-          label_id?: string
-          snippet_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "snippet_label_associations_label_id_fkey"
-            columns: ["label_id"]
-            isOneToOne: false
-            referencedRelation: "snippet_labels"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "snippet_label_associations_snippet_id_fkey"
-            columns: ["snippet_id"]
-            isOneToOne: false
-            referencedRelation: "snippets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      snippet_labels: {
-        Row: {
-          color: string
           created_at: string
           created_by: string | null
           id: string
           name: string
-          organization_id: string | null
         }
         Insert: {
-          color?: string
           created_at?: string
           created_by?: string | null
           id?: string
           name: string
-          organization_id?: string | null
         }
         Update: {
-          color?: string
           created_at?: string
           created_by?: string | null
           id?: string
           name?: string
-          organization_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "snippet_labels_created_by_fkey"
+            foreignKeyName: "organizations_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "snippet_labels_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
         ]
       }
-      snippet_templates: {
+      profiles: {
         Row: {
-          content: string
+          avatar_url: string | null
           created_at: string
-          created_by: string | null
-          description: string | null
           id: string
-          language: string | null
-          name: string
-          organization_id: string | null
-          team_id: string | null
           updated_at: string
-          variables: Json | null
+          username: string | null
         }
         Insert: {
-          content: string
+          avatar_url?: string | null
           created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          language?: string | null
-          name: string
-          organization_id?: string | null
-          team_id?: string | null
+          id: string
           updated_at?: string
-          variables?: Json | null
+          username?: string | null
         }
         Update: {
-          content?: string
+          avatar_url?: string | null
           created_at?: string
-          created_by?: string | null
-          description?: string | null
           id?: string
-          language?: string | null
-          name?: string
-          organization_id?: string | null
-          team_id?: string | null
           updated_at?: string
-          variables?: Json | null
+          username?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "snippet_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "snippet_templates_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       snippets: {
         Row: {
           code_content: string
           complexity_level: string | null
           created_at: string
-          created_by: string | null
+          created_by: string
           description: string | null
           id: string
           is_public: boolean | null
-          is_template: boolean | null
           language: string | null
-          metadata: Json | null
           organization_id: string | null
           tags: string[] | null
           team_id: string | null
@@ -318,13 +118,11 @@ export type Database = {
           code_content: string
           complexity_level?: string | null
           created_at?: string
-          created_by?: string | null
+          created_by: string
           description?: string | null
           id?: string
           is_public?: boolean | null
-          is_template?: boolean | null
           language?: string | null
-          metadata?: Json | null
           organization_id?: string | null
           tags?: string[] | null
           team_id?: string | null
@@ -335,13 +133,11 @@ export type Database = {
           code_content?: string
           complexity_level?: string | null
           created_at?: string
-          created_by?: string | null
+          created_by?: string
           description?: string | null
           id?: string
           is_public?: boolean | null
-          is_template?: boolean | null
           language?: string | null
-          metadata?: Json | null
           organization_id?: string | null
           tags?: string[] | null
           team_id?: string | null
@@ -375,19 +171,19 @@ export type Database = {
       team_members: {
         Row: {
           joined_at: string
-          role: Database["public"]["Enums"]["team_role"]
+          role: string
           team_id: string
           user_id: string
         }
         Insert: {
           joined_at?: string
-          role: Database["public"]["Enums"]["team_role"]
+          role: string
           team_id: string
           user_id: string
         }
         Update: {
           joined_at?: string
-          role?: Database["public"]["Enums"]["team_role"]
+          role?: string
           team_id?: string
           user_id?: string
         }
@@ -412,7 +208,6 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
-          description: string | null
           id: string
           name: string
           organization_id: string
@@ -420,7 +215,6 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
-          description?: string | null
           id?: string
           name: string
           organization_id: string
@@ -428,7 +222,6 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
-          description?: string | null
           id?: string
           name?: string
           organization_id?: string
