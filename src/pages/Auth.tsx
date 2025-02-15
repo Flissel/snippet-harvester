@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,10 +34,9 @@ const Auth = () => {
         if (error) throw error;
         toast({
           title: "Success!",
-          description: "Account created successfully. Please sign in.",
+          description: "Account created successfully. Please sign in with your credentials.",
         });
-        // Reset form and switch to login view
-        setEmail("");
+        // Only reset password and username, keep email for convenience
         setPassword("");
         setUsername("");
         setIsSignUp(false);
