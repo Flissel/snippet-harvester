@@ -49,22 +49,8 @@ export function useAuthFlow() {
     try {
       setIsLoading(true);
 
-      // Step 1: Create organization
-      const { data: orgResult, error: orgError } = await supabase
-        .from("organizations")
-        .insert([
-          {
-            name: orgData.name,
-            description: orgData.description,
-          },
-        ])
-        .select()
-        .single();
-
-      if (orgError) throw orgError;
-
-      // Step 2: Create user account with metadata
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      // Step 1: Create user account first
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
         options: {
@@ -75,34 +61,52 @@ export function useAuthFlow() {
       });
 
       if (signUpError) throw signUpError;
+      
+      if (!authData.user) {
+        throw new Error("Failed to create user account");
+      }
+
+      // Step 2: Create organization
+      const { data: orgResult, error: orgError } = await supabase
+        .from("organizations")
+        .insert([
+          {
+            name: orgData.name,
+            description: orgData.description,
+            created_by: authData.user.id,
+          },
+        ])
+        .select()
+        .single();
+
+      if (orgError) throw orgError;
 
       // Step 3: Create organization member entry (admin role)
-      if (data.user) {
-        const { error: memberError } = await supabase
-          .from("organization_members")
-          .insert([
-            {
-              organization_id: orgResult.id,
-              user_id: data.user.id,
-              role: "admin",
-            },
-          ]);
+      const { error: memberError } = await supabase
+        .from("organization_members")
+        .insert([
+          {
+            organization_id: orgResult.id,
+            user_id: authData.user.id,
+            role: "admin",
+          },
+        ]);
 
-        if (memberError) throw memberError;
+      if (memberError) throw memberError;
 
-        // Step 4: Update profile with last used organization
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({ last_used_organization_id: orgResult.id })
-          .eq("id", data.user.id);
+      // Step 4: Update profile with last used organization
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ last_used_organization_id: orgResult.id })
+        .eq("id", authData.user.id);
 
-        if (profileError) throw profileError;
-      }
+      if (profileError) throw profileError;
 
       toast.success("Account created successfully! Please check your email to confirm your account.");
       setIsSignUp(false);
       resetForm();
     } catch (error: any) {
+      console.error("Signup error:", error);
       toast.error(error.message);
     } finally {
       setIsLoading(false);
