@@ -41,28 +41,11 @@ const Snippets = () => {
       const { data, error } = await supabase
         .from("snippets")
         .select(`
-          id,
-          title,
-          description,
-          code_content,
-          language,
-          complexity_level,
-          created_at,
-          is_public,
-          team_id,
-          created_by,
-          profiles:created_by(
-            username,
-            avatar_url
-          ),
-          teams:team_id(
-            name
-          ),
+          *,
+          profiles:created_by(username, avatar_url),
+          teams:team_id(name),
           snippet_label_associations(
-            snippet_labels:label_id(
-              name,
-              color
-            )
+            snippet_labels:label_id(name, color)
           )
         `)
         .order('created_at', { ascending: false });
