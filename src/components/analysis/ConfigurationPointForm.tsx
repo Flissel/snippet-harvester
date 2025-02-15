@@ -11,6 +11,7 @@ import { TypeSelector } from './config-form/TypeSelector';
 import { CodeInput } from './config-form/CodeInput';
 import { RequiredToggle } from './config-form/RequiredToggle';
 import { configPointSchema, ConfigPointFormValues } from './config-form/schema';
+import { useEffect } from 'react';
 
 interface ConfigurationPointFormProps {
   snippet: Snippet;
@@ -20,12 +21,14 @@ interface ConfigurationPointFormProps {
     start: number;
     end: number;
   } | null;
+  initialValues?: any;
 }
 
 export function ConfigurationPointForm({ 
   snippet, 
   onSubmit,
-  selectedCode 
+  selectedCode,
+  initialValues 
 }: ConfigurationPointFormProps) {
   const form = useForm<ConfigPointFormValues>({
     resolver: zodResolver(configPointSchema),
@@ -40,6 +43,21 @@ export function ConfigurationPointForm({
       end_position: selectedCode?.end ?? 0,
     },
   });
+
+  useEffect(() => {
+    if (initialValues) {
+      form.reset({
+        label: initialValues.label,
+        config_type: initialValues.config_type,
+        default_value: selectedCode?.text ?? '',
+        description: initialValues.description || '',
+        template_placeholder: initialValues.template_placeholder || `{${initialValues.label}}`,
+        is_required: true,
+        start_position: selectedCode?.start ?? 0,
+        end_position: selectedCode?.end ?? 0,
+      });
+    }
+  }, [initialValues, selectedCode, form]);
 
   const handleSubmit = (data: ConfigPointFormValues) => {
     const configPoint: ConfigurationPointInput = {

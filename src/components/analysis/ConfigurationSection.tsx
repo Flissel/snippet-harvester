@@ -9,6 +9,7 @@ interface ConfigurationSectionProps {
   snippet: Snippet;
   configPoints: ConfigurationPoint[];
   selectedCode: { text: string; start: number; end: number; } | null;
+  selectedConfig: any | null;
   onDelete: (id: string) => void;
   onSubmit: (data: ConfigurationPointInput) => void;
 }
@@ -17,6 +18,7 @@ export function ConfigurationSection({
   snippet,
   configPoints,
   selectedCode,
+  selectedConfig,
   onDelete,
   onSubmit,
 }: ConfigurationSectionProps) {
@@ -42,6 +44,7 @@ export function ConfigurationSection({
           snippet={snippet}
           onSubmit={onSubmit}
           selectedCode={selectedCode}
+          initialValues={selectedConfig}
         />
       </Card>
     </div>

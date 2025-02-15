@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { predefinedConfigPoints } from './config-form/schema';
@@ -17,22 +16,31 @@ const getConfigTypeColor = (type: string) => {
   return colors[type] || 'bg-gray-100 text-gray-700 border-gray-200';
 };
 
-interface DraggableConfigPointsProps {
-  onConfigPointSelected: (point: typeof predefinedConfigPoints[0]) => void;
+interface ConfigPoint {
+  label: string;
+  config_type: string;
+  description?: string;
+  template_placeholder?: string;
 }
 
-export function DraggableConfigPoints({ onConfigPointSelected }: DraggableConfigPointsProps) {
-  const handleClick = (point: typeof predefinedConfigPoints[0]) => {
-    onConfigPointSelected(point);
-  };
+interface DraggableConfigPointsProps {
+  onConfigPointSelected: (point: ConfigPoint) => void;
+  customConfigPoints?: ConfigPoint[];
+}
+
+export function DraggableConfigPoints({ 
+  onConfigPointSelected,
+  customConfigPoints = []
+}: DraggableConfigPointsProps) {
+  const allConfigPoints = [...predefinedConfigPoints, ...customConfigPoints];
 
   return (
     <ScrollArea className="w-full mb-4">
       <div className="flex gap-1.5 p-2 min-w-max">
-        {predefinedConfigPoints.map((point, index) => (
+        {allConfigPoints.map((point, index) => (
           <button
-            key={index}
-            onClick={() => handleClick(point)}
+            key={`${point.label}-${index}`}
+            onClick={() => onConfigPointSelected(point)}
             className={cn(
               "px-2 py-1 rounded-md text-xs font-medium transition-colors border",
               "hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary",
