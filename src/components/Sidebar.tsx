@@ -8,7 +8,8 @@ import {
   FileCode2, 
   Wand2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  UserCircle
 } from 'lucide-react';
 
 export const Sidebar = () => {
@@ -20,6 +21,7 @@ export const Sidebar = () => {
     { icon: Code2, label: 'Code Analysis', path: '/analyze' },
     { icon: FileCode2, label: 'Snippets', path: '/snippets' },
     { icon: Wand2, label: 'Generate', path: '/generate' },
+    { icon: UserCircle, label: 'Profile', path: '/profile' },
   ];
 
   return (

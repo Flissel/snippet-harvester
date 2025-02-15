@@ -9,6 +9,62 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      organization_members: {
+        Row: {
+          joined_at: string
+          organization_id: string
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          organization_id: string
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          organization_id?: string
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -299,6 +355,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          organization_id: string | null
         }
         Insert: {
           created_at?: string
@@ -306,6 +363,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          organization_id?: string | null
         }
         Update: {
           created_at?: string
@@ -313,6 +371,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          organization_id?: string | null
         }
         Relationships: [
           {
@@ -320,6 +379,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

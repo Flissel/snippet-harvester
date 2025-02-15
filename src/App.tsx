@@ -7,6 +7,7 @@ import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 import Snippets from "@/pages/Snippets";
+import Profile from "@/pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,10 @@ const router = createBrowserRouter([
   {
     path: "/snippets",
     element: <Snippets />,
+  },
+  {
+    path: "/profile",
+    element: <Profile />,
   },
   {
     path: "*",
