@@ -1,18 +1,43 @@
 
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "./ui/use-toast";
 
 export const Header = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      navigate("/auth");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <header className="w-full glass-hover sticky top-0 z-30 px-6 py-4 flex items-center justify-between">
-      <div className="flex items-center space-x-4">
-        <h2 className="text-xl font-semibold">AutoGen Snippets</h2>
-      </div>
-      <div className="flex items-center space-x-4">
-        <Button className="bg-primary hover:bg-primary/90">
-          <Plus className="h-4 w-4 mr-2" />
-          New Snippet
-        </Button>
+    <header className="border-b border-border px-6 py-3 flex items-center justify-between">
+      <h1 className="text-xl font-semibold">Snippet Harvester</h1>
+      <div className="flex items-center gap-4">
+        {user && (
+          <>
+            <span className="text-sm text-muted-foreground">
+              {user.email}
+            </span>
+            <Button onClick={handleLogout} variant="outline">
+              Logout
+            </Button>
+          </>
+        )}
       </div>
     </header>
   );
