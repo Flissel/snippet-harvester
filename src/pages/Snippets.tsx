@@ -44,6 +44,18 @@ const Snippets = () => {
       }
 
       console.log("Fetching snippets for user:", user.id);
+      
+      // First, get the teams the user belongs to
+      const { data: teamMemberships, error: teamError } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', user.id);
+
+      if (teamError) throw teamError;
+      
+      const teamIds = teamMemberships?.map(tm => tm.team_id) || [];
+
+      // Then fetch snippets with a simplified query
       const { data, error } = await supabase
         .from("snippets")
         .select(`
@@ -54,6 +66,7 @@ const Snippets = () => {
             snippet_labels:label_id(name, color)
           )
         `)
+        .or(`created_by.eq.${user.id},is_public.eq.true,team_id.in.(${teamIds.join(',')})`)
         .order("created_at", { ascending: false });
 
       if (error) {
