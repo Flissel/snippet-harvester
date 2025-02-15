@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import type { TeamInvite } from "@/types/auth";
 
 interface TeamInviteStepProps {
@@ -28,7 +29,10 @@ export function TeamInviteStep({ data, onChange }: TeamInviteStepProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="teamEmail">Invite Team Members (Optional)</Label>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="teamEmail">Invite Team Members (Optional)</Label>
+          <Badge variant="secondary">Coming Soon</Badge>
+        </div>
         <div className="flex gap-2">
           <Input
             id="teamEmail"
@@ -36,8 +40,9 @@ export function TeamInviteStep({ data, onChange }: TeamInviteStepProps) {
             placeholder="colleague@example.com"
             value={currentEmail}
             onChange={(e) => setCurrentEmail(e.target.value)}
+            disabled
           />
-          <Button type="button" onClick={handleAddEmail}>
+          <Button type="button" onClick={handleAddEmail} disabled>
             Add
           </Button>
         </div>
