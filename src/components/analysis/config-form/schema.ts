@@ -45,5 +45,71 @@ export const predefinedConfigPoints = [
     config_type: 'array',
     template_placeholder: '{tools}',
     description: 'List of tools available to the agent',
+  },
+  {
+    label: 'Model Name',
+    config_type: 'string',
+    template_placeholder: '{model_name}',
+    description: 'Name of the LLM model to use',
+  },
+  {
+    label: 'API Key',
+    config_type: 'string',
+    template_placeholder: '{api_key}',
+    description: 'API key for the LLM service',
+  },
+  {
+    label: 'Code Interpreter',
+    config_type: 'boolean',
+    template_placeholder: '{code_interpreter}',
+    description: 'Enable/disable code interpreter',
+  },
+  {
+    label: 'Human Input Mode',
+    config_type: 'string',
+    template_placeholder: '{human_input_mode}',
+    description: 'Mode for handling human input (e.g., NEVER, TERMINATE, ALWAYS)',
+  },
+  {
+    label: 'Max Consecutive Auto-Reply',
+    config_type: 'number',
+    template_placeholder: '{max_consecutive_auto_reply}',
+    description: 'Maximum number of consecutive auto-replies',
+  },
+  {
+    label: 'Context Window',
+    config_type: 'number',
+    template_placeholder: '{context_window}',
+    description: 'Size of the context window in tokens',
+  },
+  {
+    label: 'System Prompt',
+    config_type: 'string',
+    template_placeholder: '{system_prompt}',
+    description: 'System prompt for the agent',
+  },
+  {
+    label: 'Functions Config',
+    config_type: 'object',
+    template_placeholder: '{functions_config}',
+    description: 'Configuration for available functions',
+  },
+  {
+    label: 'Custom Requirements',
+    config_type: 'array',
+    template_placeholder: '{custom_requirements}',
+    description: 'List of custom requirements for the agent',
+  },
+  {
+    label: 'Base URL',
+    config_type: 'string',
+    template_placeholder: '{base_url}',
+    description: 'Base URL for API calls',
+  },
+  {
+    label: 'Timeout',
+    config_type: 'number',
+    template_placeholder: '{timeout}',
+    description: 'Timeout duration in seconds',
   }
 ];
