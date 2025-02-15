@@ -3,6 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { OrganizationRole } from "@/types/auth";
+
+interface OrganizationMember {
+  user_id: string;
+  role: OrganizationRole;
+}
+
+interface Organization {
+  id: string;
+  name: string;
+  description: string | null;
+  organization_members: OrganizationMember[];
+}
 
 export function OrganizationList() {
   const { data: organizations, isLoading } = useQuery({
@@ -19,7 +33,7 @@ export function OrganizationList() {
         `);
 
       if (error) throw error;
-      return data;
+      return data as Organization[];
     },
   });
 
@@ -47,9 +61,14 @@ export function OrganizationList() {
             <CardDescription>{org.description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {org.organization_members.length} members
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {org.organization_members.length} members
+              </p>
+              {org.organization_members.some(member => member.role === 'admin') && (
+                <Badge variant="secondary">Admin</Badge>
+              )}
+            </div>
           </CardContent>
         </Card>
       ))}
@@ -61,3 +80,4 @@ export function OrganizationList() {
     </div>
   );
 }
+

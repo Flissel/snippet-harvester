@@ -13,19 +13,19 @@ export type Database = {
         Row: {
           joined_at: string
           organization_id: string
-          role: string | null
+          role: Database["public"]["Enums"]["organization_role"]
           user_id: string
         }
         Insert: {
           joined_at?: string
           organization_id: string
-          role?: string | null
+          role: Database["public"]["Enums"]["organization_role"]
           user_id: string
         }
         Update: {
           joined_at?: string
           organization_id?: string
-          role?: string | null
+          role?: Database["public"]["Enums"]["organization_role"]
           user_id?: string
         }
         Relationships: [
@@ -45,6 +45,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          settings: Json | null
           updated_at: string
         }
         Insert: {
@@ -53,6 +54,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          settings?: Json | null
           updated_at?: string
         }
         Update: {
@@ -61,6 +63,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          settings?: Json | null
           updated_at?: string
         }
         Relationships: []
@@ -103,6 +106,7 @@ export type Database = {
           id: string
           is_template: boolean | null
           name: string
+          organization_id: string | null
           team_id: string | null
           updated_at: string
           version: string
@@ -114,6 +118,7 @@ export type Database = {
           id?: string
           is_template?: boolean | null
           name: string
+          organization_id?: string | null
           team_id?: string | null
           updated_at?: string
           version?: string
@@ -125,6 +130,7 @@ export type Database = {
           id?: string
           is_template?: boolean | null
           name?: string
+          organization_id?: string | null
           team_id?: string | null
           updated_at?: string
           version?: string
@@ -135,6 +141,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snippet_configurations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -220,6 +233,7 @@ export type Database = {
           id: string
           language: string | null
           name: string
+          organization_id: string | null
           team_id: string | null
           updated_at: string
           variables: Json | null
@@ -232,6 +246,7 @@ export type Database = {
           id?: string
           language?: string | null
           name: string
+          organization_id?: string | null
           team_id?: string | null
           updated_at?: string
           variables?: Json | null
@@ -244,6 +259,7 @@ export type Database = {
           id?: string
           language?: string | null
           name?: string
+          organization_id?: string | null
           team_id?: string | null
           updated_at?: string
           variables?: Json | null
@@ -254,6 +270,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snippet_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -267,6 +290,7 @@ export type Database = {
           id: string
           is_public: boolean | null
           language: string | null
+          organization_id: string | null
           team_id: string | null
           title: string
           updated_at: string
@@ -279,6 +303,7 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           language?: string | null
+          organization_id?: string | null
           team_id?: string | null
           title: string
           updated_at?: string
@@ -291,6 +316,7 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           language?: string | null
+          organization_id?: string | null
           team_id?: string | null
           title?: string
           updated_at?: string
@@ -301,6 +327,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snippets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -315,19 +348,19 @@ export type Database = {
       team_members: {
         Row: {
           joined_at: string
-          role: string | null
+          role: Database["public"]["Enums"]["team_role"]
           team_id: string
           user_id: string
         }
         Insert: {
           joined_at?: string
-          role?: string | null
+          role: Database["public"]["Enums"]["team_role"]
           team_id: string
           user_id: string
         }
         Update: {
           joined_at?: string
-          role?: string | null
+          role?: Database["public"]["Enums"]["team_role"]
           team_id?: string
           user_id?: string
         }
@@ -355,7 +388,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
-          organization_id: string | null
+          organization_id: string
         }
         Insert: {
           created_at?: string
@@ -363,7 +396,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
-          organization_id?: string | null
+          organization_id: string
         }
         Update: {
           created_at?: string
@@ -371,7 +404,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
-          organization_id?: string | null
+          organization_id?: string
         }
         Relationships: [
           {
@@ -398,7 +431,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      organization_role: "admin" | "member"
+      team_role: "leader" | "member"
     }
     CompositeTypes: {
       [_ in never]: never

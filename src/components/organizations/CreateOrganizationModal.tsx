@@ -42,7 +42,7 @@ export function CreateOrganizationModal({ open, onOpenChange }: CreateOrganizati
 
       if (orgError) throw orgError;
 
-      // Add creator as member
+      // Add creator as admin member
       const { error: memberError } = await supabase
         .from("organization_members")
         .insert([
@@ -112,3 +112,4 @@ export function CreateOrganizationModal({ open, onOpenChange }: CreateOrganizati
     </Dialog>
   );
 }
+
