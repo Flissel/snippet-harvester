@@ -73,22 +73,7 @@ export type Database = {
           updated_at?: string
           version?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "snippet_configurations_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "snippet_configurations_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       snippet_label_associations: {
         Row: {
@@ -199,22 +184,7 @@ export type Database = {
           updated_at?: string
           variables?: Json | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "snippet_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "snippet_templates_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       snippets: {
         Row: {
