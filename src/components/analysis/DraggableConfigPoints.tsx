@@ -37,19 +37,6 @@ export function DraggableConfigPoints({
   return (
     <ScrollArea className="w-full mb-4">
       <div className="flex gap-1.5 p-2 min-w-max">
-        {allConfigPoints.map((point, index) => (
-          <button
-            key={`${point.label}-${index}`}
-            onClick={() => onConfigPointSelected(point)}
-            className={cn(
-              "px-2 py-1 rounded-md text-xs font-medium transition-colors border",
-              "hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary",
-              getConfigTypeColor(point.config_type)
-            )}
-          >
-            {point.label}
-          </button>
-        ))}
       </div>
     </ScrollArea>
   );
