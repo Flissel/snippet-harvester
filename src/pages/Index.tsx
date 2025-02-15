@@ -6,9 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { SnippetFormModal } from "@/components/SnippetFormModal";
+import { SnippetViewModal } from "@/components/SnippetViewModal";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Maximize2 } from "lucide-react";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSnippet, setSelectedSnippet] = useState<any>(null);
 
   const { data: snippets, isLoading, error } = useQuery({
     queryKey: ["snippets"],
@@ -40,9 +45,6 @@ const Index = () => {
     snippet.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     snippet.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  console.log("Filtered snippets:", filteredSnippets);
-  console.log("Error state:", error);
 
   if (error) {
     return (
@@ -80,7 +82,6 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
-              // Loading skeletons
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="p-6 rounded-lg glass card-shadow">
                   <Skeleton className="h-32 mb-4" />
@@ -96,15 +97,25 @@ const Index = () => {
               filteredSnippets?.map((snippet, i) => (
                 <div
                   key={snippet.id}
-                  className="p-6 rounded-lg glass card-shadow animate-in"
+                  className="p-6 rounded-lg glass card-shadow animate-in group"
                   style={{
                     animationDelay: `${i * 0.1}s`,
                   }}
                 >
-                  <div className="h-32 flex items-center justify-center bg-primary/5 rounded-md mb-4 overflow-hidden">
-                    <pre className="text-xs text-primary/60 p-4 w-full overflow-hidden">
-                      {snippet.code_content.slice(0, 200)}...
-                    </pre>
+                  <div className="relative">
+                    <ScrollArea className="h-[200px] w-full rounded-md border p-4 mb-4">
+                      <pre className="font-mono text-xs text-primary/60">
+                        {snippet.code_content}
+                      </pre>
+                    </ScrollArea>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setSelectedSnippet(snippet)}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
                   </div>
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-medium">{snippet.title}</h3>
@@ -143,6 +154,13 @@ const Index = () => {
               ))
             )}
           </div>
+          {selectedSnippet && (
+            <SnippetViewModal
+              isOpen={!!selectedSnippet}
+              onClose={() => setSelectedSnippet(null)}
+              snippet={selectedSnippet}
+            />
+          )}
         </main>
       </div>
     </div>
