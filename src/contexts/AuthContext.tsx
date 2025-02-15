@@ -33,6 +33,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (error) {
           console.error("Error getting initial session:", error);
+          if (mounted) {
+            setLoading(false);
+            setInitialized(true);
+          }
           return;
         }
 
@@ -43,14 +47,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setSession(initialSession);
             setUser(initialSession.user);
           }
-          setLoading(false);
+          // Set initialized first, then remove loading state
           setInitialized(true);
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
         if (mounted) {
-          setLoading(false);
           setInitialized(true);
+          setLoading(false);
         }
       }
     };
@@ -70,6 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setSession(null);
           setUser(null);
         }
+        setInitialized(true);
         setLoading(false);
       }
     });

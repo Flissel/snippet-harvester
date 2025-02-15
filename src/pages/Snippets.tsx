@@ -57,10 +57,11 @@ const Snippets = () => {
       console.log("Fetched snippets:", data);
       return data;
     },
-    enabled: !!user && !loading, // Only run query when user is authenticated and not loading
+    enabled: !!user && initialized && !loading, // Only run query when auth is fully initialized
   });
 
-  if (!initialized || loading) {
+  // Only show loading state during initial auth check
+  if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
