@@ -30,10 +30,12 @@ export function SnippetPreview({ snippet }: SnippetPreviewProps) {
         </div>
         <div>
           <h4 className="font-medium mb-1">Code Content</h4>
-          <div className="bg-muted/50 p-4 rounded-md overflow-x-auto">
-            <pre className="font-mono text-sm whitespace-pre-wrap break-words max-w-full">
-              {snippet.code_content}
-            </pre>
+          <div className="bg-muted/50 p-4 rounded-md overflow-hidden">
+            <ScrollArea className="h-[300px] w-full">
+              <pre className="font-mono text-sm whitespace-pre-wrap break-words">
+                {snippet.code_content}
+              </pre>
+            </ScrollArea>
           </div>
         </div>
       </div>
