@@ -23,6 +23,8 @@
     --muted-foreground: 240 3.8% 46.1%;
     --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 155 30% 60%;
@@ -48,6 +50,37 @@
 
   .card-shadow {
     @apply shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+  }
+
+  /* Enhanced dropdown styles */
+  .dropdown-content {
+    @apply bg-white border border-border shadow-lg rounded-md z-50;
+  }
+
+  .dropdown-item {
+    @apply px-4 py-2 hover:bg-accent transition-colors duration-200 cursor-pointer;
+  }
+
+  /* Enhanced button styles */
+  .btn-hover {
+    @apply transition-all duration-200 hover:shadow-md active:scale-[0.98];
+  }
+
+  /* Color utility classes */
+  .text-success {
+    color: hsl(var(--success));
+  }
+
+  .bg-success-light {
+    background-color: hsl(var(--success) / 0.1);
+  }
+
+  .text-destructive {
+    color: hsl(var(--destructive));
+  }
+
+  .bg-destructive-light {
+    background-color: hsl(var(--destructive) / 0.1);
   }
 }
 
