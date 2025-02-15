@@ -13,22 +13,18 @@ export function TeamList() {
     queryFn: async () => {
       if (!user) throw new Error("User must be authenticated");
       
-      // Simple query that relies on RLS policies
+      // Direct query to teams table, now secured by our simplified RLS policy
       const { data, error } = await supabase
-        .from("team_members")
-        .select(`
-          teams (
-            id,
-            name,
-            description
-          )
-        `)
-        .eq("user_id", user.id);
+        .from("teams")
+        .select("id, name, description");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching teams:", error);
+        throw error;
+      }
       
-      // Transform the data to get just the teams
-      return data.map(item => item.teams).filter(Boolean);
+      console.log("Fetched teams:", data);
+      return data;
     },
     enabled: !!user
   });
