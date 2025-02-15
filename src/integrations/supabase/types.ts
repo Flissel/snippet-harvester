@@ -9,239 +9,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      organization_members: {
-        Row: {
-          joined_at: string
-          organization_id: string
-          role: string
-          user_id: string
-        }
-        Insert: {
-          joined_at?: string
-          organization_id: string
-          role: string
-          user_id: string
-        }
-        Update: {
-          joined_at?: string
-          organization_id?: string
-          role?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "organization_members_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "organization_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      organizations: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "organizations_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          id: string
-          updated_at: string
-          username: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          id: string
-          updated_at?: string
-          username?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          id?: string
-          updated_at?: string
-          username?: string | null
-        }
-        Relationships: []
-      }
       snippets: {
         Row: {
           code_content: string
-          complexity_level: string | null
           created_at: string
           created_by: string
           description: string | null
           id: string
           is_public: boolean | null
           language: string | null
-          organization_id: string | null
-          tags: string[] | null
-          team_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
           code_content: string
-          complexity_level?: string | null
           created_at?: string
           created_by: string
           description?: string | null
           id?: string
           is_public?: boolean | null
           language?: string | null
-          organization_id?: string | null
-          tags?: string[] | null
-          team_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           code_content?: string
-          complexity_level?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
           id?: string
           is_public?: boolean | null
           language?: string | null
-          organization_id?: string | null
-          tags?: string[] | null
-          team_id?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "snippets_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "snippets_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "snippets_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_members: {
-        Row: {
-          joined_at: string
-          role: string
-          team_id: string
-          user_id: string
-        }
-        Insert: {
-          joined_at?: string
-          role: string
-          team_id: string
-          user_id: string
-        }
-        Update: {
-          joined_at?: string
-          role?: string
-          team_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_members_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      teams: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          name: string
-          organization_id: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name: string
-          organization_id: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name?: string
-          organization_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "teams_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "teams_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {

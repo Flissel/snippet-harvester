@@ -40,11 +40,7 @@ const Snippets = () => {
       
       const { data, error } = await supabase
         .from("snippets")
-        .select(`
-          *,
-          profiles:created_by(username, avatar_url),
-          teams:team_id(name)
-        `)
+        .select()
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -53,20 +49,7 @@ const Snippets = () => {
       }
       
       console.log("Fetched snippets:", data);
-
-      const typedData = data?.map(snippet => ({
-        ...snippet,
-        complexity_level: (snippet.complexity_level || 'beginner') as Snippet['complexity_level'],
-        profiles: snippet.profiles ? {
-          username: snippet.profiles.username,
-          avatar_url: snippet.profiles.avatar_url
-        } : null,
-        teams: snippet.teams ? {
-          name: snippet.teams.name
-        } : null
-      })) as Snippet[];
-
-      return typedData;
+      return data as Snippet[];
     },
     enabled: !!user && initialized && !loading,
   });
