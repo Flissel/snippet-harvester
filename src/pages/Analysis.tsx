@@ -12,7 +12,7 @@ import { ConfigurationPointList } from '@/components/analysis/ConfigurationPoint
 import { DraggableConfigPoints } from '@/components/analysis/DraggableConfigPoints';
 import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
-import { predefinedConfigPoints } from './config-form/schema';
+import { predefinedConfigPoints } from '@/components/analysis/config-form/schema';
 
 export function Analysis() {
   const { toast } = useToast();
