@@ -13,19 +13,23 @@ export function TeamList() {
     queryFn: async () => {
       if (!user) throw new Error("User must be authenticated");
       
+      // Simplified query to avoid recursion
       const { data, error } = await supabase
-        .from("teams")
+        .from("team_members")
         .select(`
-          *,
-          team_members!inner(
-            user_id,
-            role
+          teams:team_id (
+            id,
+            name,
+            description,
+            organization_id
           )
         `)
-        .eq("team_members.user_id", user.id);
+        .eq("user_id", user.id);
 
       if (error) throw error;
-      return data;
+      
+      // Transform the data to get just the teams
+      return data.map(item => item.teams).filter(Boolean);
     },
     enabled: !!user
   });
