@@ -14,7 +14,7 @@ export function DraggableConfigPoints({ onDrop }: DraggableConfigPointsProps) {
   };
 
   return (
-    <ScrollArea className="w-full mb-4" orientation="horizontal">
+    <ScrollArea className="w-full mb-4">
       <div className="flex gap-2 p-2 min-w-max">
         {predefinedConfigPoints.map((point, index) => (
           <Card
