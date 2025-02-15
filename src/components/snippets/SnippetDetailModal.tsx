@@ -1,18 +1,15 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, Copy, Check, Edit } from "lucide-react";
-import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { Card } from "@/components/ui/card";
 import { Snippet } from "@/types/snippets";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useState } from "react";
-import { SnippetForm } from "./SnippetForm";
 import { useForm } from "react-hook-form";
 import { snippetFormSchema } from "./hooks/useSnippetForm";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUpdateSnippet } from "./hooks/useUpdateSnippet";
+import { SnippetViewMode } from "./SnippetViewMode";
+import { SnippetEditMode } from "./SnippetEditMode";
 
 interface SnippetDetailModalProps {
   snippet: Snippet;
@@ -57,136 +54,29 @@ export function SnippetDetailModal({ snippet, onClose }: SnippetDetailModalProps
 
   const canModify = user?.id === snippet.created_by;
 
-  if (isEditing) {
-    return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-4xl max-h-[90vh] flex flex-col animate-fade-in">
-          <CardHeader className="relative border-b">
-            <div className="absolute right-2 top-2">
-              <Button
-                variant="secondary"
-                size="icon"
-                className="hover:bg-destructive/20 hover:text-destructive transition-colors"
-                onClick={() => setIsEditing(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <CardTitle>Edit Snippet</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <SnippetForm
-              form={form}
-              onSubmit={updateSnippet}
-              onCancel={() => setIsEditing(false)}
-              zoom={zoom}
-              onZoomIn={handleZoomIn}
-              onZoomOut={handleZoomOut}
-              onResetZoom={handleResetZoom}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-3xl max-h-[80vh] flex flex-col animate-fade-in shadow-lg bg-gradient-to-b from-card to-card/50">
-        <CardHeader className="relative border-b bg-muted/50">
-          <div className="absolute right-2 top-2 flex items-center gap-2 z-50">
-            <Button
-              variant="secondary"
-              size="icon"
-              className="hover:bg-primary/20 hover:text-primary transition-colors"
-              onClick={copyToClipboard}
-              title="Copy code"
-            >
-              {isCopied ? (
-                <Check className="h-4 w-4 text-success" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-            {canModify && (
-              <Button
-                variant="secondary"
-                size="icon"
-                className="hover:bg-primary/20 hover:text-primary transition-colors"
-                onClick={() => setIsEditing(true)}
-                title="Edit snippet"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-            <Button
-              variant="secondary"
-              size="icon"
-              className="hover:bg-destructive/20 hover:text-destructive transition-colors"
-              onClick={onClose}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            {snippet.title}
-          </CardTitle>
-          <CardDescription className="text-muted-foreground/80">
-            {snippet.description}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 flex-1 min-h-0 p-6">
-          <ScrollArea className="h-[calc(100vh-400px)] w-full rounded-lg border bg-muted/30 shadow-inner">
-            <div className="p-4">
-              <SyntaxHighlighter
-                language={snippet.language || 'text'}
-                className="!bg-transparent !m-0 !p-0"
-                showLineNumbers
-                wrapLongLines
-                customStyle={{
-                  background: 'transparent',
-                  fontSize: '14px',
-                }}
-              >
-                {snippet.code_content}
-              </SyntaxHighlighter>
-            </div>
-          </ScrollArea>
-          {snippet.teams && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Team:</span>
-              <span className="text-sm text-primary bg-primary/10 px-3 py-1 rounded-full font-medium">
-                {snippet.teams.name}
-              </span>
-            </div>
-          )}
-          {snippet.snippet_label_associations?.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {snippet.snippet_label_associations.map(({ snippet_labels }) => (
-                <span
-                  key={snippet_labels.name}
-                  className="text-xs px-3 py-1 rounded-full font-medium"
-                  style={{
-                    backgroundColor: `${snippet_labels.color}20`,
-                    color: snippet_labels.color,
-                  }}
-                >
-                  {snippet_labels.name}
-                </span>
-              ))}
-            </div>
-          )}
-          <div className="flex items-center gap-2 pt-2 border-t">
-            <img
-              src={snippet.profiles?.avatar_url || "/placeholder.svg"}
-              alt={snippet.profiles?.username || "Anonymous"}
-              className="w-6 h-6 rounded-full ring-2 ring-primary/20"
-            />
-            <span className="text-sm text-muted-foreground">
-              {snippet.profiles?.username || "Anonymous"}
-            </span>
-          </div>
-        </CardContent>
+      <Card className={`w-full ${isEditing ? 'max-w-4xl' : 'max-w-3xl'} max-h-[90vh] flex flex-col animate-fade-in ${!isEditing ? 'shadow-lg bg-gradient-to-b from-card to-card/50' : ''}`}>
+        {isEditing ? (
+          <SnippetEditMode
+            onClose={() => setIsEditing(false)}
+            form={form}
+            onSubmit={updateSnippet}
+            zoom={zoom}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onResetZoom={handleResetZoom}
+          />
+        ) : (
+          <SnippetViewMode
+            snippet={snippet}
+            onClose={onClose}
+            onEdit={() => setIsEditing(true)}
+            onCopy={copyToClipboard}
+            isCopied={isCopied}
+            canModify={canModify}
+          />
+        )}
       </Card>
     </div>
   );
