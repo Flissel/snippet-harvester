@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -49,7 +48,19 @@ export function useAuthFlow() {
     try {
       setIsLoading(true);
 
-      // Step 1: Create user account first
+      // Step 1: Check if user already exists
+      const { data: existingUser, error: checkError } = await supabase.auth.signInWithPassword({
+        email: userData.email,
+        password: userData.password,
+      });
+
+      if (existingUser?.user) {
+        toast.error("An account with this email already exists. Please sign in instead.");
+        setIsSignUp(false);
+        return;
+      }
+
+      // Step 2: Create user account
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
@@ -60,13 +71,20 @@ export function useAuthFlow() {
         },
       });
 
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        if (signUpError.message.includes("User already registered")) {
+          toast.error("An account with this email already exists. Please sign in instead.");
+          setIsSignUp(false);
+          return;
+        }
+        throw signUpError;
+      }
       
       if (!authData.user) {
         throw new Error("Failed to create user account");
       }
 
-      // Step 2: Create organization
+      // Step 3: Create organization
       const { data: orgResult, error: orgError } = await supabase
         .from("organizations")
         .insert([
@@ -81,7 +99,7 @@ export function useAuthFlow() {
 
       if (orgError) throw orgError;
 
-      // Step 3: Create organization member entry (admin role)
+      // Step 4: Create organization member entry (admin role)
       const { error: memberError } = await supabase
         .from("organization_members")
         .insert([
@@ -94,7 +112,7 @@ export function useAuthFlow() {
 
       if (memberError) throw memberError;
 
-      // Step 4: Update profile with last used organization
+      // Step 5: Update profile with last used organization
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ last_used_organization_id: orgResult.id })
