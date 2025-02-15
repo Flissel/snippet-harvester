@@ -1,1 +1,5 @@
+
 project_id = "nacxysqeciqbtdznnhud"
+
+[auth-test]
+verify_jwt = false
