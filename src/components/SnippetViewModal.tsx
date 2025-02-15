@@ -12,7 +12,7 @@ interface SnippetViewModalProps {
     title: string;
     description?: string | null;
     code_content: string;
-    language: string;
+    language?: string | null;  // Changed from required to optional
   };
 }
 
