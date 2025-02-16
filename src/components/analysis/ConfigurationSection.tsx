@@ -5,7 +5,7 @@ import { ConfigurationPointForm } from './ConfigurationPointForm';
 import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
 import { Button } from '@/components/ui/button';
-import { Code, Plus, Check } from 'lucide-react';
+import { Plus, Check } from 'lucide-react';
 import { useState } from 'react';
 
 interface ConfigurationSectionProps {
@@ -47,14 +47,14 @@ export function ConfigurationSection({
 
   const handleSubmitAll = () => {
     pendingReplacements.forEach(replacement => {
-      const placeholder = replacement.config.template_placeholder || `${replacement.config.label}: YAML_VALUE`;
       const configPoint: ConfigurationPointInput = {
         snippet_id: snippet.id,
         label: replacement.config.label,
         config_type: replacement.config.config_type,
         default_value: replacement.text,
         description: replacement.config.description || '',
-        template_placeholder: placeholder,
+        template_placeholder: replacement.config.template_placeholder || `{${replacement.config.label}}`,
+        is_required: true,
         start_position: replacement.start,
         end_position: replacement.end,
       };
@@ -64,12 +64,21 @@ export function ConfigurationSection({
   };
 
   const renderCodeWithReplacements = () => {
+    if (pendingReplacements.length === 0 && selectedCode && selectedConfig) {
+      // Show preview of current selection
+      let result = snippet.code_content;
+      const placeholder = selectedConfig.template_placeholder || `{${selectedConfig.label}}`;
+      result = result.slice(0, selectedCode.start) + placeholder + result.slice(selectedCode.end);
+      return result;
+    }
+
+    // Show all pending replacements
     let result = snippet.code_content;
     let positions: { pos: number; isStart: boolean; placeholder: string }[] = [];
 
     // Collect all positions
     pendingReplacements.forEach(replacement => {
-      const placeholder = replacement.config.template_placeholder || `${replacement.config.label}: YAML_VALUE`;
+      const placeholder = replacement.config.template_placeholder || `{${replacement.config.label}}`;
       positions.push({ pos: replacement.start, isStart: true, placeholder });
       positions.push({ pos: replacement.end, isStart: false, placeholder: '' });
     });
@@ -91,7 +100,6 @@ export function ConfigurationSection({
 
   return (
     <div className="grid grid-cols-2 gap-6">
-      {/* Left column - Code selection and labeling */}
       <div className="space-y-6">
         <Card className="p-4">
           <h2 className="text-xl font-semibold mb-4">Configuration Points</h2>
@@ -126,7 +134,6 @@ export function ConfigurationSection({
         </Card>
       </div>
 
-      {/* Right column - Code preview with replacements */}
       <div>
         <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
@@ -143,7 +150,7 @@ export function ConfigurationSection({
               </Button>
             )}
           </div>
-          <pre className="p-3 bg-muted rounded-lg font-mono text-sm">
+          <pre className="p-3 bg-muted rounded-lg font-mono text-sm whitespace-pre-wrap">
             {renderCodeWithReplacements()}
           </pre>
         </Card>
