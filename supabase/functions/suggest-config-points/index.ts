@@ -29,27 +29,54 @@ serve(async (req) => {
           {
             role: 'system',
             content: `You are an AI assistant that analyzes Python code related to AutoGen agents and identifies configurable parameters. For each identified parameter:
-            1. Determine its type (string, number, boolean, array, object)
-            2. Suggest a descriptive label
-            3. Provide a placeholder template
-            4. Add a helpful description
-            Respond in JSON format with an array of configuration points.`
+            1. Find a value in the code that should be configurable (like API keys, model names, agent names, etc.)
+            2. Determine its type (string, number, boolean, array, object)
+            3. Create a descriptive label
+            4. Suggest a helpful description
+            5. Include the exact default value from the code
+            6. Create a template placeholder
+
+            Respond in a JSON array format like this:
+            [
+              {
+                "label": "human_name",
+                "config_type": "string",
+                "description": "Name for the human agent in the conversation",
+                "default_value": "Human",
+                "template_placeholder": "{human_name}"
+              }
+            ]`
           },
           {
             role: 'user',
-            content: `Analyze this code and suggest configuration points:\n${code}`
+            content: `Analyze this AutoGen code and suggest configuration points:\n${code}`
           }
         ],
       }),
     });
 
     const data = await response.json();
-    const suggestions = JSON.parse(data.choices[0].message.content);
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response from OpenAI');
+    }
+
+    let suggestions;
+    try {
+      suggestions = JSON.parse(data.choices[0].message.content);
+      if (!Array.isArray(suggestions)) {
+        throw new Error('Invalid suggestions format');
+      }
+    } catch (error) {
+      console.error('Failed to parse suggestions:', error);
+      throw new Error('Failed to parse configuration suggestions');
+    }
 
     return new Response(JSON.stringify({ suggestions }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    console.error('Error in suggest-config-points function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
