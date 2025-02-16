@@ -1,35 +1,12 @@
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Prompt } from '@/types/prompts';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from "sonner";
-import { Switch } from '@/components/ui/switch';
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-
-const promptSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
-  system_message: z.string().min(1, 'System message is required'),
-  user_message: z.string().min(1, 'User message is required'),
-  is_default: z.boolean().default(false),
-});
-
-type PromptFormValues = z.infer<typeof promptSchema>;
+import { useEffect } from 'react';
+import { BasicInfoFields } from './FormFields/BasicInfoFields';
+import { MessageFields } from './FormFields/MessageFields';
+import { DefaultToggle } from './FormFields/DefaultToggle';
+import { usePromptForm } from './hooks/usePromptForm';
 
 interface PromptFormProps {
   prompt?: Prompt;
@@ -37,185 +14,20 @@ interface PromptFormProps {
 }
 
 export function PromptForm({ prompt, onCancel }: PromptFormProps) {
-  const queryClient = useQueryClient();
-  const [userId, setUserId] = useState<string | null>(null);
-  const { snippetId } = useParams();
-  
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-      }
-    };
-    getCurrentUser();
+  const { form, generateSystemMessage, onSubmit } = usePromptForm(prompt, onCancel);
 
-    // If we're creating a new prompt, generate the system message
+  useEffect(() => {
     if (!prompt) {
       generateSystemMessage();
     }
-  }, []);
-
-  const generateSystemMessage = async () => {
-    try {
-      const response = await supabase.functions.invoke('generate-system-prompt', {});
-      
-      if (response.data?.system_prompt) {
-        form.setValue('system_message', response.data.system_prompt);
-      } else {
-        throw new Error('No system prompt generated');
-      }
-    } catch (error) {
-      console.error('Error generating system message:', error);
-      toast.error('Failed to generate system message');
-    }
-  };
-
-  const form = useForm<PromptFormValues>({
-    resolver: zodResolver(promptSchema),
-    defaultValues: prompt || {
-      name: '',
-      description: '',
-      system_message: '',
-      user_message: '',
-      is_default: false,
-    },
-  });
-
-  const mutation = useMutation({
-    mutationFn: async (values: PromptFormValues) => {
-      if (!userId) throw new Error('No user found');
-
-      if (prompt) {
-        const { error } = await supabase
-          .from('prompts')
-          .update({
-            ...values,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', prompt.id);
-        if (error) throw error;
-      } else {
-        const newPrompt = {
-          name: values.name,
-          description: values.description || null,
-          system_message: values.system_message,
-          user_message: values.user_message,
-          is_default: values.is_default,
-          created_by: userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        const { error } = await supabase
-          .from('prompts')
-          .insert([newPrompt]);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['prompts'] });
-      toast.success(prompt ? 'Prompt updated successfully' : 'Prompt created successfully');
-      onCancel();
-    },
-    onError: (error) => {
-      toast.error(`Failed to ${prompt ? 'update' : 'create'} prompt: ` + error.message);
-    },
-  });
-
-  function onSubmit(values: PromptFormValues) {
-    mutation.mutate(values);
-  }
+  }, [prompt]);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter prompt name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter description (optional)" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="system_message"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>System Message</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter system message"
-                  className="min-h-[100px]"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="user_message"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>User Message</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter user message"
-                  className="min-h-[100px]"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="is_default"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">
-                  Set as Default
-                </FormLabel>
-                <div className="text-sm text-muted-foreground">
-                  Make this prompt the default for analysis
-                </div>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+        <BasicInfoFields form={form} />
+        <MessageFields form={form} />
+        <DefaultToggle form={form} />
 
         <div className="flex justify-end gap-2">
           <Button
