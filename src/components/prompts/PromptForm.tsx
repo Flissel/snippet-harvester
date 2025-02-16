@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import { Switch } from '@/components/ui/switch';
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 const promptSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -38,6 +39,7 @@ interface PromptFormProps {
 export function PromptForm({ prompt, onCancel }: PromptFormProps) {
   const queryClient = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
+  const { snippetId } = useParams();
   
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -47,7 +49,58 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
       }
     };
     getCurrentUser();
+
+    // If we're creating a new prompt, fetch the suggested system message
+    if (!prompt && snippetId) {
+      fetchSuggestedSystemMessage();
+    }
   }, []);
+
+  const fetchSuggestedSystemMessage = async () => {
+    try {
+      const { data: snippetData } = await supabase
+        .from('snippets')
+        .select('code')
+        .eq('id', snippetId)
+        .single();
+
+      if (snippetData?.code) {
+        const response = await supabase.functions.invoke('suggest-config-points', {
+          body: { code: snippetData.code }
+        });
+
+        if (response.data?.suggestions) {
+          const systemMessage = generateSystemMessage(response.data.suggestions);
+          form.setValue('system_message', systemMessage);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching suggested system message:', error);
+      toast.error('Failed to fetch configuration suggestions');
+    }
+  };
+
+  const generateSystemMessage = (suggestions: any[]) => {
+    return `You are a specialized AI that analyzes Python code for AutoGen agents and identifies configuration points. Focus on finding:
+
+1. Model configurations (model names, temperature, max_tokens)
+2. API keys and credentials
+3. Agent configurations (system messages, human input modes)
+4. Tool configurations (function names, parameters)
+5. Runtime parameters (timeouts, retries)
+
+For each identified point, provide:
+${suggestions.map(suggestion => `
+- ${suggestion.label}: ${suggestion.description}
+  Type: ${suggestion.config_type}
+  Default: ${suggestion.default_value}
+  Best Practices:
+    ${suggestion.best_practices?.join('\n    ')}
+`).join('\n')}
+
+Documentation References:
+${suggestions.flatMap(s => s.documentation_links || []).filter((v, i, a) => a.indexOf(v) === i).join('\n')}`;
+  };
 
   const form = useForm<PromptFormValues>({
     resolver: zodResolver(promptSchema),
@@ -74,7 +127,6 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
           .eq('id', prompt.id);
         if (error) throw error;
       } else {
-        // Ensure all required fields are present and properly typed
         const newPrompt = {
           name: values.name,
           description: values.description || null,
