@@ -1,5 +1,5 @@
 
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { PromptsList } from '@/components/prompts/PromptsList';
@@ -13,12 +13,7 @@ import { Plus, ArrowLeft } from 'lucide-react';
 
 export default function PromptsManagement() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [isCreating, setIsCreating] = useState(false);
-
-  // Check if we came from a snippet analysis page
-  const fromSnippet = location.state?.from === 'snippet';
-  const snippetId = location.state?.snippetId;
 
   const { data: prompts, isLoading: isLoadingPrompts } = useQuery({
     queryKey: ['prompts'],
@@ -46,14 +41,6 @@ export default function PromptsManagement() {
     },
   });
 
-  const handleBack = () => {
-    if (fromSnippet && snippetId) {
-      navigate(`/analyze/${snippetId}`);
-    } else {
-      navigate('/');
-    }
-  };
-
   if (isLoadingPrompts || isLoadingTemplates) {
     return <div>Loading...</div>;
   }
@@ -62,7 +49,7 @@ export default function PromptsManagement() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={handleBack}>
+          <Button variant="outline" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl font-bold">Prompts Management</h1>

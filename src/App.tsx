@@ -24,7 +24,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/snippets" element={<Snippets />} />
             <Route path="/analyze/:snippetId" element={<Analysis />} />
-            <Route path="/analyze/:snippetId/prompts" element={<PromptsManagement />} />
+            <Route path="/prompts" element={<PromptsManagement />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,16 +16,13 @@ export function Analysis() {
   const params = useParams<{ snippetId: string }>();
   const snippetId = params.snippetId;
   
-  // Early return if no snippetId is provided
   if (!snippetId) {
-    // Use useEffect to handle navigation to avoid React state updates during render
     useEffect(() => {
       navigate('/snippets');
     }, [navigate]);
     return null;
   }
 
-  // Only initialize the hook if we have a snippetId
   const { snippet, configPoints, isLoading, createConfigPoint, deleteConfigPoint } = useAnalysisData(snippetId);
   const [selectedCode, setSelectedCode] = useState<{
     text: string;
@@ -37,7 +33,6 @@ export function Analysis() {
   const [customConfigPoints, setCustomConfigPoints] = useState<any[]>([]);
 
   useEffect(() => {
-    // Test the edge function
     const testFunction = async () => {
       const { data, error } = await supabase.functions.invoke('test-function');
       console.log('Edge function response:', data);
@@ -79,7 +74,6 @@ export function Analysis() {
 
     createConfigPoint.mutate(configPoint);
     
-    // Add to custom config points if it's a new one
     if (!customConfigPoints.some(p => p.label === selectedConfig.label)) {
       setCustomConfigPoints(prev => [...prev, selectedConfig]);
     }
@@ -93,7 +87,6 @@ export function Analysis() {
 
   const handleConfigSubmit = (data: ConfigurationPointInput) => {
     createConfigPoint.mutate(data);
-    // Add to custom config points
     const newConfigPoint = {
       label: data.label,
       config_type: data.config_type,
@@ -131,12 +124,7 @@ export function Analysis() {
           </Button>
           <Button 
             variant="default" 
-            onClick={() => navigate('/prompts', { 
-              state: { 
-                from: 'snippet', 
-                snippetId 
-              } 
-            })}
+            onClick={() => navigate('/prompts')}
           >
             <Plus className="mr-2 h-4 w-4" />
             Manage Prompts
