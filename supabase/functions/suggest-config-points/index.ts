@@ -20,7 +20,7 @@ serve(async (req) => {
   try {
     const { code } = await req.json();
     
-    console.log('Analyzing code:', code); // Add logging
+    console.log('Analyzing code:', code);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -29,58 +29,67 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo', // Fixed model name
+        model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
-            content: `You are an AI assistant that analyzes Python code related to AutoGen agents and identifies configurable parameters. For each identified parameter:
-            1. Find a value in the code that should be configurable (like API keys, model names, agent names, etc.)
-            2. Determine its type (string, number, boolean, array, object)
-            3. Create a descriptive label
-            4. Suggest a helpful description
-            5. Include the exact default value from the code
-            6. Create a template placeholder
-
-            Respond in a JSON array format like this:
-            [
-              {
-                "label": "human_name",
-                "config_type": "string",
-                "description": "Name for the human agent in the conversation",
-                "default_value": "Human",
-                "template_placeholder": "{human_name}"
-              }
-            ]`
+            content: 'You are an AI assistant that analyzes Python code and returns a JSON array of configuration points. Each point should have label, config_type, description, default_value, and template_placeholder fields.'
           },
           {
             role: 'user',
-            content: `Analyze this AutoGen code and suggest configuration points:\n${code}`
+            content: `Please analyze this code and return ONLY a JSON array of configuration points. Format example:
+[
+  {
+    "label": "model_name",
+    "config_type": "string",
+    "description": "The name of the GPT model to use",
+    "default_value": "gpt-3.5-turbo",
+    "template_placeholder": "{model_name}"
+  }
+]
+
+Code to analyze:
+${code}`
           }
         ],
-        temperature: 0.7,
-        max_tokens: 2000
+        temperature: 0.3, // Lower temperature for more consistent formatting
+        max_tokens: 1000
       }),
     });
 
-    console.log('OpenAI response status:', response.status); // Add logging
-
-    const data = await response.json();
+    console.log('OpenAI API response status:', response.status);
     
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('Invalid OpenAI response:', data); // Add logging
-      throw new Error('Invalid response from OpenAI');
+    const data = await response.json();
+    console.log('OpenAI API raw response:', JSON.stringify(data, null, 2));
+    
+    if (!data.choices?.[0]?.message?.content) {
+      console.error('Invalid OpenAI response structure:', data);
+      throw new Error('Invalid response structure from OpenAI');
     }
+
+    const content = data.choices[0].message.content.trim();
+    console.log('OpenAI response content:', content);
+
+    // Try to find JSON array in the content
+    const match = content.match(/\[[\s\S]*\]/);
+    if (!match) {
+      console.error('No JSON array found in content');
+      throw new Error('No valid JSON array found in OpenAI response');
+    }
+
+    const jsonStr = match[0];
+    console.log('Extracted JSON string:', jsonStr);
 
     let suggestions;
     try {
-      suggestions = JSON.parse(data.choices[0].message.content);
+      suggestions = JSON.parse(jsonStr);
       if (!Array.isArray(suggestions)) {
-        throw new Error('Invalid suggestions format');
+        throw new Error('Parsed result is not an array');
       }
-      console.log('Parsed suggestions:', suggestions); // Add logging
+      console.log('Successfully parsed suggestions:', suggestions);
     } catch (error) {
-      console.error('Failed to parse suggestions:', error);
-      throw new Error('Failed to parse configuration suggestions');
+      console.error('JSON parsing error:', error);
+      throw new Error(`Failed to parse JSON: ${error.message}`);
     }
 
     return new Response(JSON.stringify({ suggestions }), {
@@ -91,7 +100,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in suggest-config-points function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: error.stack
+    }), {
       status: 500,
       headers: { 
         ...corsHeaders, 
