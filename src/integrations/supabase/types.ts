@@ -99,6 +99,8 @@ export type Database = {
           start_position: number
           template_placeholder: string | null
           updated_at: string
+          validation_rules: Json | null
+          yaml_path: string | null
         }
         Insert: {
           config_type: string
@@ -113,6 +115,8 @@ export type Database = {
           start_position: number
           template_placeholder?: string | null
           updated_at?: string
+          validation_rules?: Json | null
+          yaml_path?: string | null
         }
         Update: {
           config_type?: string
@@ -127,6 +131,8 @@ export type Database = {
           start_position?: number
           template_placeholder?: string | null
           updated_at?: string
+          validation_rules?: Json | null
+          yaml_path?: string | null
         }
         Relationships: [
           {
@@ -217,10 +223,12 @@ export type Database = {
           description: string | null
           id: string
           is_default: boolean | null
+          model: string | null
           name: string
           system_message: string
           updated_at: string
           user_message: string
+          yaml_template: string | null
         }
         Insert: {
           created_at?: string
@@ -228,10 +236,12 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean | null
+          model?: string | null
           name: string
           system_message: string
           updated_at?: string
           user_message: string
+          yaml_template?: string | null
         }
         Update: {
           created_at?: string
@@ -239,10 +249,12 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean | null
+          model?: string | null
           name?: string
           system_message?: string
           updated_at?: string
           user_message?: string
+          yaml_template?: string | null
         }
         Relationships: []
       }

@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { PromptsList } from '@/components/prompts/PromptsList';
 import { PromptForm } from '@/components/prompts/PromptForm';
+import { LabelTemplatesList } from '@/components/prompts/LabelTemplatesList';
+import { LabelTemplateForm } from '@/components/prompts/LabelTemplateForm';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
@@ -14,6 +16,7 @@ import { Plus, ArrowLeft } from 'lucide-react';
 export default function PromptsManagement() {
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
+  const [activeTab, setActiveTab] = useState('prompts');
 
   const { data: prompts, isLoading: isLoadingPrompts } = useQuery({
     queryKey: ['prompts'],
@@ -57,13 +60,13 @@ export default function PromptsManagement() {
         {!isCreating && (
           <Button onClick={() => setIsCreating(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            New Prompt
+            New {activeTab === 'prompts' ? 'Prompt' : 'Label Template'}
           </Button>
         )}
       </div>
 
       <Card className="p-6">
-        <Tabs defaultValue="prompts">
+        <Tabs defaultValue="prompts" onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="prompts">Prompts</TabsTrigger>
             <TabsTrigger value="templates">Label Templates</TabsTrigger>
@@ -78,8 +81,11 @@ export default function PromptsManagement() {
           </TabsContent>
           
           <TabsContent value="templates" className="space-y-4">
-            {/* TODO: Implement label templates management */}
-            <div>Label templates management coming soon...</div>
+            {isCreating ? (
+              <LabelTemplateForm onCancel={() => setIsCreating(false)} />
+            ) : (
+              <LabelTemplatesList labelTemplates={labelTemplates || []} />
+            )}
           </TabsContent>
         </Tabs>
       </Card>

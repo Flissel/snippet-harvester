@@ -9,6 +9,8 @@ export interface Prompt {
   created_by: string;
   created_at: string;
   updated_at: string;
+  yaml_template?: string;
+  model: string;
 }
 
 export interface LabelTemplate {
