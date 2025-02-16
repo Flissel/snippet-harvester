@@ -1,12 +1,13 @@
-
 import { Card } from '@/components/ui/card';
 import { ConfigurationPointList } from './ConfigurationPointList';
 import { ConfigurationPointForm } from './ConfigurationPointForm';
 import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
 import { Button } from '@/components/ui/button';
-import { Plus, Check } from 'lucide-react';
+import { Plus, Check, Wand2 } from 'lucide-react';
 import { useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ConfigurationSectionProps {
   snippet: Snippet;
@@ -32,7 +33,9 @@ export function ConfigurationSection({
   onDelete,
   onSubmit,
 }: ConfigurationSectionProps) {
+  const { toast } = useToast();
   const [pendingReplacements, setPendingReplacements] = useState<PendingReplacement[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleAddLabel = () => {
     if (!selectedCode || !selectedConfig) return;
@@ -63,11 +66,54 @@ export function ConfigurationSection({
     setPendingReplacements([]);
   };
 
+  const handleAnalyzeCode = async () => {
+    setIsAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-config-points', {
+        body: { code: snippet.code_content }
+      });
+
+      if (error) throw error;
+
+      const suggestions = data.suggestions;
+      
+      suggestions.forEach((suggestion: any) => {
+        const startPosition = snippet.code_content.indexOf(suggestion.default_value);
+        if (startPosition !== -1) {
+          setPendingReplacements(prev => [...prev, {
+            start: startPosition,
+            end: startPosition + suggestion.default_value.length,
+            text: suggestion.default_value,
+            config: {
+              label: suggestion.label,
+              config_type: suggestion.config_type,
+              description: suggestion.description,
+              template_placeholder: suggestion.template_placeholder,
+            }
+          }]);
+        }
+      });
+
+      toast({
+        title: "Analysis Complete",
+        description: `Found ${suggestions.length} potential configuration points.`,
+      });
+    } catch (error) {
+      console.error('Error analyzing code:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Failed to analyze code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const renderCodeWithReplacements = () => {
     let result = snippet.code_content;
     const allReplacements: PendingReplacement[] = [];
 
-    // Add existing config points
     configPoints.forEach(point => {
       allReplacements.push({
         start: point.start_position,
@@ -80,10 +126,8 @@ export function ConfigurationSection({
       });
     });
 
-    // Add pending replacements
     allReplacements.push(...pendingReplacements);
 
-    // Add current selection preview
     if (selectedCode && selectedConfig && pendingReplacements.length === 0) {
       allReplacements.push({
         start: selectedCode.start,
@@ -93,10 +137,8 @@ export function ConfigurationSection({
       });
     }
 
-    // Sort replacements from last to first to avoid position shifts
     allReplacements.sort((a, b) => b.start - a.start);
 
-    // Apply all replacements
     allReplacements.forEach(replacement => {
       const placeholder = replacement.config.template_placeholder || `{${replacement.config.label}}`;
       result = result.slice(0, replacement.start) + placeholder + result.slice(replacement.end);
@@ -109,7 +151,19 @@ export function ConfigurationSection({
     <div className="grid grid-cols-2 gap-6">
       <div className="space-y-6">
         <Card className="p-4">
-          <h2 className="text-xl font-semibold mb-4">Configuration Points</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Configuration Points</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAnalyzeCode}
+              disabled={isAnalyzing}
+              className="flex items-center gap-2"
+            >
+              <Wand2 className="w-4 h-4" />
+              {isAnalyzing ? 'Analyzing...' : 'Auto-detect'}
+            </Button>
+          </div>
           <ConfigurationPointList
             configPoints={configPoints}
             onDelete={onDelete}
