@@ -9,31 +9,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: corsHeaders 
-    });
-  }
-
-  try {
-    const { code } = await req.json();
-    
-    console.log('Analyzing code:', code);
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a specialized AI that analyzes Python code for AutoGen agents and identifies configuration points. Focus on finding:
+async function analyzeCodeIteration(code: string, existingSuggestions: any[] = []): Promise<any[]> {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a specialized AI that analyzes Python code for AutoGen agents and identifies configuration points. Focus on finding:
 1. Model configurations (model names, temperature, max_tokens)
 2. API keys and credentials
 3. Agent configurations (system messages, human input modes)
@@ -45,11 +33,14 @@ For each identified point, return a JSON object with:
 - config_type: One of [string, number, boolean, array, object]
 - description: A helpful explanation of the configuration point
 - default_value: The current value in the code
-- template_placeholder: Format as {label} for template substitution`
-          },
-          {
-            role: 'user',
-            content: `Analyze this code and return ONLY a JSON array of configuration points. Example format:
+- template_placeholder: Format as {label} for template substitution
+
+IMPORTANT: Do not suggest configuration points that have already been identified. Here are the existing suggestions:
+${JSON.stringify(existingSuggestions, null, 2)}`
+        },
+        {
+          role: 'user',
+          content: `Analyze this code and return ONLY a JSON array of NEW configuration points that haven't been suggested before. Example format:
 [
   {
     "label": "model_name",
@@ -62,49 +53,64 @@ For each identified point, return a JSON object with:
 
 Code to analyze:
 ${code}`
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 1000
-      }),
-    });
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 1000
+    }),
+  });
 
-    console.log('OpenAI API response status:', response.status);
-    
-    const data = await response.json();
-    console.log('OpenAI API raw response:', JSON.stringify(data, null, 2));
-    
-    if (!data.choices?.[0]?.message?.content) {
-      console.error('Invalid OpenAI response structure:', data);
-      throw new Error('Invalid response structure from OpenAI');
-    }
+  const data = await response.json();
+  if (!data.choices?.[0]?.message?.content) {
+    throw new Error('Invalid response structure from OpenAI');
+  }
 
-    const content = data.choices[0].message.content.trim();
-    console.log('OpenAI response content:', content);
+  const content = data.choices[0].message.content.trim();
+  const match = content.match(/\[[\s\S]*\]/);
+  if (!match) {
+    return [];
+  }
 
-    // Try to find JSON array in the content
-    const match = content.match(/\[[\s\S]*\]/);
-    if (!match) {
-      console.error('No JSON array found in content');
-      throw new Error('No valid JSON array found in OpenAI response');
-    }
+  const jsonStr = match[0];
+  const newSuggestions = JSON.parse(jsonStr);
+  return Array.isArray(newSuggestions) ? newSuggestions : [];
+}
 
-    const jsonStr = match[0];
-    console.log('Extracted JSON string:', jsonStr);
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
-    let suggestions;
-    try {
-      suggestions = JSON.parse(jsonStr);
-      if (!Array.isArray(suggestions)) {
-        throw new Error('Parsed result is not an array');
+  try {
+    const { code } = await req.json();
+    console.log('Starting code analysis...');
+
+    const allSuggestions = [];
+    let iterationCount = 0;
+    const MAX_ITERATIONS = 3; // Limit iterations to prevent infinite loops
+
+    while (iterationCount < MAX_ITERATIONS) {
+      console.log(`Starting iteration ${iterationCount + 1}...`);
+      
+      const newSuggestions = await analyzeCodeIteration(code, allSuggestions);
+      console.log(`Found ${newSuggestions.length} new suggestions in iteration ${iterationCount + 1}`);
+      
+      if (newSuggestions.length === 0) {
+        console.log('No new suggestions found, stopping iterations');
+        break;
       }
-      console.log('Successfully parsed suggestions:', suggestions);
-    } catch (error) {
-      console.error('JSON parsing error:', error);
-      throw new Error(`Failed to parse JSON: ${error.message}`);
+
+      // Add new suggestions to the collection
+      allSuggestions.push(...newSuggestions);
+      iterationCount++;
     }
 
-    return new Response(JSON.stringify({ suggestions }), {
+    console.log(`Analysis complete. Found total ${allSuggestions.length} suggestions in ${iterationCount} iterations`);
+
+    return new Response(JSON.stringify({ 
+      suggestions: allSuggestions,
+      iterations: iterationCount 
+    }), {
       headers: { 
         ...corsHeaders, 
         'Content-Type': 'application/json' 
