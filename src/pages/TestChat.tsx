@@ -1,3 +1,4 @@
+
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -196,10 +197,7 @@ export default function TestChat() {
               <h3 className="font-medium">System Message</h3>
               <Textarea 
                 value={systemMessage}
-                onChange={(e) => {
-                  setSystemMessage(e.target.value);
-                  resetChat();
-                }}
+                onChange={(e) => setSystemMessage(e.target.value)}
                 className="min-h-[200px]"
                 placeholder="System message..."
               />
@@ -209,10 +207,7 @@ export default function TestChat() {
               <h3 className="font-medium">User Message Template</h3>
               <Textarea 
                 value={userMessage}
-                onChange={(e) => {
-                  setUserMessage(e.target.value);
-                  resetChat();
-                }}
+                onChange={(e) => setUserMessage(e.target.value)}
                 className="min-h-[100px]"
                 placeholder="User message template..."
               />
