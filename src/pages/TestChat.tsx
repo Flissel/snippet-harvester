@@ -1,82 +1,35 @@
 
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, RefreshCw, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Prompt } from '@/types/prompts';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { Card } from '@/components/ui/card';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Prompt } from '@/types/prompts';
+import { usePromptConfiguration } from './test-chat/hooks/usePromptConfiguration';
+import { PromptConfiguration } from './test-chat/components/PromptConfiguration';
+import { SaveConfigurationDialog } from './test-chat/components/SaveConfigurationDialog';
 
 export default function TestChat() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [prompts, setPrompts] = useState<Prompt[]>([]);
-  const [selectedPrompt, setSelectedPrompt] = useState<Prompt | undefined>();
-  const [isLoading, setIsLoading] = useState(true);
-  const [systemMessage, setSystemMessage] = useState('');
-  const [userMessage, setUserMessage] = useState('');
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [chatKey, setChatKey] = useState(0);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
 
-  useEffect(() => {
-    loadPrompts();
-  }, []);
-
-  useEffect(() => {
-    if (selectedPrompt) {
-      setSystemMessage(selectedPrompt.system_message);
-      setUserMessage(selectedPrompt.user_message);
-      setHasUnsavedChanges(false);
-    }
-  }, [selectedPrompt]);
-
-  useEffect(() => {
-    if (selectedPrompt) {
-      const hasChanges = 
-        systemMessage !== selectedPrompt.system_message ||
-        userMessage !== selectedPrompt.user_message;
-      setHasUnsavedChanges(hasChanges);
-    }
-  }, [systemMessage, userMessage, selectedPrompt]);
-
-  const loadPrompts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('prompts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setPrompts(data || []);
-      
-      const defaultPrompt = data?.find(p => p.is_default);
-      if (defaultPrompt) {
-        setSelectedPrompt(defaultPrompt);
-      }
-    } catch (error) {
-      console.error('Error loading prompts:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    prompts,
+    selectedPrompt,
+    isLoading,
+    systemMessage,
+    setSystemMessage,
+    userMessage,
+    setUserMessage,
+    hasUnsavedChanges,
+    setSelectedPrompt,
+    saveConfiguration
+  } = usePromptConfiguration(user);
 
   const resetChat = () => {
     setChatKey(prev => prev + 1);
@@ -86,40 +39,24 @@ export default function TestChat() {
     });
   };
 
-  const saveConfiguration = async () => {
-    if (!user || !selectedPrompt) return;
+  const handlePromptSelect = (promptId: string) => {
+    if (hasUnsavedChanges) {
+      if (confirm("You have unsaved changes. Are you sure you want to switch prompts?")) {
+        const prompt = prompts.find(p => p.id === promptId);
+        setSelectedPrompt(prompt);
+        resetChat();
+      }
+    } else {
+      const prompt = prompts.find(p => p.id === promptId);
+      setSelectedPrompt(prompt);
+      resetChat();
+    }
+  };
 
-    try {
-      const { data, error } = await supabase
-        .from('prompt_configurations')
-        .insert({
-          name: `${selectedPrompt.name} - Configuration`,
-          system_message: systemMessage,
-          user_message: userMessage,
-          model: selectedPrompt.model,
-          created_by: user.id,
-          yaml_template: selectedPrompt.yaml_template,
-          description: `Configuration based on prompt: ${selectedPrompt.name}`,
-          is_finalized: true
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setHasUnsavedChanges(false);
+  const handleSaveConfiguration = async () => {
+    const success = await saveConfiguration();
+    if (success) {
       setShowSaveDialog(false);
-      toast({
-        title: "Success",
-        description: "Configuration saved successfully",
-      });
-    } catch (error) {
-      console.error('Error saving configuration:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save configuration",
-        variant: "destructive"
-      });
     }
   };
 
@@ -153,66 +90,16 @@ export default function TestChat() {
       
       {!isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-4 space-y-4">
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold">Prompt Configuration</h2>
-              <Select
-                value={selectedPrompt?.id}
-                onValueChange={(value) => {
-                  if (hasUnsavedChanges) {
-                    if (confirm("You have unsaved changes. Are you sure you want to switch prompts?")) {
-                      const prompt = prompts.find(p => p.id === value);
-                      setSelectedPrompt(prompt);
-                      resetChat();
-                    }
-                  } else {
-                    const prompt = prompts.find(p => p.id === value);
-                    setSelectedPrompt(prompt);
-                    resetChat();
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a prompt" />
-                </SelectTrigger>
-                <SelectContent>
-                  {prompts.map((prompt) => (
-                    <SelectItem key={prompt.id} value={prompt.id}>
-                      {prompt.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {hasUnsavedChanges && (
-              <Alert>
-                <AlertDescription>
-                  You have unsaved changes to this prompt configuration. Test them in the chat, and save when you're satisfied.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-2">
-              <h3 className="font-medium">System Message</h3>
-              <Textarea 
-                value={systemMessage}
-                onChange={(e) => setSystemMessage(e.target.value)}
-                className="min-h-[200px]"
-                placeholder="System message..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-medium">User Message Template</h3>
-              <Textarea 
-                value={userMessage}
-                onChange={(e) => setUserMessage(e.target.value)}
-                className="min-h-[100px]"
-                placeholder="User message template..."
-              />
-            </div>
-          </Card>
+          <PromptConfiguration
+            prompts={prompts}
+            selectedPrompt={selectedPrompt}
+            systemMessage={systemMessage}
+            userMessage={userMessage}
+            hasUnsavedChanges={hasUnsavedChanges}
+            onPromptSelect={handlePromptSelect}
+            onSystemMessageChange={setSystemMessage}
+            onUserMessageChange={setUserMessage}
+          />
 
           <ChatWindow 
             key={chatKey}
@@ -225,20 +112,11 @@ export default function TestChat() {
         </div>
       )}
 
-      <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Save Configuration</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to save this prompt configuration? This will create a new configuration based on your current changes.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={saveConfiguration}>Save Configuration</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <SaveConfigurationDialog
+        open={showSaveDialog}
+        onOpenChange={setShowSaveDialog}
+        onSave={handleSaveConfiguration}
+      />
     </div>
   );
 }
