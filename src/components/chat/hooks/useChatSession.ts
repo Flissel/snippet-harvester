@@ -2,11 +2,11 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Message, ChatSession } from '../types';
+import { ChatMessage, ChatSession } from '../types';
 import { Prompt } from '@/types/prompts';
 
 export function useChatSession(user: any, prompt?: Prompt) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [session, setSession] = useState<ChatSession | null>(null);
   const { toast } = useToast();
 

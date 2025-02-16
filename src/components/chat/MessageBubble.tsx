@@ -1,8 +1,8 @@
 
-import { Message } from './types';
+import { ChatMessage } from './types';
 
 interface MessageBubbleProps {
-  message: Message;
+  message: ChatMessage;
 }
 
 export function MessageBubble({ message }: MessageBubbleProps) {
