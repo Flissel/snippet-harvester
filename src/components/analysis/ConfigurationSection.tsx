@@ -82,8 +82,8 @@ export function ConfigurationSection({
               </div>
             </div>
           ) : (
-            <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground">
-              Select code in the editor above to create a configuration point
+            <div className="flex items-center justify-center p-6 bg-muted rounded-lg text-sm text-muted-foreground">
+              Highlight code in the editor to create a configuration point
             </div>
           )}
         </div>
