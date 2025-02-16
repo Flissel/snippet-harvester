@@ -10,18 +10,19 @@ const corsHeaders = {
 };
 
 async function analyzeCodeIteration(code: string, existingSuggestions: any[] = []): Promise<any[]> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a specialized AI that analyzes Python code for AutoGen agents and identifies configuration points. Focus on finding:
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a specialized AI that analyzes Python code for AutoGen agents and identifies configuration points. Focus on finding:
 1. Model configurations (model names, temperature, max_tokens)
 2. API keys and credentials
 3. Agent configurations (system messages, human input modes)
@@ -46,10 +47,10 @@ For each identified point, return a JSON object with:
 
 IMPORTANT: Do not suggest configuration points that have already been identified. Here are the existing suggestions:
 ${JSON.stringify(existingSuggestions, null, 2)}`
-        },
-        {
-          role: 'user',
-          content: `Analyze this code and return ONLY a JSON array of NEW configuration points that haven't been suggested before, including research insights. Example format:
+          },
+          {
+            role: 'user',
+            content: `Analyze this code and return ONLY a JSON array of NEW configuration points that haven't been suggested before, including research insights. Example format:
 [
   {
     "label": "model_name",
@@ -74,27 +75,38 @@ ${JSON.stringify(existingSuggestions, null, 2)}`
 
 Code to analyze:
 ${code}`
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 1000
-    }),
-  });
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 1000
+      }),
+    });
 
-  const data = await response.json();
-  if (!data.choices?.[0]?.message?.content) {
-    throw new Error('Invalid response structure from OpenAI');
-  }
+    const data = await response.json();
+    if (!data.choices?.[0]?.message?.content) {
+      console.error('Invalid response structure from OpenAI:', data);
+      throw new Error('Invalid response structure from OpenAI');
+    }
 
-  const content = data.choices[0].message.content.trim();
-  const match = content.match(/\[[\s\S]*\]/);
-  if (!match) {
+    const content = data.choices[0].message.content.trim();
+    const match = content.match(/\[[\s\S]*\]/);
+    if (!match) {
+      console.error('No JSON array found in response:', content);
+      return [];
+    }
+
+    const jsonStr = match[0];
+    try {
+      const newSuggestions = JSON.parse(jsonStr);
+      return Array.isArray(newSuggestions) ? newSuggestions : [];
+    } catch (error) {
+      console.error('Error parsing JSON:', error, 'JSON string:', jsonStr);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error in analyzeCodeIteration:', error);
     return [];
   }
-
-  const jsonStr = match[0];
-  const newSuggestions = JSON.parse(jsonStr);
-  return Array.isArray(newSuggestions) ? newSuggestions : [];
 }
 
 serve(async (req) => {
@@ -108,7 +120,7 @@ serve(async (req) => {
 
     const allSuggestions = [];
     let iterationCount = 0;
-    const MAX_ITERATIONS = 3; // Limit iterations to prevent infinite loops
+    const MAX_ITERATIONS = 3;
 
     while (iterationCount < MAX_ITERATIONS) {
       console.log(`Starting iteration ${iterationCount + 1}...`);
@@ -121,7 +133,6 @@ serve(async (req) => {
         break;
       }
 
-      // Add new suggestions to the collection
       allSuggestions.push(...newSuggestions);
       iterationCount++;
     }
