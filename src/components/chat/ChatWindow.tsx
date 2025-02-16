@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Loader, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
   id: string;
@@ -27,17 +28,30 @@ export function ChatWindow() {
   const [isLoading, setIsLoading] = useState(false);
   const [session, setSession] = useState<ChatSession | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    createNewSession();
-  }, []);
+    if (user) {
+      createNewSession();
+    }
+  }, [user]);
 
   const createNewSession = async () => {
+    if (!user) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to start a chat session.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
         .insert({
           title: `Chat ${new Date().toLocaleString()}`,
+          created_by: user.id
         })
         .select()
         .single();
@@ -145,6 +159,14 @@ export function ChatWindow() {
       sendMessage();
     }
   };
+
+  if (!user) {
+    return (
+      <Card className="p-4 text-center">
+        <p>Please log in to start a chat session.</p>
+      </Card>
+    );
+  }
 
   return (
     <Card className="flex flex-col h-[600px] w-full max-w-2xl mx-auto">
