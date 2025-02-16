@@ -54,10 +54,10 @@ export function ConfigurationSection({
       <Card className="p-4">
         <h2 className="text-xl font-semibold mb-4">Add Configuration Point</h2>
         <div className="space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium">Selected Code</h3>
-              {selectedCode && selectedConfig && (
+          {selectedCode && selectedConfig && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium">Will Be Replaced With</h3>
                 <Button
                   variant="outline"
                   size="sm"
@@ -67,31 +67,7 @@ export function ConfigurationSection({
                   <Code className="w-4 h-4" />
                   Cut & Replace
                 </Button>
-              )}
-            </div>
-            {selectedCode ? (
-              <div className="relative">
-                <pre className="p-3 bg-muted rounded-lg font-mono text-sm whitespace-pre-wrap overflow-x-auto">
-                  {snippet.code_content.substring(0, selectedCode.start)}
-                  <mark className="bg-primary/20 px-1">
-                    {selectedCode.text}
-                  </mark>
-                  {snippet.code_content.substring(selectedCode.end)}
-                </pre>
-                <div className="absolute top-2 right-2 text-xs text-muted-foreground">
-                  Position: {selectedCode.start}-{selectedCode.end}
-                </div>
               </div>
-            ) : (
-              <div className="flex items-center justify-center p-6 bg-muted rounded-lg text-sm text-muted-foreground">
-                Highlight code in the editor to create a configuration point
-              </div>
-            )}
-          </div>
-
-          {selectedCode && selectedConfig && (
-            <div>
-              <h3 className="text-sm font-medium mb-2">Will Be Replaced With</h3>
               <pre className="p-3 bg-muted rounded-lg font-mono text-sm">
                 {snippet.code_content.substring(0, selectedCode.start)}
                 <mark className="bg-success/20 dark:bg-success/40 px-1">
