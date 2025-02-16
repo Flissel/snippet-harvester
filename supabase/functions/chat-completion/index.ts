@@ -20,15 +20,14 @@ serve(async (req) => {
   );
 
   try {
-    const { messages, sessionId, model } = await req.json();
+    const { messages, sessionId, model, currentSystemMessage } = await req.json();
 
-    // Get the prompt from the first system message
-    const systemMessage = messages.find((msg: any) => msg.role === 'system');
-    const userMessage = messages[messages.length - 1]; // Last message is the user's input
+    // Get the last user message
+    const userMessage = messages[messages.length - 1];
 
-    // Prepare messages array with system context and user input
+    // Prepare messages array with current system message and user input
     const openAIMessages = [
-      systemMessage,
+      { role: 'system', content: currentSystemMessage },
       { role: 'user', content: userMessage.content }
     ].filter(Boolean);
 

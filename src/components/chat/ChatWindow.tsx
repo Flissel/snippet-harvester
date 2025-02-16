@@ -134,12 +134,13 @@ export function ChatWindow({ prompt }: ChatWindowProps) {
         .eq('session_id', session.id)
         .order('created_at', { ascending: true });
 
-      // Call chat completion function
+      // Call chat completion function with current system message
       const { data, error } = await supabase.functions.invoke('chat-completion', {
         body: {
           messages: messagesData,
           sessionId: session.id,
           model: prompt?.model || 'gpt-4o-mini',
+          currentSystemMessage: prompt?.system_message
         },
       });
 
