@@ -5,7 +5,8 @@ import { ConfigurationPointForm } from './ConfigurationPointForm';
 import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
 import { Button } from '@/components/ui/button';
-import { Code } from 'lucide-react';
+import { Code, Plus, Check } from 'lucide-react';
+import { useState } from 'react';
 
 interface ConfigurationSectionProps {
   snippet: Snippet;
@@ -16,6 +17,13 @@ interface ConfigurationSectionProps {
   onSubmit: (data: ConfigurationPointInput) => void;
 }
 
+interface PendingReplacement {
+  start: number;
+  end: number;
+  text: string;
+  config: any;
+}
+
 export function ConfigurationSection({
   snippet,
   configPoints,
@@ -24,21 +32,59 @@ export function ConfigurationSection({
   onDelete,
   onSubmit,
 }: ConfigurationSectionProps) {
-  const handleInsertLabel = () => {
+  const [pendingReplacements, setPendingReplacements] = useState<PendingReplacement[]>([]);
+
+  const handleAddLabel = () => {
     if (!selectedCode || !selectedConfig) return;
     
-    const placeholder = selectedConfig.template_placeholder || `${selectedConfig.label}: YAML_VALUE`;
-    const configPoint: ConfigurationPointInput = {
-      snippet_id: snippet.id,
-      label: selectedConfig.label,
-      config_type: selectedConfig.config_type,
-      default_value: selectedCode.text,
-      description: selectedConfig.description || '',
-      template_placeholder: placeholder,
-      start_position: selectedCode.start,
-      end_position: selectedCode.end,
-    };
-    onSubmit(configPoint);
+    setPendingReplacements(prev => [...prev, {
+      start: selectedCode.start,
+      end: selectedCode.end,
+      text: selectedCode.text,
+      config: selectedConfig
+    }]);
+  };
+
+  const handleSubmitAll = () => {
+    pendingReplacements.forEach(replacement => {
+      const placeholder = replacement.config.template_placeholder || `${replacement.config.label}: YAML_VALUE`;
+      const configPoint: ConfigurationPointInput = {
+        snippet_id: snippet.id,
+        label: replacement.config.label,
+        config_type: replacement.config.config_type,
+        default_value: replacement.text,
+        description: replacement.config.description || '',
+        template_placeholder: placeholder,
+        start_position: replacement.start,
+        end_position: replacement.end,
+      };
+      onSubmit(configPoint);
+    });
+    setPendingReplacements([]);
+  };
+
+  const renderCodeWithReplacements = () => {
+    let result = snippet.code_content;
+    let positions: { pos: number; isStart: boolean; placeholder: string }[] = [];
+
+    // Collect all positions
+    pendingReplacements.forEach(replacement => {
+      const placeholder = replacement.config.template_placeholder || `${replacement.config.label}: YAML_VALUE`;
+      positions.push({ pos: replacement.start, isStart: true, placeholder });
+      positions.push({ pos: replacement.end, isStart: false, placeholder: '' });
+    });
+
+    // Sort positions from last to first to avoid position shifts
+    positions.sort((a, b) => b.pos - a.pos);
+
+    // Apply replacements
+    positions.forEach(({ pos, isStart, placeholder }) => {
+      result = isStart
+        ? result.slice(0, pos) + `<mark class="bg-success/20 dark:bg-success/40 px-1">${placeholder}</mark>` + result.slice(pos)
+        : result.slice(0, pos) + result.slice(pos);
+    });
+
+    return result;
   };
 
   return (
@@ -52,29 +98,41 @@ export function ConfigurationSection({
       </Card>
 
       <Card className="p-4">
-        <h2 className="text-xl font-semibold mb-4">Add Configuration Point</h2>
+        <h2 className="text-xl font-semibold mb-4">Add Configuration Points</h2>
         <div className="space-y-4">
           {selectedCode && selectedConfig && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium">Will Be Replaced With</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleInsertLabel}
-                  className="flex items-center gap-2"
-                >
-                  <Code className="w-4 h-4" />
-                  Cut & Replace
-                </Button>
+                <h3 className="text-sm font-medium">Add Labels</h3>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddLabel}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Label
+                  </Button>
+                  {pendingReplacements.length > 0 && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleSubmitAll}
+                      className="flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      Submit All ({pendingReplacements.length})
+                    </Button>
+                  )}
+                </div>
               </div>
-              <pre className="p-3 bg-muted rounded-lg font-mono text-sm">
-                {snippet.code_content.substring(0, selectedCode.start)}
-                <mark className="bg-success/20 dark:bg-success/40 px-1">
-                  {selectedConfig.template_placeholder || `${selectedConfig.label}: YAML_VALUE`}
-                </mark>
-                {snippet.code_content.substring(selectedCode.end)}
-              </pre>
+              <pre 
+                className="p-3 bg-muted rounded-lg font-mono text-sm"
+                dangerouslySetInnerHTML={{ 
+                  __html: renderCodeWithReplacements() 
+                }}
+              />
             </div>
           )}
         </div>
