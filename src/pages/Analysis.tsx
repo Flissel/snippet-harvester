@@ -31,14 +31,14 @@ export function Analysis() {
   };
 
   const handleConfigPointDrop = (config: any, start: number, end: number) => {
-    if (!snippet) return;
+    if (!snippet || !selectedConfig) return;
     const configPoint: ConfigurationPointInput = {
       snippet_id: snippet.id,
-      label: config.label,
-      config_type: config.config_type,
+      label: selectedConfig.label,
+      config_type: selectedConfig.config_type,
       default_value: snippet.code_content.substring(start, end),
-      description: config.description,
-      template_placeholder: config.template_placeholder,
+      description: selectedConfig.description,
+      template_placeholder: selectedConfig.template_placeholder,
       is_required: true,
       start_position: start,
       end_position: end,
@@ -47,8 +47,8 @@ export function Analysis() {
     setSelectedCode(null);
 
     // Add to custom config points if it's a new one
-    if (!customConfigPoints.some(p => p.label === config.label)) {
-      setCustomConfigPoints(prev => [...prev, config]);
+    if (!customConfigPoints.some(p => p.label === selectedConfig.label)) {
+      setCustomConfigPoints(prev => [...prev, selectedConfig]);
     }
   };
 

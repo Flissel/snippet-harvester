@@ -48,14 +48,14 @@ export function CodeViewer({
           end: startIndex + text.length 
         });
         
-        if (activeConfig) {
-          onConfigPointDrop?.(activeConfig, startIndex, startIndex + text.length);
-          setActiveConfig(null);
-        } else {
-          onSelectionChange?.(text);
-        }
+        onSelectionChange?.(text);
       }
     }
+  };
+
+  const handleAddLabel = () => {
+    if (!selectedRange) return;
+    onSelectionChange?.(selectedRange.text);
   };
 
   return (
@@ -77,7 +77,7 @@ export function CodeViewer({
               variant="outline"
               size="sm"
               className="flex items-center gap-2"
-              onClick={() => onConfigPointDrop?.(activeConfig, selectedRange.start, selectedRange.end)}
+              onClick={handleAddLabel}
             >
               <Plus className="w-4 h-4" />
               Add Label
