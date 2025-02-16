@@ -5,10 +5,11 @@ import { ConfigurationPointForm } from './ConfigurationPointForm';
 import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
 import { Button } from '@/components/ui/button';
-import { Plus, Check, Wand2 } from 'lucide-react';
+import { Plus, Check, Wand2, X } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ConfigurationSectionProps {
   snippet: Snippet;
@@ -26,6 +27,14 @@ interface PendingReplacement {
   config: any;
 }
 
+interface Suggestion {
+  label: string;
+  config_type: string;
+  description: string;
+  default_value: string;
+  template_placeholder?: string;
+}
+
 export function ConfigurationSection({
   snippet,
   configPoints,
@@ -36,6 +45,7 @@ export function ConfigurationSection({
 }: ConfigurationSectionProps) {
   const { toast } = useToast();
   const [pendingReplacements, setPendingReplacements] = useState<PendingReplacement[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleAddLabel = () => {
@@ -47,6 +57,25 @@ export function ConfigurationSection({
       text: selectedCode.text,
       config: selectedConfig
     }]);
+  };
+
+  const handleAddSuggestion = (suggestion: Suggestion) => {
+    const startPosition = snippet.code_content.indexOf(suggestion.default_value);
+    if (startPosition !== -1) {
+      setPendingReplacements(prev => [...prev, {
+        start: startPosition,
+        end: startPosition + suggestion.default_value.length,
+        text: suggestion.default_value,
+        config: suggestion
+      }]);
+      
+      // Remove the suggestion from the list
+      setSuggestions(prev => prev.filter(s => s.label !== suggestion.label));
+    }
+  };
+
+  const handleRemoveSuggestion = (suggestion: Suggestion) => {
+    setSuggestions(prev => prev.filter(s => s.label !== suggestion.label));
   };
 
   const handleSubmitAll = () => {
@@ -76,31 +105,12 @@ export function ConfigurationSection({
 
       if (error) throw error;
 
-      const suggestions = data.suggestions;
-      
-      // Clear existing pending replacements
+      setSuggestions(data.suggestions);
       setPendingReplacements([]);
-      
-      suggestions.forEach((suggestion: any) => {
-        const startPosition = snippet.code_content.indexOf(suggestion.default_value);
-        if (startPosition !== -1) {
-          setPendingReplacements(prev => [...prev, {
-            start: startPosition,
-            end: startPosition + suggestion.default_value.length,
-            text: suggestion.default_value,
-            config: {
-              label: suggestion.label,
-              config_type: suggestion.config_type,
-              description: suggestion.description,
-              template_placeholder: suggestion.template_placeholder,
-            }
-          }]);
-        }
-      });
 
       toast({
         title: "Analysis Complete",
-        description: `Found ${suggestions.length} potential configuration points.`,
+        description: `Found ${data.suggestions.length} potential configuration points.`,
       });
     } catch (error) {
       console.error('Error analyzing code:', error);
@@ -173,6 +183,52 @@ export function ConfigurationSection({
             onDelete={onDelete}
           />
         </Card>
+
+        {suggestions.length > 0 && (
+          <Card className="p-4">
+            <h2 className="text-xl font-semibold mb-4">Suggestions</h2>
+            <ScrollArea className="h-[200px]">
+              <div className="space-y-2">
+                {suggestions.map((suggestion) => (
+                  <div
+                    key={suggestion.label}
+                    className="flex items-start justify-between p-3 border rounded-lg"
+                  >
+                    <div className="space-y-1">
+                      <div className="font-medium">{suggestion.label}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Type: {suggestion.config_type}
+                      </div>
+                      {suggestion.description && (
+                        <div className="text-sm text-muted-foreground">
+                          {suggestion.description}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleAddSuggestion(suggestion)}
+                        className="text-primary hover:text-primary/90"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveSuggestion(suggestion)}
+                        className="text-destructive hover:text-destructive/90"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </Card>
+        )}
 
         <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
