@@ -129,11 +129,17 @@ export function Analysis() {
           <Button variant="outline" onClick={() => window.history.back()}>
             Back
           </Button>
-          <Button variant="default" asChild>
-            <Link to={`/analyze/${snippetId}/prompts`}>
-              <Plus className="mr-2 h-4 w-4" />
-              Manage Prompts
-            </Link>
+          <Button 
+            variant="default" 
+            onClick={() => navigate('/prompts', { 
+              state: { 
+                from: 'snippet', 
+                snippetId 
+              } 
+            })}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Manage Prompts
           </Button>
         </div>
       </div>
