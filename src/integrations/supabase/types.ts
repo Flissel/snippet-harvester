@@ -62,6 +62,114 @@ export type Database = {
           },
         ]
       }
+      label_templates: {
+        Row: {
+          config_type: string
+          created_at: string
+          created_by: string
+          default_value: string | null
+          description: string | null
+          id: string
+          name: string
+          template_placeholder: string | null
+          updated_at: string
+        }
+        Insert: {
+          config_type: string
+          created_at?: string
+          created_by: string
+          default_value?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          template_placeholder?: string | null
+          updated_at?: string
+        }
+        Update: {
+          config_type?: string
+          created_at?: string
+          created_by?: string
+          default_value?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          template_placeholder?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prompt_label_mappings: {
+        Row: {
+          created_at: string
+          id: string
+          label_template_id: string
+          prompt_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label_template_id: string
+          prompt_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label_template_id?: string
+          prompt_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_label_mappings_label_template_id_fkey"
+            columns: ["label_template_id"]
+            isOneToOne: false
+            referencedRelation: "label_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_label_mappings_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompts: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          system_message: string
+          updated_at: string
+          user_message: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          system_message: string
+          updated_at?: string
+          user_message: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          system_message?: string
+          updated_at?: string
+          user_message?: string
+        }
+        Relationships: []
+      }
       snippets: {
         Row: {
           code_content: string

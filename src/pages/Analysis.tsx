@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAnalysisData } from '@/components/analysis/hooks/useAnalysisData';
 import { AnalysisCodeSection } from '@/components/analysis/AnalysisCodeSection';
@@ -10,6 +10,7 @@ import { DraggableConfigPoints } from '@/components/analysis/DraggableConfigPoin
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
+import { Plus } from 'lucide-react';
 
 export function Analysis() {
   const { snippetId } = useParams();
@@ -103,9 +104,17 @@ export function Analysis() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Analyze Snippet: {snippet.title}</h1>
-        <Button variant="outline" onClick={() => window.history.back()}>
-          Back
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => window.history.back()}>
+            Back
+          </Button>
+          <Button variant="default" asChild>
+            <Link to={`/analyze/${snippetId}/prompts`}>
+              <Plus className="mr-2 h-4 w-4" />
+              Manage Prompts
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="p-4">

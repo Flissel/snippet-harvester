@@ -5,6 +5,7 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Snippets from "./pages/Snippets";
 import Analysis from "./pages/Analysis";
+import PromptsManagement from "./pages/PromptsManagement";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -23,6 +24,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/snippets" element={<Snippets />} />
             <Route path="/analyze/:snippetId" element={<Analysis />} />
+            <Route path="/analyze/:snippetId/prompts" element={<PromptsManagement />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>
