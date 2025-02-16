@@ -20,7 +20,17 @@ serve(async (req) => {
   );
 
   try {
-    const { messages, sessionId } = await req.json();
+    const { messages, sessionId, model } = await req.json();
+
+    // Get the prompt from the first system message
+    const systemMessage = messages.find((msg: any) => msg.role === 'system');
+    const userMessage = messages[messages.length - 1]; // Last message is the user's input
+
+    // Prepare messages array with system context and user input
+    const openAIMessages = [
+      systemMessage,
+      { role: 'user', content: userMessage.content }
+    ].filter(Boolean);
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -30,8 +40,8 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
-        messages: messages,
+        model: model || 'gpt-4o-mini',
+        messages: openAIMessages,
         temperature: 0.7,
       }),
     });

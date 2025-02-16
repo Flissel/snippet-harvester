@@ -180,6 +180,48 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_configurations: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_finalized: boolean | null
+          model: string | null
+          name: string
+          system_message: string
+          updated_at: string
+          user_message: string
+          yaml_template: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_finalized?: boolean | null
+          model?: string | null
+          name: string
+          system_message: string
+          updated_at?: string
+          user_message: string
+          yaml_template?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_finalized?: boolean | null
+          model?: string | null
+          name?: string
+          system_message?: string
+          updated_at?: string
+          user_message?: string
+          yaml_template?: string | null
+        }
+        Relationships: []
+      }
       prompt_label_mappings: {
         Row: {
           created_at: string
