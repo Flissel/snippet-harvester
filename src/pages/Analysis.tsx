@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,8 @@ import { ConfigurationSection } from '@/components/analysis/ConfigurationSection
 import { ConfigurationPointInput } from '@/types/configuration';
 import { DraggableConfigPoints } from '@/components/analysis/DraggableConfigPoints';
 import { Card } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from "sonner";
 
 export function Analysis() {
   const { snippetId } = useParams();
@@ -18,6 +21,22 @@ export function Analysis() {
   } | null>(null);
   const [selectedConfig, setSelectedConfig] = useState<any>(null);
   const [customConfigPoints, setCustomConfigPoints] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Test the edge function
+    const testFunction = async () => {
+      const { data, error } = await supabase.functions.invoke('test-function');
+      console.log('Edge function response:', data);
+      if (error) {
+        console.error('Edge function error:', error);
+        toast.error('Edge function test failed');
+      } else {
+        toast.success('Edge function is working!');
+      }
+    };
+    
+    testFunction();
+  }, []);
 
   const handleCodeSelection = (text: string) => {
     if (!snippet) return;
