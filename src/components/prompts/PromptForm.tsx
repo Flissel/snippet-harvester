@@ -74,12 +74,21 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
           .eq('id', prompt.id);
         if (error) throw error;
       } else {
+        // Ensure all required fields are present and properly typed
+        const newPrompt = {
+          name: values.name,
+          description: values.description || null,
+          system_message: values.system_message,
+          user_message: values.user_message,
+          is_default: values.is_default,
+          created_by: userId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
         const { error } = await supabase
           .from('prompts')
-          .insert([{
-            ...values,
-            created_by: userId,
-          }]);
+          .insert([newPrompt]);
         if (error) throw error;
       }
     },
