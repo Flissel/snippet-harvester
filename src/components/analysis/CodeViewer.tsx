@@ -56,22 +56,33 @@ export function CodeViewer({
         <pre className="p-4 overflow-auto font-mono text-sm whitespace-pre-wrap">
           {code}
         </pre>
-        {configPoints.map((point, index) => (
-          <div
-            key={point.id}
-            className="absolute bg-primary/20 pointer-events-none group"
-            style={{
-              top: `${Math.floor(code.substring(0, code.indexOf(point.default_value || '')).split('\n').length - 1) * 24}px`,
-              left: '0',
-              width: '100%',
-              height: '24px'
-            }}
-          >
-            <div className="absolute hidden group-hover:block bg-popover text-popover-foreground p-2 rounded shadow-lg -top-8 left-0 z-50">
-              {point.label}{point.is_required ? ' (Required)' : ''}
+        {configPoints.map((point, index) => {
+          if (!point.default_value) return null;
+          
+          const startPosition = point.start_position || code.indexOf(point.default_value);
+          if (startPosition === -1) return null;
+
+          const lines = code.substring(0, startPosition).split('\n');
+          const lineNumber = lines.length - 1;
+          const lineHeight = 24; // Approximate line height in pixels
+
+          return (
+            <div
+              key={point.id}
+              className="absolute bg-primary/20 pointer-events-none group"
+              style={{
+                top: `${lineNumber * lineHeight}px`,
+                left: '0',
+                width: '100%',
+                height: `${lineHeight}px`
+              }}
+            >
+              <div className="absolute hidden group-hover:block bg-popover text-popover-foreground p-2 rounded shadow-lg -top-8 left-0 z-50">
+                {point.label}{point.is_required ? ' (Required)' : ''}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
