@@ -20,26 +20,28 @@ export function CodeViewer({
 }: CodeViewerProps) {
   const codeRef = useRef<HTMLDivElement>(null);
   const [activeConfig, setActiveConfig] = useState<typeof predefinedConfigPoints[0] | null>(null);
+  const [selectedRange, setSelectedRange] = useState<{ start: number; end: number } | null>(null);
 
   const handleMouseUp = () => {
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
+    if (!selection || selection.rangeCount === 0) {
+      setSelectedRange(null);
+      return;
+    }
 
     const range = selection.getRangeAt(0);
     const text = range.toString().trim();
     
     if (text) {
-      // Get the pre element's text content
       const preElement = codeRef.current?.querySelector('pre');
       if (!preElement) return;
 
       const fullText = preElement.textContent || '';
       const startIndex = fullText.indexOf(text);
       
-      console.log('Selected text:', text);
-      console.log('Found at position:', startIndex);
-      
       if (startIndex !== -1) {
+        setSelectedRange({ start: startIndex, end: startIndex + text.length });
+        
         if (activeConfig) {
           onConfigPointDrop?.(activeConfig, startIndex, startIndex + text.length);
           setActiveConfig(null);
@@ -48,6 +50,22 @@ export function CodeViewer({
         }
       }
     }
+  };
+
+  const renderCode = () => {
+    if (!selectedRange) {
+      return <pre className="p-4 overflow-auto font-mono text-sm whitespace-pre-wrap">{code}</pre>;
+    }
+
+    return (
+      <pre className="p-4 overflow-auto font-mono text-sm whitespace-pre-wrap">
+        {code.substring(0, selectedRange.start)}
+        <mark className="bg-primary/20 px-1">
+          {code.substring(selectedRange.start, selectedRange.end)}
+        </mark>
+        {code.substring(selectedRange.end)}
+      </pre>
+    );
   };
 
   return (
@@ -64,9 +82,7 @@ export function CodeViewer({
         className="relative group"
         onMouseUp={handleMouseUp}
       >
-        <pre className="p-4 overflow-auto font-mono text-sm whitespace-pre-wrap">
-          {code}
-        </pre>
+        {renderCode()}
         {configPoints.map((point, index) => {
           if (!point.default_value) return null;
           
