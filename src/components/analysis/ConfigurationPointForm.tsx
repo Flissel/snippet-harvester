@@ -9,7 +9,6 @@ import { ConfigurationPointInput } from '@/types/configuration';
 import { Snippet } from '@/types/snippets';
 import { TypeSelector } from './config-form/TypeSelector';
 import { CodeInput } from './config-form/CodeInput';
-import { RequiredToggle } from './config-form/RequiredToggle';
 import { configPointSchema, ConfigPointFormValues } from './config-form/schema';
 import { useEffect } from 'react';
 
@@ -38,7 +37,6 @@ export function ConfigurationPointForm({
       default_value: selectedCode?.text ?? '',
       description: '',
       template_placeholder: '',
-      is_required: true,
       start_position: selectedCode?.start ?? 0,
       end_position: selectedCode?.end ?? 0,
     },
@@ -52,7 +50,6 @@ export function ConfigurationPointForm({
         default_value: selectedCode?.text ?? '',
         description: initialValues.description || '',
         template_placeholder: initialValues.template_placeholder || `{${initialValues.label}}`,
-        is_required: true,
         start_position: selectedCode?.start ?? 0,
         end_position: selectedCode?.end ?? 0,
       });
@@ -67,7 +64,6 @@ export function ConfigurationPointForm({
       default_value: data.default_value,
       description: data.description,
       template_placeholder: data.template_placeholder || `{${data.label}}`,
-      is_required: data.is_required,
       start_position: selectedCode?.start ?? 0,
       end_position: selectedCode?.end ?? 0,
     };
@@ -108,8 +104,6 @@ export function ConfigurationPointForm({
             </FormItem>
           )}
         />
-
-        <RequiredToggle form={form} />
 
         <FormField
           control={form.control}
