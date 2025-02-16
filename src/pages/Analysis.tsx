@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAnalysisData } from '@/components/analysis/hooks/useAnalysisData';
 import { AnalysisCodeSection } from '@/components/analysis/AnalysisCodeSection';
@@ -13,8 +13,15 @@ import { toast } from "sonner";
 import { Plus } from 'lucide-react';
 
 export function Analysis() {
-  const { snippetId } = useParams();
-  const { snippets, configPoints, isLoading, createConfigPoint, deleteConfigPoint } = useAnalysisData();
+  const { snippetId } = useParams<{ snippetId: string }>();
+  const navigate = useNavigate();
+  
+  if (!snippetId) {
+    navigate('/snippets');
+    return null;
+  }
+
+  const { snippet, configPoints, isLoading, createConfigPoint, deleteConfigPoint } = useAnalysisData(snippetId);
   const [selectedCode, setSelectedCode] = useState<{
     text: string;
     start: number;
@@ -94,11 +101,19 @@ export function Analysis() {
     return <div>Loading...</div>;
   }
 
-  if (!snippets || snippets.length === 0) {
-    return <div>No snippets found</div>;
+  if (!snippet) {
+    return (
+      <div className="container mx-auto py-6 text-center">
+        <h1 className="text-2xl font-bold mb-4">Snippet Not Found</h1>
+        <p className="text-muted-foreground mb-4">The requested snippet could not be found.</p>
+        <Button variant="default" asChild>
+          <Link to="/snippets">
+            Back to Snippets
+          </Link>
+        </Button>
+      </div>
+    );
   }
-
-  const snippet = snippets.find(s => s.id === snippetId) || snippets[0];
 
   return (
     <div className="container mx-auto py-6 space-y-6">

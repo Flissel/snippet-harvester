@@ -5,31 +5,34 @@ import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
 import { useToast } from '@/components/ui/use-toast';
 
-export function useAnalysisData() {
+export function useAnalysisData(snippetId: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: snippets, isLoading: isLoadingSnippets } = useQuery({
-    queryKey: ['snippets'],
+  const { data: snippet, isLoading: isLoadingSnippet } = useQuery({
+    queryKey: ['snippets', snippetId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('snippets')
-        .select('*');
+        .select('*')
+        .eq('id', snippetId)
+        .maybeSingle();
 
       if (error) {
-        console.error('Snippets fetch error:', error);
+        console.error('Snippet fetch error:', error);
         throw error;
       }
-      return data as Snippet[];
+      return data as Snippet;
     },
   });
 
   const { data: configPoints = [], isLoading: isLoadingConfig } = useQuery({
-    queryKey: ['configuration_points'],
+    queryKey: ['configuration_points', snippetId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('configuration_points')
         .select('*')
+        .eq('snippet_id', snippetId)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -38,6 +41,7 @@ export function useAnalysisData() {
       }
       return data as ConfigurationPoint[];
     },
+    enabled: !!snippet, // Only fetch config points if we have a snippet
   });
 
   const createConfigPoint = useMutation({
@@ -52,7 +56,7 @@ export function useAnalysisData() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['configuration_points'] });
+      queryClient.invalidateQueries({ queryKey: ['configuration_points', snippetId] });
       toast({
         title: 'Configuration point created',
         description: 'The configuration point has been added successfully.',
@@ -77,7 +81,7 @@ export function useAnalysisData() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['configuration_points'] });
+      queryClient.invalidateQueries({ queryKey: ['configuration_points', snippetId] });
       toast({
         title: 'Configuration point deleted',
         description: 'The configuration point has been removed successfully.',
@@ -93,9 +97,9 @@ export function useAnalysisData() {
   });
 
   return {
-    snippets,
+    snippet,
     configPoints,
-    isLoading: isLoadingSnippets || isLoadingConfig,
+    isLoading: isLoadingSnippet || isLoadingConfig,
     createConfigPoint,
     deleteConfigPoint,
   };
