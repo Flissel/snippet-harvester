@@ -4,6 +4,8 @@ import { ConfigurationPointList } from './ConfigurationPointList';
 import { ConfigurationPointForm } from './ConfigurationPointForm';
 import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
+import { Button } from '@/components/ui/button';
+import { Code } from 'lucide-react';
 
 interface ConfigurationSectionProps {
   snippet: Snippet;
@@ -22,6 +24,23 @@ export function ConfigurationSection({
   onDelete,
   onSubmit,
 }: ConfigurationSectionProps) {
+  const handleInsertLabel = () => {
+    if (!selectedCode || !selectedConfig) return;
+    
+    const placeholder = selectedConfig.template_placeholder || `{${selectedConfig.label}}`;
+    const configPoint: ConfigurationPointInput = {
+      snippet_id: snippet.id,
+      label: selectedConfig.label,
+      config_type: selectedConfig.config_type,
+      default_value: selectedCode.text,
+      description: selectedConfig.description || '',
+      template_placeholder: placeholder,
+      start_position: selectedCode.start,
+      end_position: selectedCode.end,
+    };
+    onSubmit(configPoint);
+  };
+
   return (
     <div className="space-y-6">
       <Card className="p-4">
@@ -35,7 +54,20 @@ export function ConfigurationSection({
       <Card className="p-4">
         <h2 className="text-xl font-semibold mb-4">Add Configuration Point</h2>
         <div className="mb-4">
-          <h3 className="text-sm font-medium mb-2">Selected Code</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium">Selected Code</h3>
+            {selectedCode && selectedConfig && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleInsertLabel}
+                className="flex items-center gap-2"
+              >
+                <Code className="w-4 h-4" />
+                Insert {selectedConfig.label}
+              </Button>
+            )}
+          </div>
           {selectedCode ? (
             <div className="relative">
               <pre className="p-3 bg-muted rounded-lg font-mono text-sm whitespace-pre-wrap overflow-x-auto">
