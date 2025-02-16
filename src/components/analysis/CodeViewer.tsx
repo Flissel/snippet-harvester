@@ -52,22 +52,6 @@ export function CodeViewer({
     }
   };
 
-  const renderCode = () => {
-    if (!selectedRange) {
-      return <pre className="p-4 overflow-auto font-mono text-sm whitespace-pre-wrap">{code}</pre>;
-    }
-
-    return (
-      <pre className="p-4 overflow-auto font-mono text-sm whitespace-pre-wrap">
-        {code.substring(0, selectedRange.start)}
-        <mark className="bg-primary/20 px-1">
-          {code.substring(selectedRange.start, selectedRange.end)}
-        </mark>
-        {code.substring(selectedRange.end)}
-      </pre>
-    );
-  };
-
   return (
     <div>
       {activeConfig && (
@@ -77,12 +61,21 @@ export function CodeViewer({
           </p>
         </div>
       )}
+      {selectedRange && (
+        <div className="mb-4 p-3 bg-muted rounded-md">
+          <p className="text-sm text-muted-foreground">
+            Selection: Position {selectedRange.start} to {selectedRange.end}
+          </p>
+        </div>
+      )}
       <div 
         ref={codeRef} 
         className="relative group"
         onMouseUp={handleMouseUp}
       >
-        {renderCode()}
+        <pre className="p-4 overflow-auto font-mono text-sm whitespace-pre-wrap">
+          {code}
+        </pre>
         {configPoints.map((point, index) => {
           if (!point.default_value) return null;
           
