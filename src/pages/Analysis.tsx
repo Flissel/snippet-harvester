@@ -13,14 +13,20 @@ import { toast } from "sonner";
 import { Plus } from 'lucide-react';
 
 export function Analysis() {
-  const { snippetId } = useParams<{ snippetId: string }>();
   const navigate = useNavigate();
+  const params = useParams<{ snippetId: string }>();
+  const snippetId = params.snippetId;
   
+  // Early return if no snippetId is provided
   if (!snippetId) {
-    navigate('/snippets');
+    // Use useEffect to handle navigation to avoid React state updates during render
+    useEffect(() => {
+      navigate('/snippets');
+    }, [navigate]);
     return null;
   }
 
+  // Only initialize the hook if we have a snippetId
   const { snippet, configPoints, isLoading, createConfigPoint, deleteConfigPoint } = useAnalysisData(snippetId);
   const [selectedCode, setSelectedCode] = useState<{
     text: string;
