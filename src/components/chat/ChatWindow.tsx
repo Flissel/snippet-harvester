@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
-import { Loader, Send, Copy } from 'lucide-react';
+import { Loader, Send, Copy, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatWindowProps } from './types';
 import { useChatSession } from './hooks/useChatSession';
 import { useMessageHandler } from './hooks/useMessageHandler';
 import { MessageBubble } from './MessageBubble';
 
-export function ChatWindow({ prompt }: ChatWindowProps) {
+export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
   const { user } = useAuth();
   const { messages, session, createNewSession, loadMessages } = useChatSession(user, prompt);
   const { input, setInput, isLoading, sendMessage, useTemplate } = useMessageHandler(session, loadMessages, prompt);
@@ -49,17 +49,26 @@ export function ChatWindow({ prompt }: ChatWindowProps) {
 
       <div className="p-4 border-t">
         <div className="flex flex-col gap-2">
-          {prompt?.user_message && (
+          <div className="flex gap-2 justify-end">
+            {prompt?.user_message && (
+              <Button
+                variant="outline"
+                onClick={useTemplate}
+                size="sm"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Use Template
+              </Button>
+            )}
             <Button
               variant="outline"
-              className="self-end"
-              onClick={useTemplate}
+              onClick={onResetChat}
               size="sm"
             >
-              <Copy className="h-4 w-4 mr-2" />
-              Use Template
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Adjusted Chat
             </Button>
-          )}
+          </div>
           <div className="flex gap-2">
             <Textarea
               value={input}

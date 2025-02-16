@@ -1,4 +1,3 @@
-
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw, Save } from 'lucide-react';
@@ -71,14 +70,6 @@ export default function TestChat() {
         </div>
         <div className="flex items-center gap-2">
           <Button 
-            variant="outline" 
-            onClick={resetChat}
-            disabled={!selectedPrompt}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Reset Chat
-          </Button>
-          <Button 
             onClick={() => setShowSaveDialog(true)} 
             disabled={!selectedPrompt || !hasUnsavedChanges}
           >
@@ -107,7 +98,8 @@ export default function TestChat() {
               ...selectedPrompt,
               system_message: systemMessage,
               user_message: userMessage,
-            } as Prompt} 
+            } as Prompt}
+            onResetChat={resetChat}
           />
         </div>
       )}

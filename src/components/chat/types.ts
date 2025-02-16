@@ -1,7 +1,7 @@
 
 import { Prompt } from '@/types/prompts';
 
-export interface Message {
+export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -10,10 +10,11 @@ export interface Message {
 
 export interface ChatSession {
   id: string;
-  title: string;
-  context?: string;
+  created_at: string;
+  created_by: string;
 }
 
 export interface ChatWindowProps {
   prompt?: Prompt;
+  onResetChat?: () => void;
 }
