@@ -20,7 +20,7 @@ export function CodeViewer({
 }: CodeViewerProps) {
   const codeRef = useRef<HTMLDivElement>(null);
   const [activeConfig, setActiveConfig] = useState<typeof predefinedConfigPoints[0] | null>(null);
-  const [selectedRange, setSelectedRange] = useState<{ start: number; end: number } | null>(null);
+  const [selectedRange, setSelectedRange] = useState<{ text: string; start: number; end: number } | null>(null);
 
   const handleMouseUp = () => {
     const selection = window.getSelection();
@@ -40,7 +40,11 @@ export function CodeViewer({
       const startIndex = fullText.indexOf(text);
       
       if (startIndex !== -1) {
-        setSelectedRange({ start: startIndex, end: startIndex + text.length });
+        setSelectedRange({ 
+          text,
+          start: startIndex, 
+          end: startIndex + text.length 
+        });
         
         if (activeConfig) {
           onConfigPointDrop?.(activeConfig, startIndex, startIndex + text.length);
@@ -64,7 +68,10 @@ export function CodeViewer({
       {selectedRange && (
         <div className="mb-4 p-3 bg-muted rounded-md">
           <p className="text-sm text-muted-foreground">
-            Selection: Position {selectedRange.start} to {selectedRange.end}
+            Selected code: <span className="font-mono bg-muted-foreground/10 px-2 py-1 rounded">{selectedRange.text}</span>
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Position: {selectedRange.start} to {selectedRange.end}
           </p>
         </div>
       )}
