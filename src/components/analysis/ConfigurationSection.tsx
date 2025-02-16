@@ -6,7 +6,7 @@ import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
 import { Button } from '@/components/ui/button';
 import { Code, Plus, Check, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ConfigurationSectionProps {
   snippet: Snippet;
@@ -124,7 +124,7 @@ export function ConfigurationSection({
   };
 
   // Add event listener for remove button clicks
-  useState(() => {
+  useEffect(() => {
     const handleRemoveLabelEvent = (event: CustomEvent<{ id: string }>) => {
       handleRemoveLabel(event.detail.id);
     };
