@@ -8,6 +8,7 @@ import { Loader, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { Prompt } from '@/types/prompts';
 
 interface Message {
   id: string;
@@ -22,7 +23,11 @@ interface ChatSession {
   context?: string;
 }
 
-export function ChatWindow() {
+interface ChatWindowProps {
+  prompt?: Prompt;
+}
+
+export function ChatWindow({ prompt }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +39,7 @@ export function ChatWindow() {
     if (user) {
       createNewSession();
     }
-  }, [user]);
+  }, [user, prompt]);
 
   const createNewSession = async () => {
     if (!user) {
@@ -65,7 +70,7 @@ export function ChatWindow() {
         .insert({
           session_id: sessionData.id,
           role: 'system',
-          content: 'I am an AI assistant specialized in helping with AutoGen implementation. How can I help you today?'
+          content: prompt?.system_message || 'I am an AI assistant specialized in helping with AutoGen implementation. How can I help you today?'
         });
 
       if (messageError) throw messageError;
@@ -134,6 +139,7 @@ export function ChatWindow() {
         body: {
           messages: messagesData,
           sessionId: session.id,
+          model: prompt?.model || 'gpt-4o-mini',
         },
       });
 
