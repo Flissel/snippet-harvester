@@ -5,7 +5,6 @@ export interface Prompt {
   description?: string;
   system_message: string;
   user_message: string;
-  is_default: boolean;
   created_by: string;
   created_at: string;
   updated_at: string;
