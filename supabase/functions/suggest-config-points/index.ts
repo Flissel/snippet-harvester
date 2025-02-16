@@ -7,10 +7,17 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 async function analyzeCodeIteration(code: string, existingSuggestions: any[] = []): Promise<any[]> {
   try {
+    if (!openAIApiKey) {
+      console.error('OpenAI API key not found');
+      throw new Error('OpenAI API key not configured');
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -82,6 +89,11 @@ ${code}`
       }),
     });
 
+    if (!response.ok) {
+      console.error('OpenAI API error:', await response.text());
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
     const data = await response.json();
     if (!data.choices?.[0]?.message?.content) {
       console.error('Invalid response structure from OpenAI:', data);
@@ -110,12 +122,29 @@ ${code}`
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({
+      error: 'Method not allowed'
+    }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   try {
     const { code } = await req.json();
+    if (!code) {
+      throw new Error('No code provided');
+    }
+
     console.log('Starting code analysis...');
 
     const allSuggestions = [];
