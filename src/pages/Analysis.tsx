@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -30,26 +29,29 @@ export function Analysis() {
     });
   };
 
-  const handleConfigPointDrop = (config: any, start: number, end: number) => {
+  const handleConfigPointDrop = (_config: any, start: number, end: number) => {
     if (!snippet || !selectedConfig) return;
+    
     const configPoint: ConfigurationPointInput = {
       snippet_id: snippet.id,
       label: selectedConfig.label,
       config_type: selectedConfig.config_type,
       default_value: snippet.code_content.substring(start, end),
-      description: selectedConfig.description,
-      template_placeholder: selectedConfig.template_placeholder,
+      description: selectedConfig.description || '',
+      template_placeholder: selectedConfig.template_placeholder || `{${selectedConfig.label}}`,
       is_required: true,
       start_position: start,
       end_position: end,
     };
-    createConfigPoint.mutate(configPoint);
-    setSelectedCode(null);
 
+    createConfigPoint.mutate(configPoint);
+    
     // Add to custom config points if it's a new one
     if (!customConfigPoints.some(p => p.label === selectedConfig.label)) {
       setCustomConfigPoints(prev => [...prev, selectedConfig]);
     }
+    
+    setSelectedCode(null);
   };
 
   const handleConfigPointSelect = (config: any) => {

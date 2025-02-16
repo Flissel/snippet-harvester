@@ -55,7 +55,13 @@ export function CodeViewer({
 
   const handleAddLabel = () => {
     if (!selectedRange) return;
-    onSelectionChange?.(selectedRange.text);
+    
+    // Call onConfigPointDrop with the selection range
+    if (onConfigPointDrop) {
+      onConfigPointDrop(null, selectedRange.start, selectedRange.end);
+    }
+    
+    setSelectedRange(null);
   };
 
   return (
