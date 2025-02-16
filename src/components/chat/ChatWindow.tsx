@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
-import { Loader, Send } from 'lucide-react';
+import { Loader, Send, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -166,6 +166,16 @@ export function ChatWindow({ prompt }: ChatWindowProps) {
     }
   };
 
+  const useTemplate = () => {
+    if (prompt?.user_message) {
+      setInput(prompt.user_message);
+      toast({
+        title: "Template Applied",
+        description: "User message template has been copied to input",
+      });
+    }
+  };
+
   if (!user) {
     return (
       <Card className="p-4 text-center">
@@ -205,26 +215,39 @@ export function ChatWindow({ prompt }: ChatWindowProps) {
       </ScrollArea>
 
       <div className="p-4 border-t">
-        <div className="flex gap-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Type your message..."
-            className="min-h-[60px]"
-            disabled={isLoading || !session}
-          />
-          <Button
-            onClick={sendMessage}
-            disabled={isLoading || !input.trim() || !session}
-            className="self-end"
-          >
-            {isLoading ? (
-              <Loader className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
+        <div className="flex flex-col gap-2">
+          {prompt?.user_message && (
+            <Button
+              variant="outline"
+              className="self-end"
+              onClick={useTemplate}
+              size="sm"
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Use Template
+            </Button>
+          )}
+          <div className="flex gap-2">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Type your message..."
+              className="min-h-[60px]"
+              disabled={isLoading || !session}
+            />
+            <Button
+              onClick={sendMessage}
+              disabled={isLoading || !input.trim() || !session}
+              className="self-end"
+            >
+              {isLoading ? (
+                <Loader className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </Card>
