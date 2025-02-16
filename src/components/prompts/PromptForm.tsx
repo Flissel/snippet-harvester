@@ -58,15 +58,17 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
 
   const fetchSuggestedSystemMessage = async () => {
     try {
-      const { data: snippetData } = await supabase
+      const { data: snippetData, error } = await supabase
         .from('snippets')
-        .select('code')
+        .select('code_content')  // Changed from 'code' to 'code_content'
         .eq('id', snippetId)
         .single();
 
-      if (snippetData?.code) {
+      if (error) throw error;
+
+      if (snippetData?.code_content) {  // Changed from 'code' to 'code_content'
         const response = await supabase.functions.invoke('suggest-config-points', {
-          body: { code: snippetData.code }
+          body: { code: snippetData.code_content }  // We still send it as 'code' to the function
         });
 
         if (response.data?.suggestions) {
