@@ -13,6 +13,7 @@ import {
   Keyboard,
   Beaker,
   MessagesSquare,
+  LucideIcon
 } from 'lucide-react';
 import {
   Tooltip,
@@ -23,8 +24,21 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
+// Define interface for menu items
+interface MenuItem {
+  icon: LucideIcon;
+  label: string;
+  path: string;
+  badge?: string;
+}
+
+interface MenuGroup {
+  label: string;
+  items: MenuItem[];
+}
+
 // Groups of menu items for better organization
-const menuGroups = [
+const menuGroups: MenuGroup[] = [
   {
     label: 'Main',
     items: [
