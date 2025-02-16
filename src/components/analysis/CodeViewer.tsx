@@ -2,6 +2,8 @@
 import { useRef, useState } from 'react';
 import { ConfigurationPoint } from '@/types/configuration';
 import { predefinedConfigPoints } from './config-form/schema';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface CodeViewerProps {
   code: string;
@@ -67,9 +69,20 @@ export function CodeViewer({
       )}
       {selectedRange && (
         <div className="mb-4 p-3 bg-muted rounded-md">
-          <p className="text-sm text-muted-foreground">
-            Selected code: <span className="font-mono bg-muted-foreground/10 px-2 py-1 rounded">{selectedRange.text}</span>
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Selected code: <span className="font-mono bg-muted-foreground/10 px-2 py-1 rounded">{selectedRange.text}</span>
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={() => onConfigPointDrop?.(activeConfig, selectedRange.start, selectedRange.end)}
+            >
+              <Plus className="w-4 h-4" />
+              Add Label
+            </Button>
+          </div>
           <p className="text-sm text-muted-foreground mt-2">
             Position: {selectedRange.start} to {selectedRange.end}
           </p>
