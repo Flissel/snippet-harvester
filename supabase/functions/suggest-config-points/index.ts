@@ -33,11 +33,23 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an AI assistant that analyzes Python code and returns a JSON array of configuration points. Each point should have label, config_type, description, default_value, and template_placeholder fields.'
+            content: `You are a specialized AI that analyzes Python code for AutoGen agents and identifies configuration points. Focus on finding:
+1. Model configurations (model names, temperature, max_tokens)
+2. API keys and credentials
+3. Agent configurations (system messages, human input modes)
+4. Tool configurations (function names, parameters)
+5. Runtime parameters (timeouts, retries)
+
+For each identified point, return a JSON object with:
+- label: A clear, descriptive name
+- config_type: One of [string, number, boolean, array, object]
+- description: A helpful explanation of the configuration point
+- default_value: The current value in the code
+- template_placeholder: Format as {label} for template substitution`
           },
           {
             role: 'user',
-            content: `Please analyze this code and return ONLY a JSON array of configuration points. Format example:
+            content: `Analyze this code and return ONLY a JSON array of configuration points. Example format:
 [
   {
     "label": "model_name",
@@ -52,7 +64,7 @@ Code to analyze:
 ${code}`
           }
         ],
-        temperature: 0.3, // Lower temperature for more consistent formatting
+        temperature: 0.3,
         max_tokens: 1000
       }),
     });
