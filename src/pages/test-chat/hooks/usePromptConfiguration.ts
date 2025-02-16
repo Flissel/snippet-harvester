@@ -45,9 +45,8 @@ export function usePromptConfiguration(user: User | null) {
       if (error) throw error;
       setPrompts(data || []);
       
-      const defaultPrompt = data?.find(p => p.is_default);
-      if (defaultPrompt) {
-        setSelectedPrompt(defaultPrompt);
+      if (data && data.length > 0) {
+        setSelectedPrompt(data[0]);
       }
     } catch (error) {
       console.error('Error loading prompts:', error);
@@ -57,7 +56,7 @@ export function usePromptConfiguration(user: User | null) {
   };
 
   const saveConfiguration = async () => {
-    if (!user || !selectedPrompt) return;
+    if (!user || !selectedPrompt) return false;
 
     try {
       const { data, error } = await supabase
@@ -95,6 +94,17 @@ export function usePromptConfiguration(user: User | null) {
     }
   };
 
+  const loadConfiguration = (config: Prompt) => {
+    setSelectedPrompt(config);
+    setSystemMessage(config.system_message);
+    setUserMessage(config.user_message);
+    setHasUnsavedChanges(false);
+    toast({
+      title: "Success",
+      description: "Configuration loaded successfully",
+    });
+  };
+
   return {
     prompts,
     selectedPrompt,
@@ -105,6 +115,7 @@ export function usePromptConfiguration(user: User | null) {
     setUserMessage,
     hasUnsavedChanges,
     setSelectedPrompt,
-    saveConfiguration
+    saveConfiguration,
+    loadConfiguration
   };
 }

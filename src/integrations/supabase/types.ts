@@ -186,6 +186,7 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
+          is_default: boolean | null
           is_finalized: boolean | null
           model: string | null
           name: string
@@ -199,6 +200,7 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
+          is_default?: boolean | null
           is_finalized?: boolean | null
           model?: string | null
           name: string
@@ -212,6 +214,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
+          is_default?: boolean | null
           is_finalized?: boolean | null
           model?: string | null
           name?: string

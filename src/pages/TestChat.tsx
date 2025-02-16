@@ -1,6 +1,7 @@
+
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw, Save } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Save, FolderOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +10,7 @@ import { Prompt } from '@/types/prompts';
 import { usePromptConfiguration } from './test-chat/hooks/usePromptConfiguration';
 import { PromptConfiguration } from './test-chat/components/PromptConfiguration';
 import { SaveConfigurationDialog } from './test-chat/components/SaveConfigurationDialog';
+import { SavedConfigurationsDialog } from './test-chat/components/SavedConfigurationsDialog';
 
 export default function TestChat() {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ export default function TestChat() {
   const { toast } = useToast();
   const [chatKey, setChatKey] = useState(0);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
 
   const {
     prompts,
@@ -27,7 +30,8 @@ export default function TestChat() {
     setUserMessage,
     hasUnsavedChanges,
     setSelectedPrompt,
-    saveConfiguration
+    saveConfiguration,
+    loadConfiguration
   } = usePromptConfiguration(user);
 
   const resetChat = () => {
@@ -59,6 +63,11 @@ export default function TestChat() {
     }
   };
 
+  const handleLoadConfiguration = (config: Prompt) => {
+    loadConfiguration(config);
+    resetChat();
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -69,6 +78,13 @@ export default function TestChat() {
           <h1 className="text-2xl font-bold">Test Chat with Agent</h1>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setShowLoadDialog(true)}
+          >
+            <FolderOpen className="h-4 w-4 mr-2" />
+            Load Configuration
+          </Button>
           <Button 
             onClick={() => setShowSaveDialog(true)} 
             disabled={!selectedPrompt || !hasUnsavedChanges}
@@ -108,6 +124,12 @@ export default function TestChat() {
         open={showSaveDialog}
         onOpenChange={setShowSaveDialog}
         onSave={handleSaveConfiguration}
+      />
+
+      <SavedConfigurationsDialog
+        open={showLoadDialog}
+        onOpenChange={setShowLoadDialog}
+        onConfigurationSelect={handleLoadConfiguration}
       />
     </div>
   );
