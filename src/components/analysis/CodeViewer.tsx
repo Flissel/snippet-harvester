@@ -22,8 +22,6 @@ export function CodeViewer({
   const [activeConfig, setActiveConfig] = useState<typeof predefinedConfigPoints[0] | null>(null);
 
   const handleMouseUp = () => {
-    if (!activeConfig) return;
-
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
 
@@ -31,10 +29,23 @@ export function CodeViewer({
     const text = range.toString().trim();
     
     if (text) {
-      const startIndex = code.indexOf(text);
+      // Get the pre element's text content
+      const preElement = codeRef.current?.querySelector('pre');
+      if (!preElement) return;
+
+      const fullText = preElement.textContent || '';
+      const startIndex = fullText.indexOf(text);
+      
+      console.log('Selected text:', text);
+      console.log('Found at position:', startIndex);
+      
       if (startIndex !== -1) {
-        onConfigPointDrop?.(activeConfig, startIndex, startIndex + text.length);
-        setActiveConfig(null); // Reset active config after applying
+        if (activeConfig) {
+          onConfigPointDrop?.(activeConfig, startIndex, startIndex + text.length);
+          setActiveConfig(null);
+        } else {
+          onSelectionChange?.(text);
+        }
       }
     }
   };
@@ -79,7 +90,7 @@ export function CodeViewer({
             >
               <div className="absolute hidden group-hover:block bg-popover text-popover-foreground p-2 rounded shadow-lg -top-8 left-0 z-50">
                 <div className="font-medium">{point.label}{point.is_required ? ' (Required)' : ''}</div>
-                <div className="text-xs mt-1 font-mono">Replaced: {point.default_value}</div>
+                <div className="text-xs mt-1 font-mono">Original: {point.default_value}</div>
               </div>
             </div>
           );
