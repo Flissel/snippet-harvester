@@ -1,3 +1,4 @@
+
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw, Save, FolderOpen } from 'lucide-react';
@@ -65,6 +66,11 @@ export default function TestChat() {
     resetChat();
   };
 
+  const handleEditConfiguration = (config: Prompt) => {
+    loadConfiguration(config);
+    resetChat();
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -126,6 +132,7 @@ export default function TestChat() {
         open={showLoadDialog}
         onOpenChange={setShowLoadDialog}
         onConfigurationSelect={handleLoadConfiguration}
+        onConfigurationEdit={handleEditConfiguration}
       />
     </div>
   );
