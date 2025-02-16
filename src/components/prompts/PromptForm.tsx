@@ -50,58 +50,25 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
     };
     getCurrentUser();
 
-    // If we're creating a new prompt, fetch the suggested system message
-    if (!prompt && snippetId) {
-      fetchSuggestedSystemMessage();
+    // If we're creating a new prompt, generate the system message
+    if (!prompt) {
+      generateSystemMessage();
     }
   }, []);
 
-  const fetchSuggestedSystemMessage = async () => {
+  const generateSystemMessage = async () => {
     try {
-      const { data: snippetData, error } = await supabase
-        .from('snippets')
-        .select('code_content')  // Changed from 'code' to 'code_content'
-        .eq('id', snippetId)
-        .single();
-
-      if (error) throw error;
-
-      if (snippetData?.code_content) {  // Changed from 'code' to 'code_content'
-        const response = await supabase.functions.invoke('suggest-config-points', {
-          body: { code: snippetData.code_content }  // We still send it as 'code' to the function
-        });
-
-        if (response.data?.suggestions) {
-          const systemMessage = generateSystemMessage(response.data.suggestions);
-          form.setValue('system_message', systemMessage);
-        }
+      const response = await supabase.functions.invoke('generate-system-prompt', {});
+      
+      if (response.data?.system_prompt) {
+        form.setValue('system_message', response.data.system_prompt);
+      } else {
+        throw new Error('No system prompt generated');
       }
     } catch (error) {
-      console.error('Error fetching suggested system message:', error);
-      toast.error('Failed to fetch configuration suggestions');
+      console.error('Error generating system message:', error);
+      toast.error('Failed to generate system message');
     }
-  };
-
-  const generateSystemMessage = (suggestions: any[]) => {
-    return `You are a specialized AI that analyzes Python code for AutoGen agents and identifies configuration points. Focus on finding:
-
-1. Model configurations (model names, temperature, max_tokens)
-2. API keys and credentials
-3. Agent configurations (system messages, human input modes)
-4. Tool configurations (function names, parameters)
-5. Runtime parameters (timeouts, retries)
-
-For each identified point, provide:
-${suggestions.map(suggestion => `
-- ${suggestion.label}: ${suggestion.description}
-  Type: ${suggestion.config_type}
-  Default: ${suggestion.default_value}
-  Best Practices:
-    ${suggestion.best_practices?.join('\n    ')}
-`).join('\n')}
-
-Documentation References:
-${suggestions.flatMap(s => s.documentation_links || []).filter((v, i, a) => a.indexOf(v) === i).join('\n')}`;
   };
 
   const form = useForm<PromptFormValues>({
