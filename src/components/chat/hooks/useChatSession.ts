@@ -8,7 +8,32 @@ import { Prompt } from '@/types/prompts';
 export function useChatSession(user: any, prompt?: Prompt) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [session, setSession] = useState<ChatSession | null>(null);
+  const [defaultPrompt, setDefaultPrompt] = useState<Prompt | null>(null);
   const { toast } = useToast();
+
+  // Fetch default prompt when no specific prompt is provided
+  useEffect(() => {
+    const fetchDefaultPrompt = async () => {
+      if (!prompt) {
+        const { data, error } = await supabase
+          .from('prompts')
+          .select('*')
+          .eq('is_default', true)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching default prompt:', error);
+          return;
+        }
+
+        if (data) {
+          setDefaultPrompt(data);
+        }
+      }
+    };
+
+    fetchDefaultPrompt();
+  }, [prompt]);
 
   const createNewSession = async () => {
     if (!user) {
@@ -33,13 +58,13 @@ export function useChatSession(user: any, prompt?: Prompt) {
       if (sessionError) throw sessionError;
       setSession(sessionData);
 
-      // Add initial system message
+      // Add initial system message using either provided prompt or default
       const { error: messageError } = await supabase
         .from('chat_messages')
         .insert({
           session_id: sessionData.id,
           role: 'system',
-          content: prompt?.system_message || 'I am an AI assistant specialized in helping with AutoGen implementation. How can I help you today?'
+          content: (prompt || defaultPrompt)?.system_message || 'I am an AI assistant. How can I help you today?'
         });
 
       if (messageError) throw messageError;
@@ -90,5 +115,6 @@ export function useChatSession(user: any, prompt?: Prompt) {
     session,
     createNewSession,
     loadMessages,
+    defaultPrompt,
   };
 }
