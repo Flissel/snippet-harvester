@@ -92,11 +92,13 @@ export function ConfigurationSection({
           {selectedCode && selectedConfig && (
             <div>
               <h3 className="text-sm font-medium mb-2">Will Be Replaced With</h3>
-              <div className="p-3 bg-muted rounded-lg font-mono text-sm">
-                <mark className="bg-green-200 dark:bg-green-900 px-1">
+              <pre className="p-3 bg-muted rounded-lg font-mono text-sm">
+                {snippet.code_content.substring(0, selectedCode.start)}
+                <mark className="bg-success/20 dark:bg-success/40 px-1">
                   {selectedConfig.template_placeholder || `${selectedConfig.label}: YAML_VALUE`}
                 </mark>
-              </div>
+                {snippet.code_content.substring(selectedCode.end)}
+              </pre>
             </div>
           )}
         </div>
