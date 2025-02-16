@@ -53,46 +53,62 @@ export function ConfigurationSection({
 
       <Card className="p-4">
         <h2 className="text-xl font-semibold mb-4">Add Configuration Point</h2>
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium">Selected Code</h3>
-            {selectedCode && selectedConfig && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleInsertLabel}
-                className="flex items-center gap-2"
-              >
-                <Code className="w-4 h-4" />
-                Insert {selectedConfig.label}
-              </Button>
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium">Selected Code</h3>
+              {selectedCode && selectedConfig && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleInsertLabel}
+                  className="flex items-center gap-2"
+                >
+                  <Code className="w-4 h-4" />
+                  Insert {selectedConfig.label}
+                </Button>
+              )}
+            </div>
+            {selectedCode ? (
+              <div className="relative">
+                <pre className="p-3 bg-muted rounded-lg font-mono text-sm whitespace-pre-wrap overflow-x-auto">
+                  {snippet.code_content.substring(0, selectedCode.start)}
+                  <mark className="bg-primary/20 px-1">
+                    {selectedCode.text}
+                  </mark>
+                  {snippet.code_content.substring(selectedCode.end)}
+                </pre>
+                <div className="absolute top-2 right-2 text-xs text-muted-foreground">
+                  Position: {selectedCode.start}-{selectedCode.end}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center p-6 bg-muted rounded-lg text-sm text-muted-foreground">
+                Highlight code in the editor to create a configuration point
+              </div>
             )}
           </div>
-          {selectedCode ? (
-            <div className="relative">
-              <pre className="p-3 bg-muted rounded-lg font-mono text-sm whitespace-pre-wrap overflow-x-auto">
-                {snippet.code_content.substring(0, selectedCode.start)}
-                <mark className="bg-primary/20 px-1">
-                  {selectedCode.text}
+
+          {selectedCode && selectedConfig && (
+            <div>
+              <h3 className="text-sm font-medium mb-2">Will Be Replaced With</h3>
+              <div className="p-3 bg-muted rounded-lg font-mono text-sm">
+                <mark className="bg-green-200 dark:bg-green-900 px-1">
+                  {selectedConfig.template_placeholder || `{${selectedConfig.label}}`}
                 </mark>
-                {snippet.code_content.substring(selectedCode.end)}
-              </pre>
-              <div className="absolute top-2 right-2 text-xs text-muted-foreground">
-                Position: {selectedCode.start}-{selectedCode.end}
               </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center p-6 bg-muted rounded-lg text-sm text-muted-foreground">
-              Highlight code in the editor to create a configuration point
             </div>
           )}
         </div>
-        <ConfigurationPointForm
-          snippet={snippet}
-          onSubmit={onSubmit}
-          selectedCode={selectedCode}
-          initialValues={selectedConfig}
-        />
+
+        <div className="mt-6">
+          <ConfigurationPointForm
+            snippet={snippet}
+            onSubmit={onSubmit}
+            selectedCode={selectedCode}
+            initialValues={selectedConfig}
+          />
+        </div>
       </Card>
     </div>
   );
