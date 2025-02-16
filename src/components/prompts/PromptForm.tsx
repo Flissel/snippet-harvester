@@ -18,6 +18,7 @@ import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import { Switch } from '@/components/ui/switch';
+import { useEffect, useState } from 'react';
 
 const promptSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -36,6 +37,18 @@ interface PromptFormProps {
 
 export function PromptForm({ prompt, onCancel }: PromptFormProps) {
   const queryClient = useQueryClient();
+  const [userId, setUserId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    getCurrentUser();
+  }, []);
+
   const form = useForm<PromptFormValues>({
     resolver: zodResolver(promptSchema),
     defaultValues: prompt || {
@@ -49,16 +62,24 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
 
   const mutation = useMutation({
     mutationFn: async (values: PromptFormValues) => {
+      if (!userId) throw new Error('No user found');
+
       if (prompt) {
         const { error } = await supabase
           .from('prompts')
-          .update(values)
+          .update({
+            ...values,
+            updated_at: new Date().toISOString(),
+          })
           .eq('id', prompt.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('prompts')
-          .insert([values]);
+          .insert([{
+            ...values,
+            created_by: userId,
+          }]);
         if (error) throw error;
       }
     },
