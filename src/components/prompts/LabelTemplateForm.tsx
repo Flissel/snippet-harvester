@@ -29,7 +29,6 @@ interface LabelTemplateFormProps {
 }
 
 export function LabelTemplateForm({ template, onCancel }: LabelTemplateFormProps) {
-  const [userId, setUserId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const form = useForm<LabelTemplateFormValues>({
@@ -60,10 +59,12 @@ export function LabelTemplateForm({ template, onCancel }: LabelTemplateFormProps
       } else {
         const { error } = await supabase
           .from('label_templates')
-          .insert([{
+          .insert({
             ...values,
             created_by: user.id,
-          }]);
+            name: values.name,
+            config_type: values.config_type,
+          });
         if (error) throw error;
       }
     },
