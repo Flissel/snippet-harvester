@@ -27,7 +27,7 @@ export function ConfigurationSection({
   const handleInsertLabel = () => {
     if (!selectedCode || !selectedConfig) return;
     
-    const placeholder = selectedConfig.template_placeholder || `{${selectedConfig.label}}`;
+    const placeholder = selectedConfig.template_placeholder || `${selectedConfig.label}: YAML_VALUE`;
     const configPoint: ConfigurationPointInput = {
       snippet_id: snippet.id,
       label: selectedConfig.label,
@@ -65,7 +65,7 @@ export function ConfigurationSection({
                   className="flex items-center gap-2"
                 >
                   <Code className="w-4 h-4" />
-                  Insert {selectedConfig.label}
+                  Cut & Replace
                 </Button>
               )}
             </div>
@@ -94,7 +94,7 @@ export function ConfigurationSection({
               <h3 className="text-sm font-medium mb-2">Will Be Replaced With</h3>
               <div className="p-3 bg-muted rounded-lg font-mono text-sm">
                 <mark className="bg-green-200 dark:bg-green-900 px-1">
-                  {selectedConfig.template_placeholder || `{${selectedConfig.label}}`}
+                  {selectedConfig.template_placeholder || `${selectedConfig.label}: YAML_VALUE`}
                 </mark>
               </div>
             </div>
