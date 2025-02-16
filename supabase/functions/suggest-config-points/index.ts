@@ -17,7 +17,7 @@ async function analyzeCodeIteration(code: string, existingSuggestions: any[] = [
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o',
       messages: [
         {
           role: 'system',
@@ -28,26 +28,47 @@ async function analyzeCodeIteration(code: string, existingSuggestions: any[] = [
 4. Tool configurations (function names, parameters)
 5. Runtime parameters (timeouts, retries)
 
+Also research and provide relevant documentation links, best practices, and example configurations for:
+- Similar AutoGen implementations
+- Common configuration patterns
+- Security best practices
+- Performance optimization tips
+
 For each identified point, return a JSON object with:
 - label: A clear, descriptive name
 - config_type: One of [string, number, boolean, array, object]
 - description: A helpful explanation of the configuration point
 - default_value: The current value in the code
 - template_placeholder: Format as {label} for template substitution
+- documentation_links: Array of relevant documentation URLs
+- best_practices: Array of recommended best practices
+- examples: Array of example configurations
 
 IMPORTANT: Do not suggest configuration points that have already been identified. Here are the existing suggestions:
 ${JSON.stringify(existingSuggestions, null, 2)}`
         },
         {
           role: 'user',
-          content: `Analyze this code and return ONLY a JSON array of NEW configuration points that haven't been suggested before. Example format:
+          content: `Analyze this code and return ONLY a JSON array of NEW configuration points that haven't been suggested before, including research insights. Example format:
 [
   {
     "label": "model_name",
     "config_type": "string",
     "description": "The name of the GPT model to use",
-    "default_value": "gpt-3.5-turbo",
-    "template_placeholder": "{model_name}"
+    "default_value": "gpt-4",
+    "template_placeholder": "{model_name}",
+    "documentation_links": [
+      "https://microsoft.github.io/autogen/docs/configuration",
+      "https://platform.openai.com/docs/models"
+    ],
+    "best_practices": [
+      "Choose models based on task complexity",
+      "Consider cost vs performance trade-offs"
+    ],
+    "examples": [
+      "gpt-4",
+      "gpt-3.5-turbo"
+    ]
   }
 ]
 
