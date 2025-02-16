@@ -25,8 +25,7 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    const context = body.context;
+    const { context } = await req.json();
 
     if (!context) {
       return new Response(
@@ -47,7 +46,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
@@ -59,18 +58,27 @@ serve(async (req) => {
           }
         ],
         temperature: 0.7,
+        max_tokens: 500
       }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
-      throw new Error(`OpenAI API error: ${errorText}`);
+      const errorData = await response.text();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData}`);
     }
 
     const data = await response.json();
+    
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('No content received from OpenAI API');
+    }
+
     return new Response(
-      JSON.stringify({ systemPrompt: data.choices[0].message.content }),
+      JSON.stringify({ 
+        systemPrompt: data.choices[0].message.content,
+        status: 'success'
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
@@ -78,7 +86,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in generate-system-prompt function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'An unexpected error occurred',
+        status: 'error'
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
