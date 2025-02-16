@@ -13,7 +13,6 @@ const promptSchema = z.object({
   description: z.string().optional(),
   system_message: z.string().min(1, 'System message is required'),
   user_message: z.string().min(1, 'User message is required'),
-  is_default: z.boolean().default(false),
 });
 
 export type PromptFormValues = z.infer<typeof promptSchema>;
@@ -39,22 +38,26 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
       description: '',
       system_message: '',
       user_message: '',
-      is_default: false,
     },
   });
 
-  const generateSystemMessage = async () => {
+  const generateSystemMessage = async (title: string, description?: string) => {
     try {
-      const response = await supabase.functions.invoke('generate-system-prompt', {});
+      const context = `Title: ${title}${description ? `\nDescription: ${description}` : ''}`;
       
-      if (response.data?.system_prompt) {
-        form.setValue('system_message', response.data.system_prompt);
+      const response = await supabase.functions.invoke('generate-system-prompt', {
+        body: { context }
+      });
+      
+      if (response.data?.systemPrompt) {
+        form.setValue('system_message', response.data.systemPrompt);
       } else {
         throw new Error('No system prompt generated');
       }
     } catch (error) {
       console.error('Error generating system message:', error);
       toast.error('Failed to generate system message');
+      throw error;
     }
   };
 
@@ -62,30 +65,27 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
     mutationFn: async (values: PromptFormValues) => {
       if (!userId) throw new Error('No user found');
 
+      const promptData = {
+        name: values.name,
+        description: values.description || null,
+        system_message: values.system_message,
+        user_message: values.user_message,
+        created_by: userId,
+        model: 'gpt-4o',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
       if (prompt) {
         const { error } = await supabase
           .from('prompts')
-          .update({
-            ...values,
-            updated_at: new Date().toISOString(),
-          })
+          .update(promptData)
           .eq('id', prompt.id);
         if (error) throw error;
       } else {
-        const newPrompt = {
-          name: values.name,
-          description: values.description || null,
-          system_message: values.system_message,
-          user_message: values.user_message,
-          is_default: values.is_default,
-          created_by: userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
         const { error } = await supabase
           .from('prompts')
-          .insert([newPrompt]);
+          .insert([promptData]);
         if (error) throw error;
       }
     },

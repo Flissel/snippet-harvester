@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Prompt } from '@/types/prompts';
 import { useState } from 'react';
-import { Check, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PromptForm } from './PromptForm';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
@@ -44,6 +44,11 @@ export function PromptsList({ prompts }: PromptsListProps) {
     );
   }
 
+  const truncateText = (text: string, maxLength: number = 150) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   return (
     <ScrollArea className="h-[600px]">
       <div className="space-y-4">
@@ -55,25 +60,20 @@ export function PromptsList({ prompts }: PromptsListProps) {
                 onCancel={() => setEditingId(null)}
               />
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-lg flex items-center gap-2">
-                      {prompt.name}
-                      {prompt.is_default && (
-                        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                          <Check className="mr-1 h-3 w-3" />
-                          Default
-                        </span>
-                      )}
-                    </h3>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{prompt.name}</h3>
                     {prompt.description && (
                       <p className="text-sm text-muted-foreground mt-1">
                         {prompt.description}
                       </p>
                     )}
+                    <p className="text-sm mt-2 bg-muted p-2 rounded-lg">
+                      {truncateText(prompt.system_message)}
+                    </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 ml-4">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -89,20 +89,6 @@ export function PromptsList({ prompts }: PromptsListProps) {
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">System Message</h4>
-                    <pre className="text-sm bg-muted p-2 rounded-lg whitespace-pre-wrap">
-                      {prompt.system_message}
-                    </pre>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">User Message</h4>
-                    <pre className="text-sm bg-muted p-2 rounded-lg whitespace-pre-wrap">
-                      {prompt.user_message}
-                    </pre>
                   </div>
                 </div>
               </div>
