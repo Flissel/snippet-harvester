@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { ChatMessage, ChatSession } from '../types';
@@ -45,7 +45,7 @@ export function useChatSession(user: any, prompt?: Prompt) {
       if (messageError) throw messageError;
       
       // Load messages
-      loadMessages(sessionData.id);
+      await loadMessages(sessionData.id);
     } catch (error) {
       console.error('Error creating session:', error);
       toast({
@@ -75,6 +75,15 @@ export function useChatSession(user: any, prompt?: Prompt) {
       });
     }
   };
+
+  // Clear session when prompt changes significantly
+  useEffect(() => {
+    if (session && prompt) {
+      setSession(null);
+      setMessages([]);
+      createNewSession();
+    }
+  }, [prompt?.id, prompt?.system_message]);
 
   return {
     messages,

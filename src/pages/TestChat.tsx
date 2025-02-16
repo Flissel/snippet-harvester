@@ -1,4 +1,3 @@
-
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw, Save, FolderOpen } from 'lucide-react';
@@ -16,7 +15,6 @@ export default function TestChat() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [chatKey, setChatKey] = useState(0);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
 
@@ -35,7 +33,6 @@ export default function TestChat() {
   } = usePromptConfiguration(user);
 
   const resetChat = () => {
-    setChatKey(prev => prev + 1);
     toast({
       title: "Chat Reset",
       description: "Started a new conversation with current prompt settings",
@@ -109,7 +106,6 @@ export default function TestChat() {
           />
 
           <ChatWindow 
-            key={chatKey}
             prompt={{
               ...selectedPrompt,
               system_message: systemMessage,

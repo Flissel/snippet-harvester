@@ -17,10 +17,10 @@ export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
   const { input, setInput, isLoading, sendMessage, useTemplate } = useMessageHandler(session, loadMessages, prompt);
 
   useEffect(() => {
-    if (user) {
+    if (user && !session) {
       createNewSession();
     }
-  }, [user, prompt]);
+  }, [user, session]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -66,7 +66,7 @@ export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
               size="sm"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
-              Adjusted Chat
+              Reset Chat
             </Button>
           </div>
           <div className="flex gap-2">
