@@ -79,73 +79,75 @@ export function ConfigurationSection({
 
     // Apply replacements
     positions.forEach(({ pos, isStart, placeholder }) => {
-      result = isStart
-        ? result.slice(0, pos) + `<mark class="bg-success/20 dark:bg-success/40 px-1">${placeholder}</mark>` + result.slice(pos)
-        : result.slice(0, pos) + result.slice(pos);
+      if (isStart) {
+        result = result.slice(0, pos) + placeholder + result.slice(pos);
+      } else {
+        result = result.slice(0, pos) + result.slice(pos);
+      }
     });
 
     return result;
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="p-4">
-        <h2 className="text-xl font-semibold mb-4">Configuration Points</h2>
-        <ConfigurationPointList
-          configPoints={configPoints}
-          onDelete={onDelete}
-        />
-      </Card>
+    <div className="grid grid-cols-2 gap-6">
+      {/* Left column - Code selection and labeling */}
+      <div className="space-y-6">
+        <Card className="p-4">
+          <h2 className="text-xl font-semibold mb-4">Configuration Points</h2>
+          <ConfigurationPointList
+            configPoints={configPoints}
+            onDelete={onDelete}
+          />
+        </Card>
 
-      <Card className="p-4">
-        <h2 className="text-xl font-semibold mb-4">Add Configuration Points</h2>
-        <div className="space-y-4">
-          {selectedCode && selectedConfig && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium">Add Labels</h3>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddLabel}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Label
-                  </Button>
-                  {pendingReplacements.length > 0 && (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={handleSubmitAll}
-                      className="flex items-center gap-2"
-                    >
-                      <Check className="w-4 h-4" />
-                      Submit All ({pendingReplacements.length})
-                    </Button>
-                  )}
-                </div>
-              </div>
-              <pre 
-                className="p-3 bg-muted rounded-lg font-mono text-sm"
-                dangerouslySetInnerHTML={{ 
-                  __html: renderCodeWithReplacements() 
-                }}
-              />
-            </div>
-          )}
-        </div>
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Add Labels</h2>
+            {selectedCode && selectedConfig && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddLabel}
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Label
+              </Button>
+            )}
+          </div>
 
-        <div className="mt-6">
           <ConfigurationPointForm
             snippet={snippet}
             onSubmit={onSubmit}
             selectedCode={selectedCode}
             initialValues={selectedConfig}
           />
-        </div>
-      </Card>
+        </Card>
+      </div>
+
+      {/* Right column - Code preview with replacements */}
+      <div>
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Preview</h2>
+            {pendingReplacements.length > 0 && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleSubmitAll}
+                className="flex items-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                Submit All ({pendingReplacements.length})
+              </Button>
+            )}
+          </div>
+          <pre className="p-3 bg-muted rounded-lg font-mono text-sm">
+            {renderCodeWithReplacements()}
+          </pre>
+        </Card>
+      </div>
     </div>
   );
 }
