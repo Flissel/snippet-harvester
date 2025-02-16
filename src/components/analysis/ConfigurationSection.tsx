@@ -1,3 +1,4 @@
+
 import { Card } from '@/components/ui/card';
 import { ConfigurationPointList } from './ConfigurationPointList';
 import { ConfigurationPointForm } from './ConfigurationPointForm';
@@ -76,6 +77,9 @@ export function ConfigurationSection({
       if (error) throw error;
 
       const suggestions = data.suggestions;
+      
+      // Clear existing pending replacements
+      setPendingReplacements([]);
       
       suggestions.forEach((suggestion: any) => {
         const startPosition = snippet.code_content.indexOf(suggestion.default_value);
