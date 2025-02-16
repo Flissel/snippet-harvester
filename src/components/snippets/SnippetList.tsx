@@ -12,6 +12,7 @@ interface SnippetListProps {
   focusedSnippetId: string | null;
   onSnippetExpand: (snippet: Snippet) => void;
   onSnippetCopy: (code: string, id: string) => void;
+  onSnippetAnalyze: (snippet: Snippet) => void;
 }
 
 export function SnippetList({
@@ -22,6 +23,7 @@ export function SnippetList({
   focusedSnippetId,
   onSnippetExpand,
   onSnippetCopy,
+  onSnippetAnalyze,
 }: SnippetListProps) {
   if (isLoading) {
     return (
@@ -54,6 +56,7 @@ export function SnippetList({
           snippet={snippet}
           onExpand={onSnippetExpand}
           onCopy={onSnippetCopy}
+          onAnalyze={onSnippetAnalyze}
           isExpanded={expandedCardId === snippet.id}
           isCopied={copiedSnippetId === snippet.id}
           isFocused={focusedSnippetId === snippet.id}

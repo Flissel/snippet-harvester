@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -85,6 +84,10 @@ const Snippets = () => {
     }
   };
 
+  const handleSnippetAnalyze = (snippet: Snippet) => {
+    navigate(`/analyze/${snippet.id}`);
+  };
+
   if (error) {
     return (
       <div className="min-h-screen flex bg-background">
@@ -128,6 +131,7 @@ const Snippets = () => {
               focusedSnippetId={focusedSnippet?.id || null}
               onSnippetExpand={handleCardClick}
               onSnippetCopy={handleCopyCode}
+              onSnippetAnalyze={handleSnippetAnalyze}
             />
           </div>
           {selectedSnippet && (

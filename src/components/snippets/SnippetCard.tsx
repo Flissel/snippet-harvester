@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, Copy, Maximize2 } from "lucide-react";
+import { Check, Copy, Maximize2, Wand2 } from 'lucide-react';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Snippet } from "@/types/snippets";
 
@@ -10,6 +10,7 @@ interface SnippetCardProps {
   snippet: Snippet;
   onExpand: (snippet: Snippet) => void;
   onCopy: (code: string, id: string) => void;
+  onAnalyze: (snippet: Snippet) => void;
   isExpanded: boolean;
   isCopied: boolean;
   isFocused: boolean;
@@ -19,6 +20,7 @@ export function SnippetCard({
   snippet,
   onExpand,
   onCopy,
+  onAnalyze,
   isExpanded,
   isCopied,
   isFocused
@@ -61,6 +63,18 @@ export function SnippetCard({
         </div>
         <CardTitle>{snippet.title}</CardTitle>
         <CardDescription>{snippet.description}</CardDescription>
+        <Button
+          variant="default"
+          size="sm"
+          className="mt-4 w-full flex items-center justify-center gap-2 bg-primary"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAnalyze(snippet);
+          }}
+        >
+          <Wand2 className="h-4 w-4" />
+          Analyze Snippet
+        </Button>
       </CardHeader>
       {isExpanded && (
         <CardContent className="border-t pt-4 space-y-4 animate-slide-up">
