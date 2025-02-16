@@ -11,6 +11,8 @@ import {
   ChevronRight,
   UserCircle,
   Keyboard,
+  Beaker,
+  MessagesSquare,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -33,8 +35,15 @@ const menuGroups = [
     label: 'Development',
     items: [
       { icon: Code2, label: 'Code Analysis', path: '/analyze' },
-      { icon: FileCode2, label: 'Snippets', path: '/snippets', badge: 'New' },
+      { icon: FileCode2, label: 'Snippets', path: '/snippets' },
       { icon: Wand2, label: 'Generate', path: '/generate' },
+    ]
+  },
+  {
+    label: 'Agent Eval',
+    items: [
+      { icon: Beaker, label: 'Prompt Management', path: '/prompts' },
+      { icon: MessagesSquare, label: 'Test Chat', path: '/test-chat' },
     ]
   },
   {
