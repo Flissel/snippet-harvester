@@ -64,35 +64,42 @@ export function ConfigurationSection({
   };
 
   const renderCodeWithReplacements = () => {
-    if (pendingReplacements.length === 0 && selectedCode && selectedConfig) {
-      // Show preview of current selection
-      let result = snippet.code_content;
-      const placeholder = selectedConfig.template_placeholder || `{${selectedConfig.label}}`;
-      result = result.slice(0, selectedCode.start) + placeholder + result.slice(selectedCode.end);
-      return result;
-    }
-
-    // Show all pending replacements
     let result = snippet.code_content;
-    let positions: { pos: number; isStart: boolean; placeholder: string }[] = [];
+    const allReplacements: PendingReplacement[] = [];
 
-    // Collect all positions
-    pendingReplacements.forEach(replacement => {
-      const placeholder = replacement.config.template_placeholder || `{${replacement.config.label}}`;
-      positions.push({ pos: replacement.start, isStart: true, placeholder });
-      positions.push({ pos: replacement.end, isStart: false, placeholder: '' });
+    // Add existing config points
+    configPoints.forEach(point => {
+      allReplacements.push({
+        start: point.start_position,
+        end: point.end_position,
+        text: point.default_value || '',
+        config: {
+          label: point.label,
+          template_placeholder: point.template_placeholder,
+        }
+      });
     });
 
-    // Sort positions from last to first to avoid position shifts
-    positions.sort((a, b) => b.pos - a.pos);
+    // Add pending replacements
+    allReplacements.push(...pendingReplacements);
 
-    // Apply replacements
-    positions.forEach(({ pos, isStart, placeholder }) => {
-      if (isStart) {
-        result = result.slice(0, pos) + placeholder + result.slice(pos);
-      } else {
-        result = result.slice(0, pos) + result.slice(pos);
-      }
+    // Add current selection preview
+    if (selectedCode && selectedConfig && pendingReplacements.length === 0) {
+      allReplacements.push({
+        start: selectedCode.start,
+        end: selectedCode.end,
+        text: selectedCode.text,
+        config: selectedConfig
+      });
+    }
+
+    // Sort replacements from last to first to avoid position shifts
+    allReplacements.sort((a, b) => b.start - a.start);
+
+    // Apply all replacements
+    allReplacements.forEach(replacement => {
+      const placeholder = replacement.config.template_placeholder || `{${replacement.config.label}}`;
+      result = result.slice(0, replacement.start) + placeholder + result.slice(replacement.end);
     });
 
     return result;
