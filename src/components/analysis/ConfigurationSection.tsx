@@ -5,8 +5,8 @@ import { ConfigurationPointForm } from './ConfigurationPointForm';
 import { Snippet } from '@/types/snippets';
 import { ConfigurationPoint, ConfigurationPointInput } from '@/types/configuration';
 import { Button } from '@/components/ui/button';
-import { Code, Plus, Check, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Code, Plus, Check } from 'lucide-react';
+import { useState } from 'react';
 
 interface ConfigurationSectionProps {
   snippet: Snippet;
@@ -18,7 +18,6 @@ interface ConfigurationSectionProps {
 }
 
 interface PendingReplacement {
-  id: string;
   start: number;
   end: number;
   text: string;
@@ -39,16 +38,11 @@ export function ConfigurationSection({
     if (!selectedCode || !selectedConfig) return;
     
     setPendingReplacements(prev => [...prev, {
-      id: crypto.randomUUID(),
       start: selectedCode.start,
       end: selectedCode.end,
       text: selectedCode.text,
       config: selectedConfig
     }]);
-  };
-
-  const handleRemoveLabel = (id: string) => {
-    setPendingReplacements(prev => prev.filter(r => r.id !== id));
   };
 
   const handleSubmitAll = () => {
@@ -71,69 +65,27 @@ export function ConfigurationSection({
 
   const renderCodeWithReplacements = () => {
     let result = snippet.code_content;
-    let positions: { pos: number; isStart: boolean; replacement: PendingReplacement }[] = [];
+    let positions: { pos: number; isStart: boolean; placeholder: string }[] = [];
 
     // Collect all positions
     pendingReplacements.forEach(replacement => {
-      positions.push({ pos: replacement.start, isStart: true, replacement });
-      positions.push({ pos: replacement.end, isStart: false, replacement });
+      const placeholder = replacement.config.template_placeholder || `${replacement.config.label}: YAML_VALUE`;
+      positions.push({ pos: replacement.start, isStart: true, placeholder });
+      positions.push({ pos: replacement.end, isStart: false, placeholder: '' });
     });
 
     // Sort positions from last to first to avoid position shifts
     positions.sort((a, b) => b.pos - a.pos);
 
     // Apply replacements
-    positions.forEach(({ pos, isStart, replacement }) => {
-      if (isStart) {
-        const placeholder = replacement.config.template_placeholder || `${replacement.config.label}: YAML_VALUE`;
-        const label = replacement.config.label;
-        result = result.slice(0, pos) + 
-          `<div class="inline-block group relative">
-            <mark class="bg-success/20 dark:bg-success/40 px-1">
-              ${placeholder}
-              <button 
-                class="absolute -top-2 -right-2 hidden group-hover:flex items-center justify-center w-4 h-4 rounded-full bg-destructive text-destructive-foreground"
-                onclick="event.preventDefault(); window.handleRemoveLabel('${replacement.id}');"
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 6 6 18M6 6l12 12"/>
-                </svg>
-              </button>
-            </mark>
-            <span class="absolute -top-5 left-0 text-xs text-muted-foreground bg-background px-1 rounded border">
-              ${label}
-            </span>
-          </div>` + 
-          result.slice(pos);
-      } else {
-        result = result.slice(0, pos) + result.slice(pos);
-      }
+    positions.forEach(({ pos, isStart, placeholder }) => {
+      result = isStart
+        ? result.slice(0, pos) + `<mark class="bg-success/20 dark:bg-success/40 px-1">${placeholder}</mark>` + result.slice(pos)
+        : result.slice(0, pos) + result.slice(pos);
     });
-
-    // Add script for handling remove button clicks
-    result += `
-      <script>
-        window.handleRemoveLabel = (id) => {
-          const event = new CustomEvent('removeLabel', { detail: { id } });
-          document.dispatchEvent(event);
-        }
-      </script>
-    `;
 
     return result;
   };
-
-  // Add event listener for remove button clicks
-  useEffect(() => {
-    const handleRemoveLabelEvent = (event: CustomEvent<{ id: string }>) => {
-      handleRemoveLabel(event.detail.id);
-    };
-
-    document.addEventListener('removeLabel', handleRemoveLabelEvent as EventListener);
-    return () => {
-      document.removeEventListener('removeLabel', handleRemoveLabelEvent as EventListener);
-    };
-  }, []);
 
   return (
     <div className="space-y-6">
