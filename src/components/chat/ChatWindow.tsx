@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,50 +9,124 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 interface Message {
-  role: 'user' | 'assistant';
+  id: string;
+  role: 'user' | 'assistant' | 'system';
   content: string;
-  timestamp: Date;
+  created_at: string;
+}
+
+interface ChatSession {
+  id: string;
+  title: string;
+  context?: string;
 }
 
 export function ChatWindow() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [session, setSession] = useState<ChatSession | null>(null);
   const { toast } = useToast();
 
+  useEffect(() => {
+    createNewSession();
+  }, []);
+
+  const createNewSession = async () => {
+    try {
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          title: `Chat ${new Date().toLocaleString()}`,
+        })
+        .select()
+        .single();
+
+      if (sessionError) throw sessionError;
+      setSession(sessionData);
+
+      // Add initial system message
+      const { error: messageError } = await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: sessionData.id,
+          role: 'system',
+          content: 'I am an AI assistant specialized in helping with AutoGen implementation. How can I help you today?'
+        });
+
+      if (messageError) throw messageError;
+      
+      // Load messages
+      loadMessages(sessionData.id);
+    } catch (error) {
+      console.error('Error creating session:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to start chat session. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const loadMessages = async (sessionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load messages. Please refresh the page.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const sendMessage = async () => {
-    if (!input.trim()) return;
-
-    const userMessage: Message = {
-      role: 'user',
-      content: input.trim(),
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsLoading(true);
+    if (!input.trim() || !session) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('chat-with-agent', {
+      // Insert user message
+      const { data: messageData, error: messageError } = await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: session.id,
+          role: 'user',
+          content: input.trim(),
+        })
+        .select()
+        .single();
+
+      if (messageError) throw messageError;
+
+      setInput('');
+      setIsLoading(true);
+
+      // Get all messages for context
+      const { data: messagesData } = await supabase
+        .from('chat_messages')
+        .select('role, content')
+        .eq('session_id', session.id)
+        .order('created_at', { ascending: true });
+
+      // Call chat completion function
+      const { data, error } = await supabase.functions.invoke('chat-completion', {
         body: {
-          messages: messages.concat(userMessage).map(m => ({
-            role: m.role,
-            content: m.content,
-          })),
+          messages: messagesData,
+          sessionId: session.id,
         },
       });
 
       if (error) throw error;
 
-      if (data?.response) {
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: data.response.content,
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-      }
+      // Reload messages to get the new assistant response
+      await loadMessages(session.id);
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -76,9 +150,9 @@ export function ChatWindow() {
     <Card className="flex flex-col h-[600px] w-full max-w-2xl mx-auto">
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {messages.map((message, index) => (
+          {messages.map((message) => (
             <div
-              key={index}
+              key={message.id}
               className={`flex ${
                 message.role === 'user' ? 'justify-end' : 'justify-start'
               }`}
@@ -87,12 +161,14 @@ export function ChatWindow() {
                 className={`max-w-[80%] rounded-lg p-3 ${
                   message.role === 'user'
                     ? 'bg-primary text-primary-foreground ml-4'
+                    : message.role === 'system'
+                    ? 'bg-muted/50 mr-4'
                     : 'bg-muted mr-4'
                 }`}
               >
                 <p className="whitespace-pre-wrap">{message.content}</p>
                 <span className="text-xs opacity-70 mt-1 block">
-                  {message.timestamp.toLocaleTimeString()}
+                  {new Date(message.created_at).toLocaleTimeString()}
                 </span>
               </div>
             </div>
@@ -108,11 +184,11 @@ export function ChatWindow() {
             onKeyDown={handleKeyPress}
             placeholder="Type your message..."
             className="min-h-[60px]"
-            disabled={isLoading}
+            disabled={isLoading || !session}
           />
           <Button
             onClick={sendMessage}
-            disabled={isLoading || !input.trim()}
+            disabled={isLoading || !input.trim() || !session}
             className="self-end"
           >
             {isLoading ? (

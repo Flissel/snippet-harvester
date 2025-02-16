@@ -14,10 +14,15 @@ serve(async (req) => {
   }
 
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
   try {
-    const { context } = await req.json();
+    const { messages, sessionId } = await req.json();
 
+    // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -26,16 +31,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-4',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert in AutoGen and helping developers implement AI agents effectively.'
-          },
-          {
-            role: 'user',
-            content: `Given this context: "${context}", generate a system prompt that will help guide the assistant in providing relevant AutoGen implementation advice.`
-          }
-        ],
+        messages: messages,
         temperature: 0.7,
       }),
     });
@@ -45,11 +41,22 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    return new Response(JSON.stringify({ systemPrompt: data.choices[0].message.content }), {
+    const assistantMessage = data.choices[0].message;
+
+    // Store the assistant's response in the database
+    if (sessionId) {
+      await supabaseClient.from('chat_messages').insert({
+        session_id: sessionId,
+        role: 'assistant',
+        content: assistantMessage.content,
+      });
+    }
+
+    return new Response(JSON.stringify({ response: assistantMessage }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in generate-system-prompt function:', error);
+    console.error('Error in chat-completion function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
