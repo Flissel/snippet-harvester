@@ -78,7 +78,8 @@ export function CodeViewer({
               }}
             >
               <div className="absolute hidden group-hover:block bg-popover text-popover-foreground p-2 rounded shadow-lg -top-8 left-0 z-50">
-                {point.label}{point.is_required ? ' (Required)' : ''}
+                <div className="font-medium">{point.label}{point.is_required ? ' (Required)' : ''}</div>
+                <div className="text-xs mt-1 font-mono">Replaced: {point.default_value}</div>
               </div>
             </div>
           );
