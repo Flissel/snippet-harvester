@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +11,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { TreeItem } from './generate/components/TreeItem';
 import { FileViewer } from './generate/components/FileViewer';
-import { FileNode, DirectoryNode, RepositoryTree, isDirectoryNode } from './generate/types';
+import { 
+  FileNode, 
+  DirectoryNode, 
+  RepositoryTree, 
+  isDirectoryNode, 
+  collectFilesFromDirectory 
+} from './generate/types';
 
 export default function Generate() {
   const { user } = useAuth();
