@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, FileCode2, ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
 interface FileNode {
   name: string;
@@ -35,7 +35,6 @@ interface RepositoryTree {
   created_by: string;
 }
 
-// Type guard functions
 function isFileNode(node: any): node is FileNode {
   return (
     typeof node === 'object' &&
@@ -118,6 +117,7 @@ const TreeItem = ({ node, level, onFileSelect }: TreeItemProps) => {
 
 export default function Generate() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [repositoryUrl, setRepositoryUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
@@ -155,6 +155,32 @@ export default function Generate() {
     }
   };
 
+  const handleCreateSnippet = async () => {
+    if (!fileContent || !selectedFile || !user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('snippets')
+        .insert({
+          title: selectedFile.name,
+          code_content: fileContent,
+          language: selectedFile.name.split('.').pop() || 'text',
+          created_by: user.id,
+          source_url: selectedFile.url,
+          source_path: selectedFile.path
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Snippet created successfully');
+      navigate(`/analyze/${data.id}`);
+    } catch (error: any) {
+      toast.error('Failed to create snippet: ' + error.message);
+    }
+  };
+
   const { data: treeData, isLoading: isTreeLoading } = useQuery({
     queryKey: ['repository-trees', user?.id],
     queryFn: async () => {
@@ -167,9 +193,7 @@ export default function Generate() {
 
       if (error) throw error;
       
-      // Type guard to ensure tree_structure matches DirectoryNode interface
       if (data && typeof data.tree_structure === 'object' && data.tree_structure !== null) {
-        // First cast to unknown, then validate the structure
         const treeStructure = data.tree_structure as unknown;
         
         if (isDirectoryNode(treeStructure)) {
@@ -228,9 +252,16 @@ export default function Generate() {
         </Card>
 
         <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">
-            {selectedFile ? `File: ${selectedFile.name}` : 'Select a file to view'}
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">
+              {selectedFile ? `File: ${selectedFile.name}` : 'Select a file to view'}
+            </h2>
+            {selectedFile && fileContent && (
+              <Button onClick={handleCreateSnippet}>
+                Create Snippet
+              </Button>
+            )}
+          </div>
           <ScrollArea className="h-[500px] border rounded-md">
             {fileContent ? (
               <pre className="p-4 font-mono text-sm whitespace-pre-wrap">{fileContent}</pre>
