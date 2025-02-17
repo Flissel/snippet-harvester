@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileNode, DirectoryNode, collectFilesFromDirectory } from '../types';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Prompt } from '@/types/prompts';
 
 interface FileViewerProps {
   selectedFile: FileNode | null;
@@ -27,7 +29,32 @@ export function FileViewer({
 }: FileViewerProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchPrompts();
+  }, []);
+
+  const fetchPrompts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('prompts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPrompts(data || []);
+    } catch (error) {
+      console.error('Error fetching prompts:', error);
+      toast({
+        title: "Failed to Load Prompts",
+        description: "Could not load analysis prompts. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getFileIcon = (extension?: string) => {
     return <FileCode2 className="h-4 w-4 text-blue-500" />;
@@ -43,6 +70,14 @@ export function FileViewer({
 
   const analyzeCode = async () => {
     if (!fileContent || !selectedFile?.extension) return;
+    if (!selectedPrompt) {
+      toast({
+        title: "No Prompt Selected",
+        description: "Please select an analysis prompt before analyzing the code.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsAnalyzing(true);
     setAnalysis(null);
@@ -52,6 +87,9 @@ export function FileViewer({
         body: {
           code: fileContent,
           language: selectedFile.extension,
+          systemMessage: selectedPrompt.system_message,
+          userMessage: selectedPrompt.user_message,
+          model: selectedPrompt.model,
         },
       });
 
@@ -94,23 +132,43 @@ export function FileViewer({
               <Button onClick={onCreateSnippet}>
                 Create Snippet
               </Button>
-              <Button 
-                onClick={analyzeCode} 
-                disabled={isAnalyzing}
-                variant="outline"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Brain className="mr-2 h-4 w-4" />
-                    Analyze Code
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={selectedPrompt?.id}
+                  onValueChange={(value) => {
+                    const prompt = prompts.find(p => p.id === value);
+                    setSelectedPrompt(prompt || null);
+                  }}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select analysis prompt" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {prompts.map((prompt) => (
+                      <SelectItem key={prompt.id} value={prompt.id}>
+                        {prompt.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  onClick={analyzeCode} 
+                  disabled={isAnalyzing || !selectedPrompt}
+                  variant="outline"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="mr-2 h-4 w-4" />
+                      Analyze Code
+                    </>
+                  )}
+                </Button>
+              </div>
             </>
           )}
           {selectedDirectory && (

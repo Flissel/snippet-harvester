@@ -30,11 +30,11 @@ serve(async (req) => {
   }
 
   try {
-    const { code, language } = await req.json();
+    const { code, language, systemMessage, userMessage, model } = await req.json();
 
-    if (!code || !language) {
+    if (!code || !language || !systemMessage || !userMessage) {
       return new Response(
-        JSON.stringify({ error: 'Code and language are required' }),
+        JSON.stringify({ error: 'Required parameters are missing' }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -42,16 +42,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Analyzing ${language} code...`);
-
-    const systemPrompt = `You are an expert code analyzer. Analyze the provided code and explain:
-1. What the code does (overview)
-2. Key components and their purposes
-3. Potential issues or improvements
-4. Dependencies and relationships
-5. Documentation suggestions
-
-Keep your analysis clear and concise. If the code is complex, break down your explanation into sections.`;
+    console.log(`Analyzing ${language} code with custom prompt...`);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -60,9 +51,9 @@ Keep your analysis clear and concise. If the code is complex, break down your ex
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: model || 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: systemMessage },
           { role: 'user', content: `Language: ${language}\n\nCode:\n${code}` }
         ],
       }),
