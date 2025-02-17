@@ -4,23 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Prompt } from '@/types/prompts';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
-import { Pencil, Trash2, AlertTriangle } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfigurationsList } from './saved-configurations/ConfigurationsList';
+import { DeleteConfigurationDialog } from './saved-configurations/DeleteConfigurationDialog';
 
 interface SavedConfigurationsDialogProps {
   open: boolean;
@@ -68,16 +54,9 @@ export function SavedConfigurationsDialog({
 
       if (error) throw error;
 
-      // First close the alert dialog
       setAlertOpen(false);
-      
-      // Wait for alert dialog animation to complete
       await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Update the configurations
       await queryClient.invalidateQueries({ queryKey: ['saved-configurations'] });
-      
-      // Call the deleted callback
       onConfigurationDeleted?.();
 
       toast({
@@ -85,7 +64,6 @@ export function SavedConfigurationsDialog({
         description: "Configuration deleted successfully",
       });
 
-      // Finally close the main dialog
       onOpenChange(false);
     } catch (error) {
       console.error('Error deleting configuration:', error);
@@ -131,106 +109,30 @@ export function SavedConfigurationsDialog({
           <DialogHeader>
             <DialogTitle>Saved Configurations</DialogTitle>
           </DialogHeader>
-
-          <ScrollArea className="h-[60vh] pr-4">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-32">
-                <LoadingSpinner />
-              </div>
-            ) : configurations?.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                No saved configurations found
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {configurations?.map((config) => (
-                  <Card key={config.id} className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <h3 className="font-semibold">{config.name}</h3>
-                        {config.description && (
-                          <p className="text-sm text-muted-foreground">
-                            {config.description}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          Created {formatDistanceToNow(new Date(config.created_at))} ago
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            if (onConfigurationEdit) {
-                              onConfigurationEdit(config as Prompt);
-                              onOpenChange(false);
-                            }
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteClick(config as Prompt)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                        <Button 
-                          variant="secondary"
-                          onClick={() => {
-                            onConfigurationSelect(config as Prompt);
-                            onOpenChange(false);
-                          }}
-                        >
-                          Load
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
+          
+          <ConfigurationsList
+            configurations={configurations}
+            isLoading={isLoading}
+            onEdit={onConfigurationEdit || (() => {})}
+            onDelete={handleDeleteClick}
+            onSelect={onConfigurationSelect}
+            onClose={() => onOpenChange(false)}
+          />
         </DialogContent>
       </Dialog>
 
-      <AlertDialog 
-        open={alertOpen} 
+      <DeleteConfigurationDialog
+        config={configToDelete}
+        isOpen={alertOpen}
+        isDeleting={isDeleting}
         onOpenChange={(open) => {
           if (!isDeleting) {
             setAlertOpen(open);
             if (!open) setConfigToDelete(null);
           }
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              Delete Configuration
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{configToDelete?.name}"? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDelete} 
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <LoadingSpinner />
-              ) : (
-                'Delete'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onDelete={handleDelete}
+      />
     </>
   );
 }
