@@ -128,7 +128,7 @@ export const Sidebar = () => {
               <div key={group.label} className="space-y-2">
                 <div className={cn(
                   'text-xs font-medium text-muted-foreground px-2',
-                  collapsed && 'opacity-0 h-0'
+                  collapsed && 'opacity-0'
                 )}>
                   {group.label}
                 </div>
@@ -155,7 +155,7 @@ export const Sidebar = () => {
                         <span
                           className={cn(
                             'flex-1 text-sm transition-all duration-300',
-                            collapsed ? 'opacity-0 w-0' : 'opacity-100'
+                            collapsed ? 'w-0 hidden' : 'block'
                           )}
                         >
                           {item.label}
