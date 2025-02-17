@@ -35,19 +35,28 @@ serve(async (req) => {
       throw new Error('Invalid GitHub repository URL format')
     }
 
+    const githubToken = Deno.env.get('GITHUB_TOKEN')
+    if (!githubToken) {
+      throw new Error('GitHub token not configured')
+    }
+
+    console.log(`Fetching repository data for ${owner}/${repo}`)
+
     // Get repository tree from GitHub API
     const githubResponse = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`,
       {
         headers: {
           'Accept': 'application/vnd.github+json',
-          'Authorization': `Bearer ${Deno.env.get('GITHUB_TOKEN')}`,
+          'Authorization': `Bearer ${githubToken}`,
           'X-GitHub-Api-Version': '2022-11-28'
         }
       }
     )
 
     if (!githubResponse.ok) {
+      const errorData = await githubResponse.json()
+      console.error('GitHub API error:', errorData)
       throw new Error(`GitHub API error: ${githubResponse.statusText}`)
     }
 
@@ -81,7 +90,10 @@ serve(async (req) => {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error:', error)
+      throw error
+    }
 
     return new Response(
       JSON.stringify(insertedTree),
@@ -93,6 +105,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
+    console.error('Function error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
