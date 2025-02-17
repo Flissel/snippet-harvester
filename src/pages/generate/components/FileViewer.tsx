@@ -1,9 +1,12 @@
 
-import { FileCode2, Loader2 } from 'lucide-react';
+import { FileCode2, Loader2, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileNode, DirectoryNode, collectFilesFromDirectory } from '../types';
 import { Badge } from '@/components/ui/badge';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface FileViewerProps {
   selectedFile: FileNode | null;
@@ -22,6 +25,10 @@ export function FileViewer({
   onCreateSnippet,
   onCreateDirectorySnippets,
 }: FileViewerProps) {
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<string | null>(null);
+  const { toast } = useToast();
+
   const getFileIcon = (extension?: string) => {
     return <FileCode2 className="h-4 w-4 text-blue-500" />;
   };
@@ -32,6 +39,35 @@ export function FileViewer({
     return (
       <Badge className="ml-2 bg-blue-500">.{extension}</Badge>
     );
+  };
+
+  const analyzeCode = async () => {
+    if (!fileContent || !selectedFile?.extension) return;
+
+    setIsAnalyzing(true);
+    setAnalysis(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-code', {
+        body: {
+          code: fileContent,
+          language: selectedFile.extension,
+        },
+      });
+
+      if (error) throw error;
+
+      setAnalysis(data.analysis);
+    } catch (error) {
+      console.error('Error analyzing code:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Failed to analyze the code. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
@@ -52,30 +88,66 @@ export function FileViewer({
             'Select a file or directory'
           )}
         </h2>
-        {selectedFile && fileContent && (
-          <Button onClick={onCreateSnippet}>
-            Create Snippet
-          </Button>
-        )}
-        {selectedDirectory && (
-          <Button 
-            onClick={onCreateDirectorySnippets}
-            disabled={isCreatingSnippets}
-          >
-            {isCreatingSnippets ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating Snippets...
-              </>
-            ) : (
-              'Create Directory Snippets'
-            )}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {selectedFile && fileContent && (
+            <>
+              <Button onClick={onCreateSnippet}>
+                Create Snippet
+              </Button>
+              <Button 
+                onClick={analyzeCode} 
+                disabled={isAnalyzing}
+                variant="outline"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Brain className="mr-2 h-4 w-4" />
+                    Analyze Code
+                  </>
+                )}
+              </Button>
+            </>
+          )}
+          {selectedDirectory && (
+            <Button 
+              onClick={onCreateDirectorySnippets}
+              disabled={isCreatingSnippets}
+            >
+              {isCreatingSnippets ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Snippets...
+                </>
+              ) : (
+                'Create Directory Snippets'
+              )}
+            </Button>
+          )}
+        </div>
       </div>
       <ScrollArea className="flex-1 border rounded-md">
         {fileContent ? (
-          <pre className="p-4 font-mono text-sm whitespace-pre-wrap">{fileContent}</pre>
+          <div className="space-y-4">
+            <pre className="p-4 font-mono text-sm whitespace-pre-wrap">{fileContent}</pre>
+            {analysis && (
+              <div className="border-t p-4">
+                <h3 className="text-lg font-semibold mb-2 flex items-center">
+                  <Brain className="mr-2 h-5 w-5 text-blue-500" />
+                  Code Analysis
+                </h3>
+                <div className="prose prose-sm max-w-none">
+                  {analysis.split('\n').map((line, index) => (
+                    <p key={index} className="mb-2">{line}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         ) : selectedDirectory ? (
           <div className="p-4 space-y-4">
             <h3 className="font-medium">Files in Directory:</h3>
