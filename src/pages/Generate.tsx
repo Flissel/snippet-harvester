@@ -43,7 +43,7 @@ export default function Generate() {
 
       if (error) throw error;
       toast.success('Repository scanned successfully');
-    } catch (error) {
+    } catch (error: any) {
       toast.error('Failed to scan repository: ' + error.message);
     } finally {
       setIsLoading(false);
@@ -58,12 +58,14 @@ export default function Generate() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
+      if (!data) return null;
+
       // Validate and transform the tree_structure data
-      if (data && Array.isArray(data.tree_structure)) {
+      if (Array.isArray(data.tree_structure)) {
         const validatedTreeStructure = data.tree_structure.map((node: any) => ({
           path: String(node.path),
           type: String(node.type),
@@ -77,7 +79,7 @@ export default function Generate() {
         } as RepositoryTree;
       }
 
-      throw new Error('Invalid tree structure data');
+      return null;
     },
     enabled: !!user
   });
