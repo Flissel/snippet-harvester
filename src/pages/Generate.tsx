@@ -75,10 +75,10 @@ const TreeItem = ({ node, level }: TreeItemProps) => {
         )}
         <span className="text-sm font-medium">{node.name || 'Root'}</span>
       </div>
-      {isExpanded && (
+      {isExpanded && node.type === 'directory' && node.children && (
         <div>
           {node.children.map((child, index) => (
-            <TreeItem key={child.name + index} node={child} level={level + 1} />
+            <TreeItem key={`${child.name}-${index}`} node={child} level={level + 1} />
           ))}
         </div>
       )}
@@ -121,7 +121,16 @@ export default function Generate() {
         .maybeSingle();
 
       if (error) throw error;
-      return data as RepositoryTree | null;
+      
+      // Type guard to ensure tree_structure matches DirectoryNode interface
+      if (data && typeof data.tree_structure === 'object' && data.tree_structure !== null) {
+        const typedData = {
+          ...data,
+          tree_structure: data.tree_structure as DirectoryNode
+        };
+        return typedData as RepositoryTree;
+      }
+      return null;
     },
     enabled: !!user
   });
@@ -152,7 +161,7 @@ export default function Generate() {
             <div className="flex justify-center">
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
-          ) : treeData ? (
+          ) : treeData && treeData.tree_structure ? (
             <ScrollArea className="h-[400px] border rounded-md p-4">
               <TreeItem node={treeData.tree_structure} level={0} />
             </ScrollArea>
