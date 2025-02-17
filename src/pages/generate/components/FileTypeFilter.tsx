@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface FileTypeFilterProps {
   availableTypes: string[];
@@ -27,12 +28,14 @@ export function FileTypeFilter({
         <SelectValue placeholder="Filter by type" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">All files</SelectItem>
-        {availableTypes.map((type) => (
-          <SelectItem key={type} value={type}>
-            .{type}
-          </SelectItem>
-        ))}
+        <ScrollArea className="h-[200px]">
+          <SelectItem value="all">All files</SelectItem>
+          {availableTypes.map((type) => (
+            <SelectItem key={type} value={type}>
+              .{type}
+            </SelectItem>
+          ))}
+        </ScrollArea>
       </SelectContent>
     </Select>
   );
