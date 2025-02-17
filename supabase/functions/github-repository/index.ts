@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0'
+import { decode as decodeJWT } from "https://deno.land/x/djwt@v2.9.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,6 +40,17 @@ serve(async (req) => {
     if (!githubToken) {
       throw new Error('GitHub token not configured')
     }
+
+    // Extract user ID from JWT
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader) {
+      throw new Error('No authorization header')
+    }
+    
+    const jwt = authHeader.replace('Bearer ', '')
+    const [_header, payload] = jwt.split('.')
+    const decodedPayload = JSON.parse(atob(payload))
+    const userId = decodedPayload.sub
 
     console.log(`Fetching repository data for ${owner}/${repo}`)
 
@@ -85,7 +97,7 @@ serve(async (req) => {
       .insert({
         repository_url,
         tree_structure: treeStructure,
-        created_by: req.headers.get('authorization')?.split('Bearer ')[1]
+        created_by: userId // Use the extracted user ID instead of the full JWT
       })
       .select()
       .single()
