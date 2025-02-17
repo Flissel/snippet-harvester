@@ -1,2 +1,5 @@
 
 project_id = "nacxysqeciqbtdznnhud"
+
+[functions.github-repository]
+verify_jwt = true

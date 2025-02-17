@@ -312,6 +312,33 @@ export type Database = {
         }
         Relationships: []
       }
+      repository_trees: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          repository_url: string
+          tree_structure: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          repository_url: string
+          tree_structure: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          repository_url?: string
+          tree_structure?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       snippets: {
         Row: {
           code_content: string
@@ -321,6 +348,10 @@ export type Database = {
           id: string
           is_public: boolean | null
           language: string | null
+          python_version: string | null
+          source_commit: string | null
+          source_path: string | null
+          source_url: string | null
           title: string
           updated_at: string
         }
@@ -332,6 +363,10 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           language?: string | null
+          python_version?: string | null
+          source_commit?: string | null
+          source_path?: string | null
+          source_url?: string | null
           title: string
           updated_at?: string
         }
@@ -343,6 +378,10 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           language?: string | null
+          python_version?: string | null
+          source_commit?: string | null
+          source_path?: string | null
+          source_url?: string | null
           title?: string
           updated_at?: string
         }
