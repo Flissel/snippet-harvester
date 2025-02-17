@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0'
-import { decode as decodeJWT } from "https://deno.land/x/djwt@v2.9.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +13,7 @@ interface FileNode {
   path: string;
   sha: string;
   url: string;
+  fileType?: 'python' | 'yaml' | 'toml' | 'requirements' | 'setup';
 }
 
 interface DirectoryNode {
@@ -22,7 +22,14 @@ interface DirectoryNode {
   children: (DirectoryNode | FileNode)[];
 }
 
-type TreeNode = FileNode | DirectoryNode;
+function getFileType(filename: string): FileNode['fileType'] | undefined {
+  if (filename.endsWith('.py')) return 'python';
+  if (filename.endsWith('.yml') || filename.endsWith('.yaml')) return 'yaml';
+  if (filename.endsWith('.toml')) return 'toml';
+  if (filename === 'requirements.txt') return 'requirements';
+  if (filename === 'setup.py') return 'setup';
+  return undefined;
+}
 
 function buildDirectoryTree(files: { path: string; type: string; sha: string }[], baseUrl: string): DirectoryNode {
   const root: DirectoryNode = { name: '', type: 'directory', children: [] };
@@ -52,7 +59,8 @@ function buildDirectoryTree(files: { path: string; type: string; sha: string }[]
       type: 'file',
       path: file.path,
       sha: file.sha,
-      url: `${baseUrl}/${file.path}`
+      url: `${baseUrl}/${file.path}`,
+      fileType: getFileType(fileName)
     });
   }
 
@@ -111,14 +119,21 @@ serve(async (req) => {
 
     const data = await githubResponse.json()
     
-    // Filter Python files
-    const pythonFiles = data.tree.filter((item: any) => 
-      item.type === 'blob' && item.path.endsWith('.py')
+    // Filter Python and configuration files
+    const relevantFiles = data.tree.filter((item: any) => 
+      item.type === 'blob' && (
+        item.path.endsWith('.py') ||
+        item.path.endsWith('.yml') ||
+        item.path.endsWith('.yaml') ||
+        item.path.endsWith('.toml') ||
+        item.path === 'requirements.txt' ||
+        item.path === 'setup.py'
+      )
     )
 
     // Build the directory tree
     const treeStructure = buildDirectoryTree(
-      pythonFiles,
+      relevantFiles,
       `https://raw.githubusercontent.com/${owner}/${repo}/main`
     );
 
@@ -126,7 +141,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const supabase = createClient(supabaseUrl!, supabaseKey!)
 
-    const { data: insertedTree, error } = await supabase
+    const { data: insertedTree, error: treeError } = await supabase
       .from('repository_trees')
       .insert({
         repository_url,
@@ -136,9 +151,43 @@ serve(async (req) => {
       .select()
       .single()
 
-    if (error) {
-      console.error('Supabase error:', error)
-      throw error
+    if (treeError) {
+      console.error('Supabase error:', treeError)
+      throw treeError
+    }
+
+    // Fetch and store configuration files
+    for (const file of relevantFiles) {
+      const fileType = getFileType(file.path)
+      if (fileType && fileType !== 'python') {
+        const contentResponse = await fetch(
+          `https://raw.githubusercontent.com/${owner}/${repo}/main/${file.path}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${githubToken}`,
+            }
+          }
+        )
+
+        if (contentResponse.ok) {
+          const content = await contentResponse.text()
+          
+          const { error: configError } = await supabase
+            .from('configuration_templates')
+            .insert({
+              name: file.path.split('/').pop(),
+              file_path: file.path,
+              content,
+              template_type: fileType,
+              repository_tree_id: insertedTree.id,
+              created_by: userId
+            })
+
+          if (configError) {
+            console.error('Error storing configuration template:', configError)
+          }
+        }
+      }
     }
 
     return new Response(

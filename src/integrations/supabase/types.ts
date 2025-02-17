@@ -144,6 +144,53 @@ export type Database = {
           },
         ]
       }
+      configuration_templates: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          description: string | null
+          file_path: string
+          id: string
+          name: string
+          repository_tree_id: string
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          file_path: string
+          id?: string
+          name: string
+          repository_tree_id: string
+          template_type: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          file_path?: string
+          id?: string
+          name?: string
+          repository_tree_id?: string
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuration_templates_repository_tree_id_fkey"
+            columns: ["repository_tree_id"]
+            isOneToOne: false
+            referencedRelation: "repository_trees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       label_templates: {
         Row: {
           config_type: string
