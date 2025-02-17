@@ -2,31 +2,20 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { TreeItem } from './generate/components/TreeItem';
 import { FileViewer } from './generate/components/FileViewer';
+import { RepositoryForm } from './generate/components/RepositoryForm';
+import { RepositoryBrowser } from './generate/components/RepositoryBrowser';
 import { 
   FileNode, 
   DirectoryNode, 
   RepositoryTree, 
   isDirectoryNode, 
-  collectFilesFromDirectory,
   filterTreeByExtensions
 } from './generate/types';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export default function Generate() {
   const { user } = useAuth();
@@ -150,10 +139,6 @@ export default function Generate() {
     }
   };
 
-  const handleFileTypeChange = (value: string) => {
-    setSelectedFileTypes(value === "all" ? [] : value.split(','));
-  };
-
   const { data: treeData, isLoading: isTreeLoading } = useQuery({
     queryKey: ['repository-trees', user?.id],
     queryFn: async () => {
@@ -191,62 +176,21 @@ export default function Generate() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[calc(100%-4rem)]">
         <Card className="p-6 flex flex-col">
-          <form onSubmit={handleSubmit} className="space-y-4 mb-6">
-            <div className="flex gap-4">
-              <Input
-                placeholder="Enter GitHub repository URL"
-                value={repositoryUrl}
-                onChange={(e) => setRepositoryUrl(e.target.value)}
-                className="flex-1"
-              />
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Scan Repository
-              </Button>
-            </div>
-          </form>
-
-          <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Repository Files</h2>
-              {treeData?.available_file_types && treeData.available_file_types.length > 0 && (
-                <Select 
-                  value={selectedFileTypes.length === 0 ? "all" : selectedFileTypes.join(',')}
-                  onValueChange={handleFileTypeChange}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All files</SelectItem>
-                    {treeData.available_file_types.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        .{type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            {isTreeLoading ? (
-              <div className="flex justify-center">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : filteredTreeStructure ? (
-              <ScrollArea className="flex-1 border rounded-md p-4">
-                <TreeItem 
-                  node={filteredTreeStructure} 
-                  level={0} 
-                  onFileSelect={handleFileSelect}
-                  onDirectorySelect={handleDirectorySelect}
-                />
-              </ScrollArea>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                No repository scanned yet. Enter a GitHub URL above to start.
-              </p>
-            )}
-          </div>
+          <RepositoryForm
+            repositoryUrl={repositoryUrl}
+            isLoading={isLoading}
+            onUrlChange={setRepositoryUrl}
+            onSubmit={handleSubmit}
+          />
+          <RepositoryBrowser
+            treeData={treeData}
+            isLoading={isTreeLoading}
+            selectedFileTypes={selectedFileTypes}
+            filteredTreeStructure={filteredTreeStructure}
+            onFileSelect={handleFileSelect}
+            onDirectorySelect={handleDirectorySelect}
+            onFileTypeChange={(value) => setSelectedFileTypes(value === "all" ? [] : value.split(','))}
+          />
         </Card>
 
         <Card className="p-6 flex flex-col">
