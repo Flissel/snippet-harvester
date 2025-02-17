@@ -1,102 +1,65 @@
 
 export interface FileNode {
-  name: string;
   type: 'file';
+  name: string;
   path: string;
-  sha: string;
   url: string;
   extension?: string;
 }
 
 export interface DirectoryNode {
-  name: string;
   type: 'directory';
-  children: (DirectoryNode | FileNode)[];
+  name: string;
+  path: string;
+  children: (FileNode | DirectoryNode)[];
 }
-
-export type TreeNode = FileNode | DirectoryNode;
 
 export interface RepositoryTree {
   id: string;
-  repository_url: string;
+  created_at: string;
   tree_structure: DirectoryNode;
   available_file_types: string[];
-  created_at: string;
-  updated_at: string;
-  created_by: string;
 }
 
-export function isFileNode(node: any): node is FileNode {
+export function isDirectoryNode(node: unknown): node is DirectoryNode {
   return (
     typeof node === 'object' &&
     node !== null &&
-    node.type === 'file' &&
-    typeof node.name === 'string' &&
-    typeof node.path === 'string' &&
-    typeof node.sha === 'string' &&
-    typeof node.url === 'string'
+    'type' in node &&
+    (node as any).type === 'directory'
   );
 }
 
-export function isDirectoryNode(node: any): node is DirectoryNode {
-  return (
-    typeof node === 'object' &&
-    node !== null &&
-    node.type === 'directory' &&
-    typeof node.name === 'string' &&
-    Array.isArray(node.children)
-  );
+export function filterTreeByExtensions(tree: DirectoryNode, extensions: string[]): DirectoryNode {
+  const filteredChildren = tree.children
+    .map(child => {
+      if (child.type === 'directory') {
+        const filteredDir = filterTreeByExtensions(child, extensions);
+        return filteredDir.children.length > 0 ? filteredDir : null;
+      }
+      return extensions.includes(child.extension || '') ? child : null;
+    })
+    .filter((child): child is FileNode | DirectoryNode => child !== null);
+
+  return {
+    ...tree,
+    children: filteredChildren
+  };
 }
 
-export function getFileExtension(filename: string): string {
-  const parts = filename.split('.');
-  return parts.length > 1 ? parts.pop()!.toLowerCase() : '';
-}
+export function collectFilesFromDirectory(directory: DirectoryNode, fileExtensions: string[]): FileNode[] {
+  const files: FileNode[] = [];
 
-export function filterTreeByExtensions(
-  node: DirectoryNode,
-  extensions: string[]
-): DirectoryNode {
-  if (extensions.length === 0) return node;
-
-  const filterNode = (n: DirectoryNode): DirectoryNode => {
-    const filteredChildren = n.children
-      .map(child => {
-        if (isFileNode(child)) {
-          const ext = getFileExtension(child.name);
-          return extensions.includes(ext) ? child : null;
-        }
-        if (isDirectoryNode(child)) {
-          const filteredDir = filterNode(child);
-          return filteredDir.children.length > 0 ? filteredDir : null;
-        }
-        return null;
-      })
-      .filter((child): child is FileNode | DirectoryNode => child !== null);
-
-    return {
-      ...n,
-      children: filteredChildren,
-    };
+  const traverse = (node: DirectoryNode) => {
+    for (const child of node.children) {
+      if (child.type === 'directory') {
+        traverse(child);
+      } else if (fileExtensions.includes(child.extension || '')) {
+        files.push(child);
+      }
+    }
   };
 
-  return filterNode(node);
-}
-
-export function collectFilesFromDirectory(
-  node: DirectoryNode,
-  extensions?: string[]
-): FileNode[] {
-  let files: FileNode[] = [];
-  for (const child of node.children) {
-    if (isFileNode(child)) {
-      const ext = getFileExtension(child.name);
-      if (!extensions || extensions.includes(ext)) {
-        files.push({ ...child, extension: ext });
-      }
-    } else if (isDirectoryNode(child)) {
-      files = [...files, ...collectFilesFromDirectory(child, extensions)];
-    }
-  }
+  traverse(directory);
   return files;
 }
