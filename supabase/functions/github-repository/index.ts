@@ -8,15 +8,58 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface TreeNode {
+interface FileNode {
+  name: string;
+  type: 'file';
   path: string;
-  type: 'tree' | 'blob';
   sha: string;
   url: string;
 }
 
+interface DirectoryNode {
+  name: string;
+  type: 'directory';
+  children: (DirectoryNode | FileNode)[];
+}
+
+type TreeNode = FileNode | DirectoryNode;
+
+function buildDirectoryTree(files: { path: string; type: string; sha: string }[], baseUrl: string): DirectoryNode {
+  const root: DirectoryNode = { name: '', type: 'directory', children: [] };
+
+  for (const file of files) {
+    const parts = file.path.split('/');
+    let currentNode = root;
+
+    // Create or traverse the directory structure
+    for (let i = 0; i < parts.length - 1; i++) {
+      const partName = parts[i];
+      let found = currentNode.children.find(
+        child => child.type === 'directory' && child.name === partName
+      ) as DirectoryNode;
+
+      if (!found) {
+        found = { name: partName, type: 'directory', children: [] };
+        currentNode.children.push(found);
+      }
+      currentNode = found;
+    }
+
+    // Add the file to its directory
+    const fileName = parts[parts.length - 1];
+    currentNode.children.push({
+      name: fileName,
+      type: 'file',
+      path: file.path,
+      sha: file.sha,
+      url: `${baseUrl}/${file.path}`
+    });
+  }
+
+  return root;
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -24,13 +67,11 @@ serve(async (req) => {
   try {
     const { repository_url } = await req.json()
     
-    // Parse GitHub URL
     const url = new URL(repository_url)
     if (!url.hostname.includes('github.com')) {
       throw new Error('Invalid GitHub URL')
     }
 
-    // Extract owner and repo from URL
     const [_, owner, repo] = url.pathname.split('/')
     if (!owner || !repo) {
       throw new Error('Invalid GitHub repository URL format')
@@ -41,7 +82,6 @@ serve(async (req) => {
       throw new Error('GitHub token not configured')
     }
 
-    // Extract user ID from JWT
     const authHeader = req.headers.get('authorization')
     if (!authHeader) {
       throw new Error('No authorization header')
@@ -52,9 +92,6 @@ serve(async (req) => {
     const decodedPayload = JSON.parse(atob(payload))
     const userId = decodedPayload.sub
 
-    console.log(`Fetching repository data for ${owner}/${repo}`)
-
-    // Get repository tree from GitHub API
     const githubResponse = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`,
       {
@@ -74,20 +111,17 @@ serve(async (req) => {
 
     const data = await githubResponse.json()
     
-    // Filter for Python files and create tree structure
-    const pythonFiles = data.tree.filter((item: TreeNode) => 
+    // Filter Python files
+    const pythonFiles = data.tree.filter((item: any) => 
       item.type === 'blob' && item.path.endsWith('.py')
     )
 
-    // Create tree structure
-    const treeStructure = pythonFiles.map((file: TreeNode) => ({
-      path: file.path,
-      type: file.type,
-      sha: file.sha,
-      url: `https://raw.githubusercontent.com/${owner}/${repo}/main/${file.path}`
-    }))
+    // Build the directory tree
+    const treeStructure = buildDirectoryTree(
+      pythonFiles,
+      `https://raw.githubusercontent.com/${owner}/${repo}/main`
+    );
 
-    // Store in Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const supabase = createClient(supabaseUrl!, supabaseKey!)
@@ -97,7 +131,7 @@ serve(async (req) => {
       .insert({
         repository_url,
         tree_structure: treeStructure,
-        created_by: userId // Use the extracted user ID instead of the full JWT
+        created_by: userId
       })
       .select()
       .single()

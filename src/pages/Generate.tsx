@@ -6,25 +6,85 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, FileCode2 } from 'lucide-react';
+import { Loader2, FileCode2, ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 
-interface TreeNode {
+interface FileNode {
+  name: string;
+  type: 'file';
   path: string;
-  type: 'tree' | 'blob';
   sha: string;
   url: string;
 }
 
+interface DirectoryNode {
+  name: string;
+  type: 'directory';
+  children: (DirectoryNode | FileNode)[];
+}
+
+type TreeNode = FileNode | DirectoryNode;
+
 interface RepositoryTree {
   id: string;
   repository_url: string;
-  tree_structure: TreeNode[];
+  tree_structure: DirectoryNode;
   created_at: string;
   updated_at: string;
   created_by: string;
 }
+
+interface TreeItemProps {
+  node: TreeNode;
+  level: number;
+}
+
+const TreeItem = ({ node, level }: TreeItemProps) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const paddingLeft = `${level * 1.5}rem`;
+
+  if (node.type === 'file') {
+    return (
+      <div
+        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer"
+        style={{ paddingLeft }}
+      >
+        <FileCode2 className="h-4 w-4 text-blue-500" />
+        <span className="text-sm">{node.name}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div
+        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer"
+        style={{ paddingLeft }}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {isExpanded ? (
+          <ChevronDown className="h-4 w-4" />
+        ) : (
+          <ChevronRight className="h-4 w-4" />
+        )}
+        {isExpanded ? (
+          <FolderOpen className="h-4 w-4 text-yellow-500" />
+        ) : (
+          <Folder className="h-4 w-4 text-yellow-500" />
+        )}
+        <span className="text-sm font-medium">{node.name || 'Root'}</span>
+      </div>
+      {isExpanded && (
+        <div>
+          {node.children.map((child, index) => (
+            <TreeItem key={child.name + index} node={child} level={level + 1} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function Generate() {
   const { user } = useAuth();
@@ -61,25 +121,7 @@ export default function Generate() {
         .maybeSingle();
 
       if (error) throw error;
-
-      if (!data) return null;
-
-      // Validate and transform the tree_structure data
-      if (Array.isArray(data.tree_structure)) {
-        const validatedTreeStructure = data.tree_structure.map((node: any) => ({
-          path: String(node.path),
-          type: String(node.type),
-          sha: String(node.sha),
-          url: String(node.url)
-        }));
-
-        return {
-          ...data,
-          tree_structure: validatedTreeStructure
-        } as RepositoryTree;
-      }
-
-      return null;
+      return data as RepositoryTree | null;
     },
     enabled: !!user
   });
@@ -112,17 +154,7 @@ export default function Generate() {
             </div>
           ) : treeData ? (
             <ScrollArea className="h-[400px] border rounded-md p-4">
-              <div className="space-y-2">
-                {treeData.tree_structure.map((node: TreeNode) => (
-                  <div
-                    key={node.sha}
-                    className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer"
-                  >
-                    <FileCode2 className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm">{node.path}</span>
-                  </div>
-                ))}
-              </div>
+              <TreeItem node={treeData.tree_structure} level={0} />
             </ScrollArea>
           ) : (
             <p className="text-muted-foreground text-center py-8">
