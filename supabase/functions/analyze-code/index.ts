@@ -9,6 +9,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const DEFAULT_ANALYSIS_CONFIG = {
+  analyzers: {
+    overview: true,
+    components: true,
+    issues: true,
+    dependencies: true,
+    documentation: true,
+    complexity: false,
+    security: false,
+    performance: false,
+  },
+  depth: 'standard', // 'basic' | 'standard' | 'detailed'
+  style: 'technical', // 'simple' | 'technical' | 'comprehensive'
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -30,7 +45,7 @@ serve(async (req) => {
   }
 
   try {
-    const { code, language } = await req.json();
+    const { code, language, config = {} } = await req.json();
 
     if (!code || !language) {
       return new Response(
@@ -42,16 +57,51 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Analyzing ${language} code...`);
+    console.log(`Analyzing ${language} code with custom configuration...`);
 
-    const systemPrompt = `You are an expert code analyzer. Analyze the provided code and explain:
-1. What the code does (overview)
-2. Key components and their purposes
-3. Potential issues or improvements
-4. Dependencies and relationships
-5. Documentation suggestions
+    const analysisConfig = { ...DEFAULT_ANALYSIS_CONFIG, ...config };
+    
+    const generateSystemPrompt = (config: typeof DEFAULT_ANALYSIS_CONFIG) => {
+      const sections = [];
+      
+      sections.push('You are an expert code analyzer. Analyze the provided code and explain:');
+      
+      if (config.analyzers.overview) {
+        sections.push('1. What the code does (overview)');
+      }
+      
+      if (config.analyzers.components) {
+        sections.push('2. Key components and their purposes');
+      }
+      
+      if (config.analyzers.issues) {
+        sections.push('3. Potential issues or improvements');
+      }
+      
+      if (config.analyzers.dependencies) {
+        sections.push('4. Dependencies and relationships');
+      }
+      
+      if (config.analyzers.documentation) {
+        sections.push('5. Documentation suggestions');
+      }
+      
+      if (config.analyzers.complexity) {
+        sections.push('6. Code complexity analysis');
+      }
+      
+      if (config.analyzers.security) {
+        sections.push('7. Security considerations');
+      }
+      
+      if (config.analyzers.performance) {
+        sections.push('8. Performance analysis');
+      }
 
-Keep your analysis clear and concise. If the code is complex, break down your explanation into sections.`;
+      sections.push(`\nProvide a ${config.depth} analysis with ${config.style} explanations.`);
+      
+      return sections.join('\n');
+    };
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -62,7 +112,7 @@ Keep your analysis clear and concise. If the code is complex, break down your ex
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: generateSystemPrompt(analysisConfig) },
           { role: 'user', content: `Language: ${language}\n\nCode:\n${code}` }
         ],
       }),

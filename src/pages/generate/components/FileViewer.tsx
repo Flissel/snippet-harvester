@@ -1,5 +1,5 @@
 
-import { FileCode2, Loader2, Brain } from 'lucide-react';
+import { FileCode2, Loader2, Brain, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileNode, DirectoryNode, collectFilesFromDirectory } from '../types';
@@ -7,6 +7,20 @@ import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FileViewerProps {
   selectedFile: FileNode | null;
@@ -15,6 +29,21 @@ interface FileViewerProps {
   isCreatingSnippets: boolean;
   onCreateSnippet: () => void;
   onCreateDirectorySnippets: () => void;
+}
+
+interface AnalysisConfig {
+  analyzers: {
+    overview: boolean;
+    components: boolean;
+    issues: boolean;
+    dependencies: boolean;
+    documentation: boolean;
+    complexity: boolean;
+    security: boolean;
+    performance: boolean;
+  };
+  depth: 'basic' | 'standard' | 'detailed';
+  style: 'simple' | 'technical' | 'comprehensive';
 }
 
 export function FileViewer({
@@ -28,6 +57,21 @@ export function FileViewer({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const [analysisConfig, setAnalysisConfig] = useState<AnalysisConfig>({
+    analyzers: {
+      overview: true,
+      components: true,
+      issues: true,
+      dependencies: true,
+      documentation: true,
+      complexity: false,
+      security: false,
+      performance: false,
+    },
+    depth: 'standard',
+    style: 'technical',
+  });
 
   const getFileIcon = (extension?: string) => {
     return <FileCode2 className="h-4 w-4 text-blue-500" />;
@@ -52,6 +96,7 @@ export function FileViewer({
         body: {
           code: fileContent,
           language: selectedFile.extension,
+          config: analysisConfig,
         },
       });
 
@@ -68,6 +113,16 @@ export function FileViewer({
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const toggleAnalyzer = (key: keyof typeof analysisConfig.analyzers) => {
+    setAnalysisConfig(prev => ({
+      ...prev,
+      analyzers: {
+        ...prev.analyzers,
+        [key]: !prev.analyzers[key],
+      },
+    }));
   };
 
   return (
@@ -94,6 +149,75 @@ export function FileViewer({
               <Button onClick={onCreateSnippet}>
                 Create Snippet
               </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Settings2 className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium leading-none">Analysis Configuration</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Configure the code analysis parameters
+                      </p>
+                    </div>
+                    <div className="grid gap-2">
+                      <div className="grid gap-4">
+                        <div className="space-y-2">
+                          <Label>Sections to Include</Label>
+                          {Object.entries(analysisConfig.analyzers).map(([key, value]) => (
+                            <div key={key} className="flex items-center space-x-2">
+                              <Switch
+                                checked={value}
+                                onCheckedChange={() => toggleAnalyzer(key as keyof typeof analysisConfig.analyzers)}
+                              />
+                              <Label>{key.charAt(0).toUpperCase() + key.slice(1)}</Label>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Analysis Depth</Label>
+                          <Select
+                            value={analysisConfig.depth}
+                            onValueChange={(value: typeof analysisConfig.depth) => 
+                              setAnalysisConfig(prev => ({ ...prev, depth: value }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="basic">Basic</SelectItem>
+                              <SelectItem value="standard">Standard</SelectItem>
+                              <SelectItem value="detailed">Detailed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Analysis Style</Label>
+                          <Select
+                            value={analysisConfig.style}
+                            onValueChange={(value: typeof analysisConfig.style) => 
+                              setAnalysisConfig(prev => ({ ...prev, style: value }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="simple">Simple</SelectItem>
+                              <SelectItem value="technical">Technical</SelectItem>
+                              <SelectItem value="comprehensive">Comprehensive</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Button 
                 onClick={analyzeCode} 
                 disabled={isAnalyzing}
