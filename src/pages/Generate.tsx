@@ -35,6 +35,29 @@ interface RepositoryTree {
   created_by: string;
 }
 
+// Type guard functions
+function isFileNode(node: any): node is FileNode {
+  return (
+    typeof node === 'object' &&
+    node !== null &&
+    node.type === 'file' &&
+    typeof node.name === 'string' &&
+    typeof node.path === 'string' &&
+    typeof node.sha === 'string' &&
+    typeof node.url === 'string'
+  );
+}
+
+function isDirectoryNode(node: any): node is DirectoryNode {
+  return (
+    typeof node === 'object' &&
+    node !== null &&
+    node.type === 'directory' &&
+    typeof node.name === 'string' &&
+    Array.isArray(node.children)
+  );
+}
+
 interface TreeItemProps {
   node: TreeNode;
   level: number;
@@ -124,11 +147,15 @@ export default function Generate() {
       
       // Type guard to ensure tree_structure matches DirectoryNode interface
       if (data && typeof data.tree_structure === 'object' && data.tree_structure !== null) {
-        const typedData = {
-          ...data,
-          tree_structure: data.tree_structure as DirectoryNode
-        };
-        return typedData as RepositoryTree;
+        // First cast to unknown, then validate the structure
+        const treeStructure = data.tree_structure as unknown;
+        
+        if (isDirectoryNode(treeStructure)) {
+          return {
+            ...data,
+            tree_structure: treeStructure
+          } as RepositoryTree;
+        }
       }
       return null;
     },
