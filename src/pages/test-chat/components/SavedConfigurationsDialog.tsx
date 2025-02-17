@@ -27,6 +27,7 @@ interface SavedConfigurationsDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfigurationSelect: (config: Prompt) => void;
   onConfigurationEdit?: (config: Prompt) => void;
+  onConfigurationDeleted?: () => void;
 }
 
 export function SavedConfigurationsDialog({
@@ -34,6 +35,7 @@ export function SavedConfigurationsDialog({
   onOpenChange,
   onConfigurationSelect,
   onConfigurationEdit,
+  onConfigurationDeleted,
 }: SavedConfigurationsDialogProps) {
   const [configToDelete, setConfigToDelete] = useState<Prompt | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -67,11 +69,17 @@ export function SavedConfigurationsDialog({
 
       // Invalidate and refetch the configurations
       await queryClient.invalidateQueries({ queryKey: ['saved-configurations'] });
+      
+      // Call the onConfigurationDeleted callback
+      onConfigurationDeleted?.();
 
       toast({
         title: "Success",
         description: "Configuration deleted successfully",
       });
+
+      // Close the dialog after successful deletion
+      onOpenChange(false);
     } catch (error) {
       console.error('Error deleting configuration:', error);
       toast({

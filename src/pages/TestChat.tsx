@@ -3,7 +3,7 @@ import { ChatWindow } from '@/components/chat/ChatWindow';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw, Save, FolderOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Prompt } from '@/types/prompts';
@@ -71,6 +71,18 @@ export default function TestChat() {
     resetChat();
   };
 
+  const handleConfigurationDeleted = useCallback(() => {
+    // Reset the selected prompt if it was deleted
+    setSelectedPrompt(undefined);
+    setSystemMessage('');
+    setUserMessage('');
+    resetChat();
+    toast({
+      title: "Configuration Deleted",
+      description: "The configuration has been deleted successfully",
+    });
+  }, [setSelectedPrompt, setSystemMessage, setUserMessage]);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -133,6 +145,7 @@ export default function TestChat() {
         onOpenChange={setShowLoadDialog}
         onConfigurationSelect={handleLoadConfiguration}
         onConfigurationEdit={handleEditConfiguration}
+        onConfigurationDeleted={handleConfigurationDeleted}
       />
     </div>
   );
