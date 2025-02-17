@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,143 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, FileCode2, ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-
-interface FileNode {
-  name: string;
-  type: 'file';
-  path: string;
-  sha: string;
-  url: string;
-}
-
-interface DirectoryNode {
-  name: string;
-  type: 'directory';
-  children: (DirectoryNode | FileNode)[];
-}
-
-type TreeNode = FileNode | DirectoryNode;
-
-interface RepositoryTree {
-  id: string;
-  repository_url: string;
-  tree_structure: DirectoryNode;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-}
-
-function isFileNode(node: any): node is FileNode {
-  return (
-    typeof node === 'object' &&
-    node !== null &&
-    node.type === 'file' &&
-    typeof node.name === 'string' &&
-    typeof node.path === 'string' &&
-    typeof node.sha === 'string' &&
-    typeof node.url === 'string'
-  );
-}
-
-function isDirectoryNode(node: any): node is DirectoryNode {
-  return (
-    typeof node === 'object' &&
-    node !== null &&
-    node.type === 'directory' &&
-    typeof node.name === 'string' &&
-    Array.isArray(node.children)
-  );
-}
-
-function collectFilesFromDirectory(node: DirectoryNode): FileNode[] {
-  let files: FileNode[] = [];
-  for (const child of node.children) {
-    if (isFileNode(child)) {
-      if (child.name.endsWith('.py')) {
-        files.push(child);
-      }
-    } else if (isDirectoryNode(child)) {
-      files = [...files, ...collectFilesFromDirectory(child)];
-    }
-  }
-  return files;
-}
-
-interface TreeItemProps {
-  node: TreeNode;
-  level: number;
-  onFileSelect: (file: FileNode) => void;
-  onDirectorySelect: (directory: DirectoryNode) => void;
-}
-
-const TreeItem = ({ node, level, onFileSelect, onDirectorySelect }: TreeItemProps) => {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const paddingLeft = `${level * 1.5}rem`;
-
-  if (node.type === 'file') {
-    return (
-      <div
-        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer"
-        style={{ paddingLeft }}
-        onClick={() => onFileSelect(node)}
-      >
-        <FileCode2 className="h-4 w-4 text-blue-500" />
-        <span className="text-sm">{node.name}</span>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <div
-        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer group"
-        style={{ paddingLeft }}
-      >
-        <div className="flex items-center gap-2" onClick={() => setIsExpanded(!isExpanded)}>
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-          {isExpanded ? (
-            <FolderOpen className="h-4 w-4 text-yellow-500" />
-          ) : (
-            <Folder className="h-4 w-4 text-yellow-500" />
-          )}
-          <span className="text-sm font-medium">{node.name || 'Root'}</span>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDirectorySelect(node);
-          }}
-        >
-          Create Snippets
-        </Button>
-      </div>
-      {isExpanded && node.type === 'directory' && node.children && (
-        <div>
-          {node.children.map((child, index) => (
-            <TreeItem 
-              key={`${child.name}-${index}`} 
-              node={child} 
-              level={level + 1} 
-              onFileSelect={onFileSelect}
-              onDirectorySelect={onDirectorySelect}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+import { TreeItem } from './generate/components/TreeItem';
+import { FileViewer } from './generate/components/FileViewer';
+import { FileNode, DirectoryNode, RepositoryTree, isDirectoryNode } from './generate/types';
 
 export default function Generate() {
   const { user } = useAuth();
@@ -336,59 +207,14 @@ export default function Generate() {
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">
-              {selectedFile 
-                ? `File: ${selectedFile.name}` 
-                : selectedDirectory 
-                  ? `Directory: ${selectedDirectory.name}`
-                  : 'Select a file or directory'}
-            </h2>
-            {selectedFile && fileContent && (
-              <Button onClick={handleCreateSnippet}>
-                Create Snippet
-              </Button>
-            )}
-            {selectedDirectory && (
-              <Button 
-                onClick={handleCreateDirectorySnippets}
-                disabled={isCreatingSnippets}
-              >
-                {isCreatingSnippets ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Snippets...
-                  </>
-                ) : (
-                  'Create Directory Snippets'
-                )}
-              </Button>
-            )}
-          </div>
-          <ScrollArea className="h-[500px] border rounded-md">
-            {fileContent ? (
-              <pre className="p-4 font-mono text-sm whitespace-pre-wrap">{fileContent}</pre>
-            ) : selectedDirectory ? (
-              <div className="p-4 space-y-4">
-                <h3 className="font-medium">Python Files in Directory:</h3>
-                <div className="space-y-2">
-                  {collectFilesFromDirectory(selectedDirectory).map((file, index) => (
-                    <div 
-                      key={index}
-                      className="flex items-center gap-2 p-2 border rounded-md"
-                    >
-                      <FileCode2 className="h-4 w-4 text-blue-500" />
-                      <span className="text-sm">{file.path}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Select a file or directory to view
-              </div>
-            )}
-          </ScrollArea>
+          <FileViewer
+            selectedFile={selectedFile}
+            selectedDirectory={selectedDirectory}
+            fileContent={fileContent}
+            isCreatingSnippets={isCreatingSnippets}
+            onCreateSnippet={handleCreateSnippet}
+            onCreateDirectorySnippets={handleCreateDirectorySnippets}
+          />
         </Card>
       </div>
     </div>
