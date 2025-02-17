@@ -14,7 +14,8 @@ import {
   DirectoryNode, 
   RepositoryTree, 
   isDirectoryNode, 
-  filterTreeByExtensions
+  filterTreeByExtensions,
+  collectFilesFromDirectory
 } from './generate/types';
 
 export default function Generate() {
