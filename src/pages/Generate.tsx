@@ -57,13 +57,28 @@ function isDirectoryNode(node: any): node is DirectoryNode {
   );
 }
 
+function collectFilesFromDirectory(node: DirectoryNode): FileNode[] {
+  let files: FileNode[] = [];
+  for (const child of node.children) {
+    if (isFileNode(child)) {
+      if (child.name.endsWith('.py')) {
+        files.push(child);
+      }
+    } else if (isDirectoryNode(child)) {
+      files = [...files, ...collectFilesFromDirectory(child)];
+    }
+  }
+  return files;
+}
+
 interface TreeItemProps {
   node: TreeNode;
   level: number;
   onFileSelect: (file: FileNode) => void;
+  onDirectorySelect: (directory: DirectoryNode) => void;
 }
 
-const TreeItem = ({ node, level, onFileSelect }: TreeItemProps) => {
+const TreeItem = ({ node, level, onFileSelect, onDirectorySelect }: TreeItemProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const paddingLeft = `${level * 1.5}rem`;
 
@@ -83,21 +98,33 @@ const TreeItem = ({ node, level, onFileSelect }: TreeItemProps) => {
   return (
     <div>
       <div
-        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer"
+        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer group"
         style={{ paddingLeft }}
-        onClick={() => setIsExpanded(!isExpanded)}
       >
-        {isExpanded ? (
-          <ChevronDown className="h-4 w-4" />
-        ) : (
-          <ChevronRight className="h-4 w-4" />
-        )}
-        {isExpanded ? (
-          <FolderOpen className="h-4 w-4 text-yellow-500" />
-        ) : (
-          <Folder className="h-4 w-4 text-yellow-500" />
-        )}
-        <span className="text-sm font-medium">{node.name || 'Root'}</span>
+        <div className="flex items-center gap-2" onClick={() => setIsExpanded(!isExpanded)}>
+          {isExpanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+          {isExpanded ? (
+            <FolderOpen className="h-4 w-4 text-yellow-500" />
+          ) : (
+            <Folder className="h-4 w-4 text-yellow-500" />
+          )}
+          <span className="text-sm font-medium">{node.name || 'Root'}</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDirectorySelect(node);
+          }}
+        >
+          Create Snippets
+        </Button>
       </div>
       {isExpanded && node.type === 'directory' && node.children && (
         <div>
@@ -107,6 +134,7 @@ const TreeItem = ({ node, level, onFileSelect }: TreeItemProps) => {
               node={child} 
               level={level + 1} 
               onFileSelect={onFileSelect}
+              onDirectorySelect={onDirectorySelect}
             />
           ))}
         </div>
@@ -122,6 +150,8 @@ export default function Generate() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [fileContent, setFileContent] = useState<string | null>(null);
+  const [selectedDirectory, setSelectedDirectory] = useState<DirectoryNode | null>(null);
+  const [isCreatingSnippets, setIsCreatingSnippets] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,6 +173,7 @@ export default function Generate() {
   };
 
   const handleFileSelect = async (file: FileNode) => {
+    setSelectedDirectory(null);
     setSelectedFile(file);
     try {
       const response = await fetch(file.url);
@@ -153,6 +184,12 @@ export default function Generate() {
       toast.error('Failed to load file content');
       setFileContent(null);
     }
+  };
+
+  const handleDirectorySelect = (directory: DirectoryNode) => {
+    setSelectedFile(null);
+    setFileContent(null);
+    setSelectedDirectory(directory);
   };
 
   const handleCreateSnippet = async () => {
@@ -178,6 +215,52 @@ export default function Generate() {
       navigate(`/analyze/${data.id}`);
     } catch (error: any) {
       toast.error('Failed to create snippet: ' + error.message);
+    }
+  };
+
+  const handleCreateDirectorySnippets = async () => {
+    if (!selectedDirectory || !user) return;
+
+    const files = collectFilesFromDirectory(selectedDirectory);
+    if (files.length === 0) {
+      toast.error('No Python files found in this directory');
+      return;
+    }
+
+    setIsCreatingSnippets(true);
+    const createdSnippets: string[] = [];
+
+    try {
+      for (const file of files) {
+        const response = await fetch(file.url);
+        if (!response.ok) throw new Error(`Failed to fetch ${file.name}`);
+        const content = await response.text();
+
+        const { data, error } = await supabase
+          .from('snippets')
+          .insert({
+            title: `${selectedDirectory.name}/${file.name}`,
+            code_content: content,
+            language: file.name.split('.').pop() || 'text',
+            created_by: user.id,
+            source_url: file.url,
+            source_path: file.path
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        createdSnippets.push(data.id);
+      }
+
+      toast.success(`Created ${createdSnippets.length} snippets successfully`);
+      if (createdSnippets.length > 0) {
+        navigate(`/analyze/${createdSnippets[0]}`);
+      }
+    } catch (error: any) {
+      toast.error('Failed to create snippets: ' + error.message);
+    } finally {
+      setIsCreatingSnippets(false);
     }
   };
 
@@ -241,6 +324,7 @@ export default function Generate() {
                   node={treeData.tree_structure} 
                   level={0} 
                   onFileSelect={handleFileSelect}
+                  onDirectorySelect={handleDirectorySelect}
                 />
               </ScrollArea>
             ) : (
@@ -254,24 +338,54 @@ export default function Generate() {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">
-              {selectedFile ? `File: ${selectedFile.name}` : 'Select a file to view'}
+              {selectedFile 
+                ? `File: ${selectedFile.name}` 
+                : selectedDirectory 
+                  ? `Directory: ${selectedDirectory.name}`
+                  : 'Select a file or directory'}
             </h2>
             {selectedFile && fileContent && (
               <Button onClick={handleCreateSnippet}>
                 Create Snippet
               </Button>
             )}
+            {selectedDirectory && (
+              <Button 
+                onClick={handleCreateDirectorySnippets}
+                disabled={isCreatingSnippets}
+              >
+                {isCreatingSnippets ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Snippets...
+                  </>
+                ) : (
+                  'Create Directory Snippets'
+                )}
+              </Button>
+            )}
           </div>
           <ScrollArea className="h-[500px] border rounded-md">
             {fileContent ? (
               <pre className="p-4 font-mono text-sm whitespace-pre-wrap">{fileContent}</pre>
+            ) : selectedDirectory ? (
+              <div className="p-4 space-y-4">
+                <h3 className="font-medium">Python Files in Directory:</h3>
+                <div className="space-y-2">
+                  {collectFilesFromDirectory(selectedDirectory).map((file, index) => (
+                    <div 
+                      key={index}
+                      className="flex items-center gap-2 p-2 border rounded-md"
+                    >
+                      <FileCode2 className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm">{file.path}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
-                {selectedFile ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                ) : (
-                  'No file selected'
-                )}
+                Select a file or directory to view
               </div>
             )}
           </ScrollArea>
