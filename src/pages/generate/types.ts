@@ -5,7 +5,7 @@ export interface FileNode {
   path: string;
   sha: string;
   url: string;
-  fileType?: 'python' | 'yaml' | 'toml' | 'requirements' | 'setup';
+  extension?: string;
 }
 
 export interface DirectoryNode {
@@ -20,22 +20,10 @@ export interface RepositoryTree {
   id: string;
   repository_url: string;
   tree_structure: DirectoryNode;
+  available_file_types: string[];
   created_at: string;
   updated_at: string;
   created_by: string;
-}
-
-export interface ConfigurationTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  file_path: string;
-  content: string;
-  template_type: 'yaml' | 'toml' | 'requirements' | 'setup';
-  repository_tree_id: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export function isFileNode(node: any): node is FileNode {
@@ -60,28 +48,54 @@ export function isDirectoryNode(node: any): node is DirectoryNode {
   );
 }
 
-function getFileType(filename: string): FileNode['fileType'] | undefined {
-  if (filename.endsWith('.py')) return 'python';
-  if (filename.endsWith('.yml') || filename.endsWith('.yaml')) return 'yaml';
-  if (filename.endsWith('.toml')) return 'toml';
-  if (filename === 'requirements.txt') return 'requirements';
-  if (filename === 'setup.py') return 'setup';
-  return undefined;
+export function getFileExtension(filename: string): string {
+  const parts = filename.split('.');
+  return parts.length > 1 ? parts.pop()!.toLowerCase() : '';
+}
+
+export function filterTreeByExtensions(
+  node: DirectoryNode,
+  extensions: string[]
+): DirectoryNode {
+  if (extensions.length === 0) return node;
+
+  const filterNode = (n: DirectoryNode): DirectoryNode => {
+    const filteredChildren = n.children
+      .map(child => {
+        if (isFileNode(child)) {
+          const ext = getFileExtension(child.name);
+          return extensions.includes(ext) ? child : null;
+        }
+        if (isDirectoryNode(child)) {
+          const filteredDir = filterNode(child);
+          return filteredDir.children.length > 0 ? filteredDir : null;
+        }
+        return null;
+      })
+      .filter((child): child is FileNode | DirectoryNode => child !== null);
+
+    return {
+      ...n,
+      children: filteredChildren,
+    };
+  };
+
+  return filterNode(node);
 }
 
 export function collectFilesFromDirectory(
   node: DirectoryNode,
-  fileTypes?: FileNode['fileType'][]
+  extensions?: string[]
 ): FileNode[] {
   let files: FileNode[] = [];
   for (const child of node.children) {
     if (isFileNode(child)) {
-      const fileType = getFileType(child.name);
-      if (!fileTypes || (fileType && fileTypes.includes(fileType))) {
-        files.push({ ...child, fileType });
+      const ext = getFileExtension(child.name);
+      if (!extensions || extensions.includes(ext)) {
+        files.push({ ...child, extension: ext });
       }
     } else if (isDirectoryNode(child)) {
-      files = [...files, ...collectFilesFromDirectory(child, fileTypes)];
+      files = [...files, ...collectFilesFromDirectory(child, extensions)];
     }
   }
   return files;

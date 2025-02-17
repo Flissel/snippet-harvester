@@ -361,6 +361,7 @@ export type Database = {
       }
       repository_trees: {
         Row: {
+          available_file_types: string[] | null
           created_at: string
           created_by: string
           id: string
@@ -369,6 +370,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          available_file_types?: string[] | null
           created_at?: string
           created_by: string
           id?: string
@@ -377,6 +379,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          available_file_types?: string[] | null
           created_at?: string
           created_by?: string
           id?: string

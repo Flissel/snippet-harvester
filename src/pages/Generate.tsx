@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,8 +17,16 @@ import {
   DirectoryNode, 
   RepositoryTree, 
   isDirectoryNode, 
-  collectFilesFromDirectory 
+  collectFilesFromDirectory,
+  filterTreeByExtensions
 } from './generate/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Generate() {
   const { user } = useAuth();
@@ -28,6 +37,7 @@ export default function Generate() {
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [selectedDirectory, setSelectedDirectory] = useState<DirectoryNode | null>(null);
   const [isCreatingSnippets, setIsCreatingSnippets] = useState(false);
+  const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +87,7 @@ export default function Generate() {
         .insert({
           title: selectedFile.name,
           code_content: fileContent,
-          language: selectedFile.name.split('.').pop() || 'text',
+          language: selectedFile.extension || 'text',
           created_by: user.id,
           source_url: selectedFile.url,
           source_path: selectedFile.path
@@ -97,7 +107,7 @@ export default function Generate() {
   const handleCreateDirectorySnippets = async () => {
     if (!selectedDirectory || !user) return;
 
-    const files = collectFilesFromDirectory(selectedDirectory);
+    const files = collectFilesFromDirectory(selectedDirectory, ['py']);
     if (files.length === 0) {
       toast.error('No Python files found in this directory');
       return;
@@ -117,7 +127,7 @@ export default function Generate() {
           .insert({
             title: `${selectedDirectory.name}/${file.name}`,
             code_content: content,
-            language: file.name.split('.').pop() || 'text',
+            language: file.extension || 'text',
             created_by: user.id,
             source_url: file.url,
             source_path: file.path
@@ -167,6 +177,10 @@ export default function Generate() {
     enabled: !!user
   });
 
+  const filteredTreeStructure = treeData?.tree_structure && selectedFileTypes.length > 0
+    ? filterTreeByExtensions(treeData.tree_structure, selectedFileTypes)
+    : treeData?.tree_structure;
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       <h1 className="text-2xl font-bold">Generate from GitHub</h1>
@@ -189,15 +203,35 @@ export default function Generate() {
           </form>
 
           <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-4">Python Files</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Repository Files</h2>
+              {treeData?.available_file_types && treeData.available_file_types.length > 0 && (
+                <Select 
+                  value={selectedFileTypes.join(',')}
+                  onValueChange={(value) => setSelectedFileTypes(value ? value.split(',') : [])}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All files</SelectItem>
+                    {treeData.available_file_types.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        .{type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
             {isTreeLoading ? (
               <div className="flex justify-center">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
-            ) : treeData && treeData.tree_structure ? (
+            ) : filteredTreeStructure ? (
               <ScrollArea className="h-[400px] border rounded-md p-4">
                 <TreeItem 
-                  node={treeData.tree_structure} 
+                  node={filteredTreeStructure} 
                   level={0} 
                   onFileSelect={handleFileSelect}
                   onDirectorySelect={handleDirectorySelect}

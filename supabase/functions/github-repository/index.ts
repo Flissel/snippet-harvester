@@ -13,7 +13,7 @@ interface FileNode {
   path: string;
   sha: string;
   url: string;
-  fileType?: 'python' | 'yaml' | 'toml' | 'requirements' | 'setup';
+  extension?: string;
 }
 
 interface DirectoryNode {
@@ -22,17 +22,14 @@ interface DirectoryNode {
   children: (DirectoryNode | FileNode)[];
 }
 
-function getFileType(filename: string): FileNode['fileType'] | undefined {
-  if (filename.endsWith('.py')) return 'python';
-  if (filename.endsWith('.yml') || filename.endsWith('.yaml')) return 'yaml';
-  if (filename.endsWith('.toml')) return 'toml';
-  if (filename === 'requirements.txt') return 'requirements';
-  if (filename === 'setup.py') return 'setup';
-  return undefined;
+function getFileExtension(filename: string): string {
+  const parts = filename.split('.');
+  return parts.length > 1 ? parts.pop()!.toLowerCase() : '';
 }
 
 function buildDirectoryTree(files: { path: string; type: string; sha: string }[], baseUrl: string): DirectoryNode {
   const root: DirectoryNode = { name: '', type: 'directory', children: [] };
+  const extensions = new Set<string>();
 
   for (const file of files) {
     const parts = file.path.split('/');
@@ -54,13 +51,18 @@ function buildDirectoryTree(files: { path: string; type: string; sha: string }[]
 
     // Add the file to its directory
     const fileName = parts[parts.length - 1];
+    const extension = getFileExtension(fileName);
+    if (extension) {
+      extensions.add(extension);
+    }
+
     currentNode.children.push({
       name: fileName,
       type: 'file',
       path: file.path,
       sha: file.sha,
       url: `${baseUrl}/${file.path}`,
-      fileType: getFileType(fileName)
+      extension
     });
   }
 
@@ -119,23 +121,25 @@ serve(async (req) => {
 
     const data = await githubResponse.json()
     
-    // Filter Python and configuration files
-    const relevantFiles = data.tree.filter((item: any) => 
-      item.type === 'blob' && (
-        item.path.endsWith('.py') ||
-        item.path.endsWith('.yml') ||
-        item.path.endsWith('.yaml') ||
-        item.path.endsWith('.toml') ||
-        item.path === 'requirements.txt' ||
-        item.path === 'setup.py'
-      )
-    )
-
-    // Build the directory tree
+    // Include all files
+    const allFiles = data.tree.filter((item: any) => item.type === 'blob');
+    
+    // Build the directory tree and collect extensions
     const treeStructure = buildDirectoryTree(
-      relevantFiles,
+      allFiles,
       `https://raw.githubusercontent.com/${owner}/${repo}/main`
     );
+
+    // Get unique file extensions
+    const availableFileTypes = Array.from(
+      new Set(
+        allFiles
+          .map((file: any) => getFileExtension(file.path))
+          .filter(Boolean)
+      )
+    ).sort();
+
+    console.log('Available file types:', availableFileTypes);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -146,6 +150,7 @@ serve(async (req) => {
       .insert({
         repository_url,
         tree_structure: treeStructure,
+        available_file_types: availableFileTypes,
         created_by: userId
       })
       .select()
@@ -154,40 +159,6 @@ serve(async (req) => {
     if (treeError) {
       console.error('Supabase error:', treeError)
       throw treeError
-    }
-
-    // Fetch and store configuration files
-    for (const file of relevantFiles) {
-      const fileType = getFileType(file.path)
-      if (fileType && fileType !== 'python') {
-        const contentResponse = await fetch(
-          `https://raw.githubusercontent.com/${owner}/${repo}/main/${file.path}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${githubToken}`,
-            }
-          }
-        )
-
-        if (contentResponse.ok) {
-          const content = await contentResponse.text()
-          
-          const { error: configError } = await supabase
-            .from('configuration_templates')
-            .insert({
-              name: file.path.split('/').pop(),
-              file_path: file.path,
-              content,
-              template_type: fileType,
-              repository_tree_id: insertedTree.id,
-              created_by: userId
-            })
-
-          if (configError) {
-            console.error('Error storing configuration template:', configError)
-          }
-        }
-      }
     }
 
     return new Response(
