@@ -61,9 +61,10 @@ function isDirectoryNode(node: any): node is DirectoryNode {
 interface TreeItemProps {
   node: TreeNode;
   level: number;
+  onFileSelect: (file: FileNode) => void;
 }
 
-const TreeItem = ({ node, level }: TreeItemProps) => {
+const TreeItem = ({ node, level, onFileSelect }: TreeItemProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const paddingLeft = `${level * 1.5}rem`;
 
@@ -72,6 +73,7 @@ const TreeItem = ({ node, level }: TreeItemProps) => {
       <div
         className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer"
         style={{ paddingLeft }}
+        onClick={() => onFileSelect(node)}
       >
         <FileCode2 className="h-4 w-4 text-blue-500" />
         <span className="text-sm">{node.name}</span>
@@ -101,7 +103,12 @@ const TreeItem = ({ node, level }: TreeItemProps) => {
       {isExpanded && node.type === 'directory' && node.children && (
         <div>
           {node.children.map((child, index) => (
-            <TreeItem key={`${child.name}-${index}`} node={child} level={level + 1} />
+            <TreeItem 
+              key={`${child.name}-${index}`} 
+              node={child} 
+              level={level + 1} 
+              onFileSelect={onFileSelect}
+            />
           ))}
         </div>
       )}
@@ -113,6 +120,8 @@ export default function Generate() {
   const { user } = useAuth();
   const [repositoryUrl, setRepositoryUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
+  const [fileContent, setFileContent] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,6 +139,19 @@ export default function Generate() {
       toast.error('Failed to scan repository: ' + error.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleFileSelect = async (file: FileNode) => {
+    setSelectedFile(file);
+    try {
+      const response = await fetch(file.url);
+      if (!response.ok) throw new Error('Failed to fetch file content');
+      const content = await response.text();
+      setFileContent(content);
+    } catch (error) {
+      toast.error('Failed to load file content');
+      setFileContent(null);
     }
   };
 
@@ -166,39 +188,64 @@ export default function Generate() {
     <div className="container mx-auto p-4 space-y-6">
       <h1 className="text-2xl font-bold">Generate from GitHub</h1>
       
-      <Card className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex gap-4">
-            <Input
-              placeholder="Enter GitHub repository URL"
-              value={repositoryUrl}
-              onChange={(e) => setRepositoryUrl(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Scan Repository
-            </Button>
-          </div>
-        </form>
-
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold mb-4">Python Files</h2>
-          {isTreeLoading ? (
-            <div className="flex justify-center">
-              <Loader2 className="h-6 w-6 animate-spin" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex gap-4">
+              <Input
+                placeholder="Enter GitHub repository URL"
+                value={repositoryUrl}
+                onChange={(e) => setRepositoryUrl(e.target.value)}
+                className="flex-1"
+              />
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Scan Repository
+              </Button>
             </div>
-          ) : treeData && treeData.tree_structure ? (
-            <ScrollArea className="h-[400px] border rounded-md p-4">
-              <TreeItem node={treeData.tree_structure} level={0} />
-            </ScrollArea>
-          ) : (
-            <p className="text-muted-foreground text-center py-8">
-              No repository scanned yet. Enter a GitHub URL above to start.
-            </p>
-          )}
-        </div>
-      </Card>
+          </form>
+
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold mb-4">Python Files</h2>
+            {isTreeLoading ? (
+              <div className="flex justify-center">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : treeData && treeData.tree_structure ? (
+              <ScrollArea className="h-[400px] border rounded-md p-4">
+                <TreeItem 
+                  node={treeData.tree_structure} 
+                  level={0} 
+                  onFileSelect={handleFileSelect}
+                />
+              </ScrollArea>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">
+                No repository scanned yet. Enter a GitHub URL above to start.
+              </p>
+            )}
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">
+            {selectedFile ? `File: ${selectedFile.name}` : 'Select a file to view'}
+          </h2>
+          <ScrollArea className="h-[500px] border rounded-md">
+            {fileContent ? (
+              <pre className="p-4 font-mono text-sm whitespace-pre-wrap">{fileContent}</pre>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                {selectedFile ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  'No file selected'
+                )}
+              </div>
+            )}
+          </ScrollArea>
+        </Card>
+      </div>
     </div>
   );
 }
