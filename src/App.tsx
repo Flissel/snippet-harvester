@@ -8,6 +8,7 @@ import Analysis from "./pages/Analysis";
 import PromptsManagement from "./pages/PromptsManagement";
 import TestChat from "./pages/TestChat";
 import NotFound from "./pages/NotFound";
+import Generate from "./pages/Generate";
 import { AuthProvider } from "./contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "./components/ui/toaster";
@@ -27,6 +28,7 @@ function App() {
             <Route path="/analyze/:snippetId" element={<Analysis />} />
             <Route path="/prompts" element={<PromptsManagement />} />
             <Route path="/test-chat" element={<TestChat />} />
+            <Route path="/generate" element={<Generate />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>
