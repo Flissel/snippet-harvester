@@ -35,7 +35,7 @@ export function FileViewer({
   };
 
   return (
-    <div>
+    <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold flex items-center">
           {selectedFile ? (
@@ -73,7 +73,7 @@ export function FileViewer({
           </Button>
         )}
       </div>
-      <ScrollArea className="h-[500px] border rounded-md">
+      <ScrollArea className="flex-1 border rounded-md">
         {fileContent ? (
           <pre className="p-4 font-mono text-sm whitespace-pre-wrap">{fileContent}</pre>
         ) : selectedDirectory ? (
@@ -93,7 +93,7 @@ export function FileViewer({
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
+          <div className="flex items-center justify-center h-full text-muted-foreground p-4">
             Select a file or directory to view
           </div>
         )}

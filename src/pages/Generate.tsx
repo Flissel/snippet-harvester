@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -185,12 +186,12 @@ export default function Generate() {
     : treeData?.tree_structure;
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <h1 className="text-2xl font-bold">Generate from GitHub</h1>
+    <div className="container mx-auto p-4 h-[calc(100vh-6rem)]">
+      <h1 className="text-2xl font-bold mb-6">Generate from GitHub</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[calc(100%-4rem)]">
+        <Card className="p-6 flex flex-col">
+          <form onSubmit={handleSubmit} className="space-y-4 mb-6">
             <div className="flex gap-4">
               <Input
                 placeholder="Enter GitHub repository URL"
@@ -205,7 +206,7 @@ export default function Generate() {
             </div>
           </form>
 
-          <div className="mt-6">
+          <div className="flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Repository Files</h2>
               {treeData?.available_file_types && treeData.available_file_types.length > 0 && (
@@ -232,7 +233,7 @@ export default function Generate() {
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : filteredTreeStructure ? (
-              <ScrollArea className="h-[400px] border rounded-md p-4">
+              <ScrollArea className="flex-1 border rounded-md p-4">
                 <TreeItem 
                   node={filteredTreeStructure} 
                   level={0} 
@@ -248,7 +249,7 @@ export default function Generate() {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-6 flex flex-col">
           <FileViewer
             selectedFile={selectedFile}
             selectedDirectory={selectedDirectory}
