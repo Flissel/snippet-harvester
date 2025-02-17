@@ -80,7 +80,7 @@ export function FileViewer({
           <div className="p-4 space-y-4">
             <h3 className="font-medium">Files in Directory:</h3>
             <div className="space-y-2">
-              {collectFilesFromDirectory(selectedDirectory).map((file, index) => (
+              {collectFilesFromDirectory(selectedDirectory, ['py']).map((file, index) => (
                 <div 
                   key={index}
                   className="flex items-center gap-2 p-2 border rounded-md"

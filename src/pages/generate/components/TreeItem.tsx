@@ -2,11 +2,11 @@
 import { useState } from 'react';
 import { FileCode2, ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FileNode, DirectoryNode, TreeNode } from '../types';
+import { FileNode, DirectoryNode } from '../types';
 import { Badge } from '@/components/ui/badge';
 
 interface TreeItemProps {
-  node: TreeNode;
+  node: FileNode | DirectoryNode;
   level: number;
   onFileSelect: (file: FileNode) => void;
   onDirectorySelect: (directory: DirectoryNode) => void;
