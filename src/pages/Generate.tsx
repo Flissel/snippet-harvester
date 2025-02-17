@@ -61,7 +61,23 @@ export default function Generate() {
         .single();
 
       if (error) throw error;
-      return data as RepositoryTree;
+
+      // Validate and transform the tree_structure data
+      if (data && Array.isArray(data.tree_structure)) {
+        const validatedTreeStructure = data.tree_structure.map((node: any) => ({
+          path: String(node.path),
+          type: String(node.type),
+          sha: String(node.sha),
+          url: String(node.url)
+        }));
+
+        return {
+          ...data,
+          tree_structure: validatedTreeStructure
+        } as RepositoryTree;
+      }
+
+      throw new Error('Invalid tree structure data');
     },
     enabled: !!user
   });
