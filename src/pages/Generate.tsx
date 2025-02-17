@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, FileCode2, FolderIcon } from 'lucide-react';
+import { Loader2, FileCode2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 
@@ -15,6 +15,15 @@ interface TreeNode {
   type: 'tree' | 'blob';
   sha: string;
   url: string;
+}
+
+interface RepositoryTree {
+  id: string;
+  repository_url: string;
+  tree_structure: TreeNode[];
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
 export default function Generate() {
@@ -52,7 +61,7 @@ export default function Generate() {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as RepositoryTree;
     },
     enabled: !!user
   });
