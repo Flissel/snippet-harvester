@@ -39,6 +39,7 @@ export function SavedConfigurationsDialog({
 }: SavedConfigurationsDialogProps) {
   const [configToDelete, setConfigToDelete] = useState<Prompt | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [alertOpen, setAlertOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -67,10 +68,16 @@ export function SavedConfigurationsDialog({
 
       if (error) throw error;
 
-      // Invalidate and refetch the configurations
+      // First close the alert dialog
+      setAlertOpen(false);
+      
+      // Wait for alert dialog animation to complete
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Update the configurations
       await queryClient.invalidateQueries({ queryKey: ['saved-configurations'] });
       
-      // Call the onConfigurationDeleted callback
+      // Call the deleted callback
       onConfigurationDeleted?.();
 
       toast({
@@ -78,7 +85,7 @@ export function SavedConfigurationsDialog({
         description: "Configuration deleted successfully",
       });
 
-      // Close the dialog after successful deletion
+      // Finally close the main dialog
       onOpenChange(false);
     } catch (error) {
       console.error('Error deleting configuration:', error);
@@ -93,6 +100,11 @@ export function SavedConfigurationsDialog({
     }
   };
 
+  const handleDeleteClick = (config: Prompt) => {
+    setConfigToDelete(config);
+    setAlertOpen(true);
+  };
+
   if (error) {
     toast({
       title: "Error",
@@ -103,7 +115,18 @@ export function SavedConfigurationsDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog 
+        open={open} 
+        onOpenChange={(newOpen) => {
+          if (!isDeleting) {
+            onOpenChange(newOpen);
+            if (!newOpen) {
+              setConfigToDelete(null);
+              setAlertOpen(false);
+            }
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Saved Configurations</DialogTitle>
@@ -150,7 +173,7 @@ export function SavedConfigurationsDialog({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setConfigToDelete(config as Prompt)}
+                          onClick={() => handleDeleteClick(config as Prompt)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -173,7 +196,15 @@ export function SavedConfigurationsDialog({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!configToDelete} onOpenChange={(open) => !isDeleting && setConfigToDelete(null)}>
+      <AlertDialog 
+        open={alertOpen} 
+        onOpenChange={(open) => {
+          if (!isDeleting) {
+            setAlertOpen(open);
+            if (!open) setConfigToDelete(null);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
