@@ -1,39 +1,57 @@
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface FileTypeFilterProps {
   availableTypes: string[];
   selectedTypes: string[];
-  onTypeChange: (value: string) => void;
+  onTypeChange: (type: string) => void;
 }
 
-export function FileTypeFilter({
-  availableTypes,
-  selectedTypes,
-  onTypeChange
-}: FileTypeFilterProps) {
+export function FileTypeFilter({ availableTypes, selectedTypes, onTypeChange }: FileTypeFilterProps) {
+  const handleTypeClick = (type: string) => {
+    if (type === 'all') {
+      onTypeChange('all');
+      return;
+    }
+
+    if (selectedTypes.includes(type)) {
+      const newTypes = selectedTypes.filter(t => t !== type);
+      onTypeChange(newTypes.length ? newTypes.join(',') : 'all');
+    } else {
+      const newTypes = [...selectedTypes, type];
+      onTypeChange(newTypes.join(','));
+    }
+  };
+
   return (
-    <Select 
-      value={selectedTypes.length === 0 ? "all" : selectedTypes.join(',')}
-      onValueChange={onTypeChange}
-    >
-      <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Filter by type" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All files</SelectItem>
+    <ScrollArea className="max-w-[300px] max-h-[40px]">
+      <div className="flex items-center gap-2 px-1">
+        <Badge
+          variant="outline"
+          className={cn(
+            "cursor-pointer hover:bg-primary/10",
+            selectedTypes.length === 0 && "bg-primary/10"
+          )}
+          onClick={() => handleTypeClick('all')}
+        >
+          All
+        </Badge>
         {availableTypes.map((type) => (
-          <SelectItem key={type} value={type}>
+          <Badge
+            key={type}
+            variant="outline"
+            className={cn(
+              "cursor-pointer hover:bg-primary/10",
+              selectedTypes.includes(type) && "bg-primary/10"
+            )}
+            onClick={() => handleTypeClick(type)}
+          >
             .{type}
-          </SelectItem>
+          </Badge>
         ))}
-      </SelectContent>
-    </Select>
+      </div>
+    </ScrollArea>
   );
 }
