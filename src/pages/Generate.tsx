@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -150,6 +149,10 @@ export default function Generate() {
     }
   };
 
+  const handleFileTypeChange = (value: string) => {
+    setSelectedFileTypes(value === "all" ? [] : value.split(','));
+  };
+
   const { data: treeData, isLoading: isTreeLoading } = useQuery({
     queryKey: ['repository-trees', user?.id],
     queryFn: async () => {
@@ -207,14 +210,14 @@ export default function Generate() {
               <h2 className="text-lg font-semibold">Repository Files</h2>
               {treeData?.available_file_types && treeData.available_file_types.length > 0 && (
                 <Select 
-                  value={selectedFileTypes.join(',')}
-                  onValueChange={(value) => setSelectedFileTypes(value ? value.split(',') : [])}
+                  value={selectedFileTypes.length === 0 ? "all" : selectedFileTypes.join(',')}
+                  onValueChange={handleFileTypeChange}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filter by type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All files</SelectItem>
+                    <SelectItem value="all">All files</SelectItem>
                     {treeData.available_file_types.map((type) => (
                       <SelectItem key={type} value={type}>
                         .{type}
