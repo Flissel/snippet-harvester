@@ -54,7 +54,7 @@ export function collectFilesFromDirectory(directory: DirectoryNode, fileExtensio
     for (const child of node.children) {
       if (child.type === 'directory') {
         traverse(child);
-      } else if (fileExtensions.includes(child.extension || '')) {
+      } else if (fileExtensions.length === 0 || fileExtensions.includes(child.extension || '')) {
         files.push(child);
       }
     }
