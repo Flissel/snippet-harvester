@@ -36,7 +36,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Sending request to OpenAI with context:', context);
+    console.log('Generating system prompt with context:', context);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -49,15 +49,35 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert in AutoGen and helping developers implement AI agents effectively.'
+            content: `You are an expert in creating highly effective system prompts for AI agents. Your goal is to craft precise, contextual, and well-structured system prompts that will guide AI assistants in providing accurate and relevant responses.
+
+Follow these guidelines when generating system prompts:
+1. Be specific about the agent's role and expertise domain
+2. Include clear constraints and boundaries
+3. Define the expected interaction style and tone
+4. Specify the format and structure of responses when relevant
+5. Include relevant domain-specific terminology and concepts
+6. Set clear ethical guidelines and bias prevention measures
+7. Define success criteria for responses
+8. Include error handling and edge case considerations`
           },
           {
             role: 'user',
-            content: `Given this context: "${context}", generate a system prompt that will help guide the assistant in providing relevant AutoGen implementation advice.`
+            content: `Create a system prompt based on this context: "${context}"
+
+Your output should follow this structure:
+1. Role and Expertise Definition
+2. Primary Objectives
+3. Interaction Guidelines
+4. Response Requirements
+5. Constraints and Limitations
+6. Success Criteria
+
+Make the prompt concise yet comprehensive, focusing on the specific needs indicated in the context.`
           }
         ],
         temperature: 0.7,
-        max_tokens: 500
+        max_tokens: 1000,
       }),
     });
 
@@ -72,6 +92,8 @@ serve(async (req) => {
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('No content received from OpenAI API');
     }
+
+    console.log('Generated system prompt:', data.choices[0].message.content);
 
     return new Response(
       JSON.stringify({ 
