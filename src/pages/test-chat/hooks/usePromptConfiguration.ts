@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Prompt } from '@/types/prompts';
 import { User } from '@supabase/supabase-js';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function usePromptConfiguration(user: User | null) {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
@@ -13,6 +14,7 @@ export function usePromptConfiguration(user: User | null) {
   const [userMessage, setUserMessage] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     loadPrompts();
@@ -50,6 +52,11 @@ export function usePromptConfiguration(user: User | null) {
       }
     } catch (error) {
       console.error('Error loading prompts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load prompts",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -77,6 +84,9 @@ export function usePromptConfiguration(user: User | null) {
       if (error) throw error;
 
       setHasUnsavedChanges(false);
+      // Invalidate the configurations query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ['saved-configurations'] });
+      
       toast({
         title: "Success",
         description: "Configuration saved successfully",

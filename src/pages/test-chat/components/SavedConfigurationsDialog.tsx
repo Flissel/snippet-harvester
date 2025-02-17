@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Prompt } from '@/types/prompts';
 import { Card } from '@/components/ui/card';
@@ -36,9 +36,11 @@ export function SavedConfigurationsDialog({
   onConfigurationEdit,
 }: SavedConfigurationsDialogProps) {
   const [configToDelete, setConfigToDelete] = useState<Prompt | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const { data: configurations, isLoading, refetch } = useQuery({
+  const { data: configurations, isLoading, error } = useQuery({
     queryKey: ['saved-configurations'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -53,6 +55,7 @@ export function SavedConfigurationsDialog({
 
   const handleDelete = async () => {
     if (!configToDelete) return;
+    setIsDeleting(true);
 
     try {
       const { error } = await supabase
@@ -62,13 +65,13 @@ export function SavedConfigurationsDialog({
 
       if (error) throw error;
 
+      // Invalidate and refetch the configurations
+      await queryClient.invalidateQueries({ queryKey: ['saved-configurations'] });
+
       toast({
         title: "Success",
         description: "Configuration deleted successfully",
       });
-
-      // Refresh the configurations list
-      refetch();
     } catch (error) {
       console.error('Error deleting configuration:', error);
       toast({
@@ -77,9 +80,18 @@ export function SavedConfigurationsDialog({
         variant: "destructive",
       });
     } finally {
+      setIsDeleting(false);
       setConfigToDelete(null);
     }
   };
+
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load configurations",
+      variant: "destructive",
+    });
+  }
 
   return (
     <>
@@ -153,7 +165,7 @@ export function SavedConfigurationsDialog({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!configToDelete} onOpenChange={() => setConfigToDelete(null)}>
+      <AlertDialog open={!!configToDelete} onOpenChange={(open) => !isDeleting && setConfigToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -165,9 +177,17 @@ export function SavedConfigurationsDialog({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <LoadingSpinner />
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
