@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { usePromptForm } from './hooks/usePromptForm';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { GenerationSettingsFields } from './FormFields/GenerationSettingsFields';
 
 interface PromptFormProps {
   prompt?: Prompt;
@@ -27,7 +28,15 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
       if (!titleValid) return;
       
       setIsGenerating(true);
-      await generateSystemMessage(form.getValues('name'), form.getValues('description'));
+      await generateSystemMessage(
+        form.getValues('name'), 
+        form.getValues('description'),
+        {
+          role: form.getValues('prompt_generation_role'),
+          guidelines: form.getValues('prompt_generation_guidelines'),
+          structure: form.getValues('prompt_generation_structure'),
+        }
+      );
       setIsGenerating(false);
     }
     
@@ -78,6 +87,8 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
                 </FormItem>
               )}
             />
+
+            <GenerationSettingsFields />
           </div>
         )}
 
@@ -101,7 +112,12 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
                         variant="outline"
                         onClick={() => generateSystemMessage(
                           form.getValues('name'),
-                          form.getValues('description')
+                          form.getValues('description'),
+                          {
+                            role: form.getValues('prompt_generation_role'),
+                            guidelines: form.getValues('prompt_generation_guidelines'),
+                            structure: form.getValues('prompt_generation_structure'),
+                          }
                         )}
                       >
                         Regenerate

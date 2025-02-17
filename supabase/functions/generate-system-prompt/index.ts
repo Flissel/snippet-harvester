@@ -7,6 +7,34 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface GenerationSettings {
+  role?: string;
+  guidelines?: string;
+  structure?: string;
+}
+
+const DEFAULT_ROLE = `You are an expert in creating highly effective system prompts for AI agents. Your goal is to craft precise, contextual, and well-structured system prompts that will guide AI assistants in providing accurate and relevant responses.`;
+
+const DEFAULT_GUIDELINES = `Follow these guidelines when generating system prompts:
+1. Be specific about the agent's role and expertise domain
+2. Include clear constraints and boundaries
+3. Define the expected interaction style and tone
+4. Specify the format and structure of responses when relevant
+5. Include relevant domain-specific terminology and concepts
+6. Set clear ethical guidelines and bias prevention measures
+7. Define success criteria for responses
+8. Include error handling and edge case considerations`;
+
+const DEFAULT_STRUCTURE = `Your output should follow this structure:
+1. Role and Expertise Definition
+2. Primary Objectives
+3. Interaction Guidelines
+4. Response Requirements
+5. Constraints and Limitations
+6. Success Criteria
+
+Make the prompt concise yet comprehensive, focusing on the specific needs indicated in the context.`;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -24,7 +52,7 @@ serve(async (req) => {
   }
 
   try {
-    const { context } = await req.json();
+    const { context, settings } = await req.json();
 
     if (!context) {
       return new Response(
@@ -37,6 +65,7 @@ serve(async (req) => {
     }
 
     console.log('Generating system prompt with context:', context);
+    console.log('Using custom settings:', settings);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -49,31 +78,15 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an expert in creating highly effective system prompts for AI agents. Your goal is to craft precise, contextual, and well-structured system prompts that will guide AI assistants in providing accurate and relevant responses.
-
-Follow these guidelines when generating system prompts:
-1. Be specific about the agent's role and expertise domain
-2. Include clear constraints and boundaries
-3. Define the expected interaction style and tone
-4. Specify the format and structure of responses when relevant
-5. Include relevant domain-specific terminology and concepts
-6. Set clear ethical guidelines and bias prevention measures
-7. Define success criteria for responses
-8. Include error handling and edge case considerations`
+            content: settings?.role || DEFAULT_ROLE
           },
           {
             role: 'user',
-            content: `Create a system prompt based on this context: "${context}"
+            content: `${settings?.guidelines || DEFAULT_GUIDELINES}
 
-Your output should follow this structure:
-1. Role and Expertise Definition
-2. Primary Objectives
-3. Interaction Guidelines
-4. Response Requirements
-5. Constraints and Limitations
-6. Success Criteria
+Create a system prompt based on this context: "${context}"
 
-Make the prompt concise yet comprehensive, focusing on the specific needs indicated in the context.`
+${settings?.structure || DEFAULT_STRUCTURE}`
           }
         ],
         temperature: 0.7,

@@ -8,11 +8,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import { Prompt } from '@/types/prompts';
 
+interface GenerationSettings {
+  role?: string;
+  guidelines?: string;
+  structure?: string;
+}
+
 const promptSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   system_message: z.string().min(1, 'System message is required'),
   user_message: z.string().min(1, 'User message is required'),
+  prompt_generation_role: z.string().optional(),
+  prompt_generation_guidelines: z.string().optional(),
+  prompt_generation_structure: z.string().optional(),
 });
 
 export type PromptFormValues = z.infer<typeof promptSchema>;
@@ -38,15 +47,25 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
       description: '',
       system_message: '',
       user_message: '',
+      prompt_generation_role: '',
+      prompt_generation_guidelines: '',
+      prompt_generation_structure: '',
     },
   });
 
-  const generateSystemMessage = async (title: string, description?: string) => {
+  const generateSystemMessage = async (
+    title: string, 
+    description?: string, 
+    settings?: GenerationSettings
+  ) => {
     try {
       const context = `Title: ${title}${description ? `\nDescription: ${description}` : ''}`;
       
       const response = await supabase.functions.invoke('generate-system-prompt', {
-        body: { context }
+        body: { 
+          context,
+          settings
+        }
       });
       
       if (response.data?.systemPrompt) {
@@ -72,6 +91,9 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
         user_message: values.user_message,
         created_by: userId,
         model: 'gpt-4o',
+        prompt_generation_role: values.prompt_generation_role || null,
+        prompt_generation_guidelines: values.prompt_generation_guidelines || null,
+        prompt_generation_structure: values.prompt_generation_structure || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };

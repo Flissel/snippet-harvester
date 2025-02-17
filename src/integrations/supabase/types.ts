@@ -270,6 +270,9 @@ export type Database = {
           is_default: boolean | null
           model: string | null
           name: string
+          prompt_generation_guidelines: string | null
+          prompt_generation_role: string | null
+          prompt_generation_structure: string | null
           system_message: string
           updated_at: string
           user_message: string
@@ -283,6 +286,9 @@ export type Database = {
           is_default?: boolean | null
           model?: string | null
           name: string
+          prompt_generation_guidelines?: string | null
+          prompt_generation_role?: string | null
+          prompt_generation_structure?: string | null
           system_message: string
           updated_at?: string
           user_message: string
@@ -296,6 +302,9 @@ export type Database = {
           is_default?: boolean | null
           model?: string | null
           name?: string
+          prompt_generation_guidelines?: string | null
+          prompt_generation_role?: string | null
+          prompt_generation_structure?: string | null
           system_message?: string
           updated_at?: string
           user_message?: string
