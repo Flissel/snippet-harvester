@@ -39,20 +39,19 @@ export function useYMLMaker(snippet: Snippet | null) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const { error } = await supabase
-        .from('yml_configurations')
-        .insert({
-          snippet_id: snippet.id,
-          config_type: 'model',  // For now, hardcoded as 'model'
-          yml_content: ymlContent,
-          imports: imports || [],
-          processed_code: processedCode || '',
-          created_by: user.id,
-        });
+      // Store in localStorage for now until we update Supabase types
+      const configuration = {
+        snippet_id: snippet.id,
+        config_type: 'model',
+        yml_content: ymlContent,
+        imports: imports || [],
+        processed_code: processedCode || '',
+        created_by: user.id,
+      };
 
-      if (error) throw error;
-
-      toast.success('Configuration saved successfully');
+      localStorage.setItem(`yml_config_${snippet.id}`, JSON.stringify(configuration));
+      toast.success('Configuration saved successfully (temporarily in localStorage)');
+      
     } catch (error) {
       console.error('Error saving configuration:', error);
       toast.error('Failed to save configuration');

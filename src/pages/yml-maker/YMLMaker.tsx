@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save, FileCode, Wand2 } from 'lucide-react';
-import { CodeViewer } from '@/pages/generate/components/FileViewer';
+import { FileViewer } from '@/pages/generate/components/FileViewer';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -77,7 +77,7 @@ export function YMLMaker() {
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="rounded-lg border">
-            <CodeViewer
+            <FileViewer
               selectedFile={{ 
                 name: snippet.title,
                 extension: snippet.language || 'py',
