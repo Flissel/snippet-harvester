@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { YMLPreview } from './components/YMLPreview';
 import { ProcessedCode } from './components/ProcessedCode';
 import { useYMLMaker } from './hooks/useYMLMaker';
+import { FileNode } from '@/pages/generate/types';
 
 export function YMLMaker() {
   const { snippetId } = useParams<{ snippetId: string }>();
@@ -78,10 +79,12 @@ export function YMLMaker() {
         <div className="space-y-4">
           <div className="rounded-lg border">
             <FileViewer
-              selectedFile={{ 
+              selectedFile={{
+                type: 'file',
                 name: snippet.title,
+                path: snippet.title,
+                url: '', // Since this is a snippet, we don't have a URL
                 extension: snippet.language || 'py',
-                path: '',
               }}
               fileContent={snippet.code_content}
               selectedDirectory={null}
