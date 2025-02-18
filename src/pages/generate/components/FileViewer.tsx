@@ -13,6 +13,7 @@ interface FileViewerProps {
   isCreatingSnippets: boolean;
   onCreateSnippet: () => void;
   onCreateDirectorySnippets: () => void;
+  onContentChange?: (content: string) => void;
 }
 
 export function FileViewer({
@@ -22,6 +23,7 @@ export function FileViewer({
   isCreatingSnippets,
   onCreateSnippet,
   onCreateDirectorySnippets,
+  onContentChange,
 }: FileViewerProps) {
   const getFileIcon = (extension?: string) => {
     return <FileCode2 className="h-4 w-4 text-blue-500" />;
@@ -33,6 +35,12 @@ export function FileViewer({
     return (
       <Badge className="ml-2 bg-blue-500">.{extension}</Badge>
     );
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (onContentChange) {
+      onContentChange(e.target.value);
+    }
   };
 
   return (
@@ -76,8 +84,8 @@ export function FileViewer({
           <div className="p-4">
             <Textarea
               value={fileContent}
+              onChange={handleContentChange}
               className="font-mono text-sm min-h-[300px] resize-none border-0 focus-visible:ring-0"
-              readOnly={false}
             />
           </div>
         ) : selectedDirectory ? (
