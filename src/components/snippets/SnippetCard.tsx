@@ -2,9 +2,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, Copy, Maximize2, Wand2 } from 'lucide-react';
+import { Check, Copy, FileCode, Maximize2, Wand2 } from 'lucide-react';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Snippet } from "@/types/snippets";
+import { useNavigate } from 'react-router-dom';
 
 interface SnippetCardProps {
   snippet: Snippet;
@@ -25,6 +26,8 @@ export function SnippetCard({
   isCopied,
   isFocused
 }: SnippetCardProps) {
+  const navigate = useNavigate();
+
   return (
     <Card 
       className={`group relative transition-all duration-200 cursor-pointer hover:shadow-md ${
@@ -63,18 +66,32 @@ export function SnippetCard({
         </div>
         <CardTitle>{snippet.title}</CardTitle>
         <CardDescription>{snippet.description}</CardDescription>
-        <Button
-          variant="default"
-          size="sm"
-          className="mt-4 w-full flex items-center justify-center gap-2 bg-primary"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAnalyze(snippet);
-          }}
-        >
-          <Wand2 className="h-4 w-4" />
-          Analyze Snippet
-        </Button>
+        <div className="mt-4 flex flex-col gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            className="w-full flex items-center justify-center gap-2 bg-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAnalyze(snippet);
+            }}
+          >
+            <Wand2 className="h-4 w-4" />
+            Analyze Snippet
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full flex items-center justify-center gap-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/yml-maker/${snippet.id}`);
+            }}
+          >
+            <FileCode className="h-4 w-4" />
+            Make YML
+          </Button>
+        </div>
       </CardHeader>
       {isExpanded && (
         <CardContent className="border-t pt-4 space-y-4 animate-slide-up">
