@@ -1,6 +1,6 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,32 +8,52 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { code } = await req.json();
-
-    // For now, let's implement a basic detection for OpenAI client configuration
-    const imports: string[] = [];
-    const processedCode = code;
     
-    // Basic example YML output (we'll enhance this with AI later)
+    if (!code) {
+      return new Response(
+        JSON.stringify({ error: 'No code provided' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    console.log('Analyzing code for YML configuration');
+
+    // Here we'll implement a basic YML detection
+    // This is a simple example - you might want to make this more sophisticated
+    const detectedImports = Array.from(
+      code.matchAll(/import\s+{[^}]+}\s+from\s+['"]([^'"]+)['"]/g)
+    ).map(match => match[1]);
+
+    // Create a basic YML structure
     const yml = `
-model:
-  type: "OpenAIChatCompletionClient"
-  settings:
-    model: "gpt-4o"
-    timeout: 30.0
-    max_retries: 5
-    temperature: 0.7
-`;
+name: Configuration
+version: 1.0.0
+imports:
+${detectedImports.map(imp => `  - ${imp}`).join('\n')}
+configurations:
+  - type: model
+    content: ${JSON.stringify(code)}
+`.trim();
+
+    // Process the code (in this example, we're just adding a comment)
+    const processedCode = `// Generated configuration\n${code}`;
+
+    console.log('YML configuration generated successfully');
 
     return new Response(
       JSON.stringify({
         yml,
-        imports,
+        imports: detectedImports,
         processedCode,
       }),
       {
@@ -41,9 +61,11 @@ model:
       }
     );
   } catch (error) {
-    console.error('Error in detect-yml-config function:', error);
+    console.error('Error in detect-yml-config:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: `Failed to analyze code: ${error.message}` 
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
