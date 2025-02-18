@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, FileCode, Wand2 } from 'lucide-react';
+import { ArrowLeft, Save, FileCode, Brain } from 'lucide-react';
 import { FileViewer } from '@/pages/generate/components/FileViewer';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -106,8 +106,8 @@ export function YMLMaker() {
             disabled={isProcessing || !selectedPrompt}
             className="flex items-center gap-2"
           >
-            <Wand2 className="h-4 w-4" />
-            Detect Configurations
+            <Brain className="h-4 w-4" />
+            Analyze Code
           </Button>
           <Button 
             onClick={handleSave}
