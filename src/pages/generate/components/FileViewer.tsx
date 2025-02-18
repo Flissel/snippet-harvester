@@ -1,5 +1,5 @@
 
-import { FileCode2, Loader2, Brain } from 'lucide-react';
+import { FileCode2, Loader2, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileNode, DirectoryNode, collectFilesFromDirectory } from '../types';
@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Prompt } from '@/types/prompts';
 
 interface FileViewerProps {
@@ -27,8 +27,7 @@ export function FileViewer({
   onCreateSnippet,
   onCreateDirectorySnippets,
 }: FileViewerProps) {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const { toast } = useToast();
@@ -50,7 +49,7 @@ export function FileViewer({
       console.error('Error fetching prompts:', error);
       toast({
         title: "Failed to Load Prompts",
-        description: "Could not load analysis prompts. Please try again.",
+        description: "Could not load prompts. Please try again.",
         variant: "destructive",
       });
     }
@@ -68,25 +67,23 @@ export function FileViewer({
     );
   };
 
-  const analyzeCode = async () => {
+  const detectConfigurations = async () => {
     if (!fileContent || !selectedFile?.extension) return;
     if (!selectedPrompt) {
       toast({
         title: "No Prompt Selected",
-        description: "Please select an analysis prompt before analyzing the code.",
+        description: "Please select a prompt before detecting configurations.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsAnalyzing(true);
-    setAnalysis(null);
+    setIsProcessing(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-code', {
+      const { data, error } = await supabase.functions.invoke('detect-yml-config', {
         body: {
           code: fileContent,
-          language: selectedFile.extension,
           systemMessage: selectedPrompt.system_message,
           userMessage: selectedPrompt.user_message,
           model: selectedPrompt.model,
@@ -95,16 +92,17 @@ export function FileViewer({
 
       if (error) throw error;
 
-      setAnalysis(data.analysis);
+      // Handle the response data according to your YML configuration needs
+      console.log('Configuration detected:', data);
     } catch (error) {
-      console.error('Error analyzing code:', error);
+      console.error('Error detecting configurations:', error);
       toast({
-        title: "Analysis Failed",
-        description: "Failed to analyze the code. Please try again later.",
+        title: "Detection Failed",
+        description: "Failed to detect configurations. Please try again later.",
         variant: "destructive",
       });
     } finally {
-      setIsAnalyzing(false);
+      setIsProcessing(false);
     }
   };
 
@@ -141,7 +139,7 @@ export function FileViewer({
                   }}
                 >
                   <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Select analysis prompt" />
+                    <SelectValue placeholder="Select prompt" />
                   </SelectTrigger>
                   <SelectContent>
                     {prompts.map((prompt) => (
@@ -152,19 +150,19 @@ export function FileViewer({
                   </SelectContent>
                 </Select>
                 <Button 
-                  onClick={analyzeCode} 
-                  disabled={isAnalyzing || !selectedPrompt}
+                  onClick={detectConfigurations} 
+                  disabled={isProcessing || !selectedPrompt}
                   variant="outline"
                 >
-                  {isAnalyzing ? (
+                  {isProcessing ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Analyzing...
+                      Detecting...
                     </>
                   ) : (
                     <>
-                      <Brain className="mr-2 h-4 w-4" />
-                      Analyze Code
+                      <Wand2 className="mr-2 h-4 w-4" />
+                      Detect Configurations
                     </>
                   )}
                 </Button>
@@ -190,22 +188,7 @@ export function FileViewer({
       </div>
       <ScrollArea className="flex-1 border rounded-md">
         {fileContent ? (
-          <div className="space-y-4">
-            <pre className="p-4 font-mono text-sm whitespace-pre-wrap">{fileContent}</pre>
-            {analysis && (
-              <div className="border-t p-4">
-                <h3 className="text-lg font-semibold mb-2 flex items-center">
-                  <Brain className="mr-2 h-5 w-5 text-blue-500" />
-                  Code Analysis
-                </h3>
-                <div className="prose prose-sm max-w-none">
-                  {analysis.split('\n').map((line, index) => (
-                    <p key={index} className="mb-2">{line}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <pre className="p-4 font-mono text-sm whitespace-pre-wrap">{fileContent}</pre>
         ) : selectedDirectory ? (
           <div className="p-4 space-y-4">
             <h3 className="font-medium">Files in Directory:</h3>
