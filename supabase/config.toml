@@ -7,3 +7,6 @@ verify_jwt = false
 [functions.github-repository]
 verify_jwt = true
 
+[functions.detect-yml-config]
+verify_jwt = false
+
