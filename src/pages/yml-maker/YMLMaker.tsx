@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save, FileCode, Wand2 } from 'lucide-react';
 import { FileViewer } from '@/pages/generate/components/FileViewer';
@@ -10,9 +10,9 @@ import { toast } from 'sonner';
 import { YMLPreview } from './components/YMLPreview';
 import { ProcessedCode } from './components/ProcessedCode';
 import { useYMLMaker } from './hooks/useYMLMaker';
-import { FileNode } from '@/pages/generate/types';
 
 export function YMLMaker() {
+  const navigate = useNavigate();
   const { snippetId } = useParams<{ snippetId: string }>();
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   
@@ -50,15 +50,22 @@ export function YMLMaker() {
   return (
     <div className="container mx-auto p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" className="flex items-center gap-2">
+        <Button 
+          variant="ghost" 
+          className="flex items-center gap-2"
+          onClick={() => navigate('/snippets')}
+        >
           <ArrowLeft className="h-4 w-4" />
-          Back
+          Back to Snippets
         </Button>
         <div className="flex items-center gap-2">
           <Button 
             variant="outline"
-            onClick={() => detectConfigurations(selectedCode)}
-            disabled={isProcessing || !selectedCode}
+            onClick={() => {
+              setSelectedCode(snippet.code_content);
+              detectConfigurations(snippet.code_content);
+            }}
+            disabled={isProcessing}
             className="flex items-center gap-2"
           >
             <Wand2 className="h-4 w-4" />
@@ -75,7 +82,7 @@ export function YMLMaker() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="rounded-lg border">
             <FileViewer
@@ -83,7 +90,7 @@ export function YMLMaker() {
                 type: 'file',
                 name: snippet.title,
                 path: snippet.title,
-                url: '', // Since this is a snippet, we don't have a URL
+                url: '',
                 extension: snippet.language || 'py',
               }}
               fileContent={snippet.code_content}
@@ -96,13 +103,32 @@ export function YMLMaker() {
         </div>
 
         <div className="space-y-4">
-          <YMLPreview 
-            ymlContent={ymlContent} 
-            imports={imports}
-          />
-          <ProcessedCode 
-            code={processedCode}
-          />
+          {(ymlContent || processedCode) && (
+            <>
+              {ymlContent && (
+                <div className="rounded-lg border p-4">
+                  <h3 className="text-lg font-semibold mb-2">YML Configuration</h3>
+                  <YMLPreview 
+                    ymlContent={ymlContent} 
+                    imports={imports}
+                  />
+                </div>
+              )}
+              {processedCode && (
+                <div className="rounded-lg border p-4">
+                  <h3 className="text-lg font-semibold mb-2">Processed Code</h3>
+                  <ProcessedCode 
+                    code={processedCode}
+                  />
+                </div>
+              )}
+            </>
+          )}
+          {isProcessing && (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          )}
         </div>
       </div>
     </div>
