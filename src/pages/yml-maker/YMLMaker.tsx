@@ -10,13 +10,16 @@ import { toast } from 'sonner';
 import { YMLPreview } from './components/YMLPreview';
 import { ProcessedCode } from './components/ProcessedCode';
 import { useYMLMaker } from './hooks/useYMLMaker';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Prompt } from '@/types/prompts';
 
 export function YMLMaker() {
   const navigate = useNavigate();
   const { snippetId } = useParams<{ snippetId: string }>();
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   
-  const { data: snippet, isLoading } = useQuery({
+  const { data: snippet, isLoading: isLoadingSnippet } = useQuery({
     queryKey: ['snippet', snippetId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -30,6 +33,19 @@ export function YMLMaker() {
     },
   });
 
+  const { data: prompts, isLoading: isLoadingPrompts } = useQuery({
+    queryKey: ['prompts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('prompts')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Prompt[];
+    },
+  });
+
   const {
     ymlContent,
     imports,
@@ -39,7 +55,7 @@ export function YMLMaker() {
     handleSave,
   } = useYMLMaker(snippet);
 
-  if (isLoading) {
+  if (isLoadingSnippet || isLoadingPrompts) {
     return <div>Loading...</div>;
   }
 
@@ -59,13 +75,35 @@ export function YMLMaker() {
           Back to Snippets
         </Button>
         <div className="flex items-center gap-2">
+          <Select
+            value={selectedPrompt?.id}
+            onValueChange={(value) => {
+              const prompt = prompts?.find(p => p.id === value);
+              setSelectedPrompt(prompt || null);
+            }}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select analysis prompt" />
+            </SelectTrigger>
+            <SelectContent>
+              {prompts?.map((prompt) => (
+                <SelectItem key={prompt.id} value={prompt.id}>
+                  {prompt.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button 
             variant="outline"
             onClick={() => {
+              if (!selectedPrompt) {
+                toast.error("Please select a prompt first");
+                return;
+              }
               setSelectedCode(snippet.code_content);
               detectConfigurations(snippet.code_content);
             }}
-            disabled={isProcessing}
+            disabled={isProcessing || !selectedPrompt}
             className="flex items-center gap-2"
           >
             <Wand2 className="h-4 w-4" />
@@ -105,6 +143,14 @@ export function YMLMaker() {
         <div className="space-y-4">
           {(ymlContent || processedCode) && (
             <>
+              {imports && imports.length > 0 && (
+                <div className="rounded-lg border p-4">
+                  <h3 className="text-lg font-semibold mb-2">Required Imports</h3>
+                  <pre className="bg-muted p-2 rounded-md overflow-x-auto">
+                    {imports.join('\n')}
+                  </pre>
+                </div>
+              )}
               {ymlContent && (
                 <div className="rounded-lg border p-4">
                   <h3 className="text-lg font-semibold mb-2">YML Configuration</h3>
@@ -116,7 +162,7 @@ export function YMLMaker() {
               )}
               {processedCode && (
                 <div className="rounded-lg border p-4">
-                  <h3 className="text-lg font-semibold mb-2">Processed Code</h3>
+                  <h3 className="text-lg font-semibold mb-2">Processed Python Code</h3>
                   <ProcessedCode 
                     code={processedCode}
                   />
