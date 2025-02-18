@@ -14,16 +14,54 @@ export function useYMLMaker(snippet: Snippet | null) {
     if (!selectedCode || !snippet) return;
 
     setIsProcessing(true);
+    setYmlContent(null);
+    setImports(null);
+    setProcessedCode(null);
+
     try {
       const { data, error } = await supabase.functions.invoke('detect-yml-config', {
-        body: { code: selectedCode },
+        body: { 
+          code: selectedCode,
+          // The system and user messages will come from the selected prompt
+          // in the YMLMaker component
+          systemMessage: 'You are an AI assistant that analyzes Python code and generates YML configurations and required imports.',
+          userMessage: `Analyze this Python code and provide:
+1. A list of required imports
+2. A YML configuration that captures all configurable parameters
+3. The processed Python code with the configuration applied
+
+Format your response with sections separated by "---":
+
+Required Imports:
+<list imports here>
+---
+YML Configuration:
+<yml configuration here>
+---
+Processed Code:
+<processed code here>
+
+Code to analyze:
+{code}`,
+          model: 'gpt-4o-mini'
+        },
       });
 
       if (error) throw error;
 
-      setYmlContent(data.yml);
-      setImports(data.imports);
-      setProcessedCode(data.processedCode);
+      if (data.yml) {
+        setYmlContent(data.yml);
+      }
+      if (data.imports) {
+        setImports(data.imports);
+      }
+      if (data.processedCode) {
+        setProcessedCode(data.processedCode);
+      }
+
+      if (!data.yml && !data.imports && !data.processedCode) {
+        throw new Error('Invalid response format from OpenAI');
+      }
     } catch (error) {
       console.error('Error detecting configurations:', error);
       toast.error('Failed to detect configurations');
@@ -39,7 +77,6 @@ export function useYMLMaker(snippet: Snippet | null) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Use type assertion since we know the structure matches
       const { error } = await supabase
         .from('yml_configurations')
         .insert({
@@ -49,7 +86,7 @@ export function useYMLMaker(snippet: Snippet | null) {
           imports: imports || [],
           processed_code: processedCode || '',
           created_by: user.id,
-        } as any); // Use type assertion as a temporary solution
+        });
 
       if (error) throw error;
 

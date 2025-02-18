@@ -1,6 +1,8 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,68 +10,84 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { code } = await req.json();
-    
+    const { code, systemMessage, userMessage, model = 'gpt-4o-mini' } = await req.json();
+
     if (!code) {
-      return new Response(
-        JSON.stringify({ error: 'No code provided' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      throw new Error('No code provided');
     }
 
-    console.log('Analyzing code for YML configuration');
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: systemMessage || 'You are an AI assistant that analyzes Python code and generates YML configurations and required imports.'
+          },
+          {
+            role: 'user',
+            content: userMessage?.replace('{code}', code) || `Analyze this Python code and provide:
+1. A list of required imports
+2. A YML configuration that captures all configurable parameters
+3. The processed Python code with the configuration applied
 
-    // Here we'll implement a basic YML detection
-    // This is a simple example - you might want to make this more sophisticated
-    const detectedImports = Array.from(
-      code.matchAll(/import\s+{[^}]+}\s+from\s+['"]([^'"]+)['"]/g)
-    ).map(match => match[1]);
+Code to analyze:
+${code}`
+          }
+        ],
+        temperature: 0.7,
+      }),
+    });
 
-    // Create a basic YML structure
-    const yml = `
-name: Configuration
-version: 1.0.0
-imports:
-${detectedImports.map(imp => `  - ${imp}`).join('\n')}
-configurations:
-  - type: model
-    content: ${JSON.stringify(code)}
-`.trim();
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.statusText}`);
+    }
 
-    // Process the code (in this example, we're just adding a comment)
-    const processedCode = `// Generated configuration\n${code}`;
+    const data = await response.json();
+    const result = data.choices[0].message.content;
 
-    console.log('YML configuration generated successfully');
+    // Parse the response to extract YML, imports, and processed code
+    const sections = result.split('---').map(s => s.trim());
+    let yml = '', imports: string[] = [], processedCode = '';
+
+    for (const section of sections) {
+      if (section.toLowerCase().includes('yml configuration:')) {
+        yml = section.split('\n').slice(1).join('\n');
+      } else if (section.toLowerCase().includes('required imports:')) {
+        imports = section.split('\n').slice(1).filter(Boolean);
+      } else if (section.toLowerCase().includes('processed code:')) {
+        processedCode = section.split('\n').slice(1).join('\n');
+      }
+    }
 
     return new Response(
       JSON.stringify({
         yml,
-        imports: detectedImports,
+        imports,
         processedCode,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      },
     );
   } catch (error) {
-    console.error('Error in detect-yml-config:', error);
+    console.error('Error:', error);
     return new Response(
-      JSON.stringify({ 
-        error: `Failed to analyze code: ${error.message}` 
-      }),
+      JSON.stringify({ error: error.message }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      },
     );
   }
 });
