@@ -437,6 +437,77 @@ export type Database = {
         }
         Relationships: []
       }
+      yml_configurations: {
+        Row: {
+          config_type: string
+          created_at: string | null
+          created_by: string
+          id: string
+          imports: string[]
+          processed_code: string
+          snippet_id: string | null
+          updated_at: string | null
+          yml_content: string
+        }
+        Insert: {
+          config_type: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          imports: string[]
+          processed_code: string
+          snippet_id?: string | null
+          updated_at?: string | null
+          yml_content: string
+        }
+        Update: {
+          config_type?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          imports?: string[]
+          processed_code?: string
+          snippet_id?: string | null
+          updated_at?: string | null
+          yml_content?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yml_configurations_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      yml_patterns: {
+        Row: {
+          created_at: string | null
+          example_code: string
+          id: string
+          pattern_name: string
+          pattern_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          example_code: string
+          id?: string
+          pattern_name: string
+          pattern_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          example_code?: string
+          id?: string
+          pattern_name?: string
+          pattern_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
