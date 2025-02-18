@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileNode, DirectoryNode, collectFilesFromDirectory } from '../types';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 
 interface FileViewerProps {
   selectedFile: FileNode | null;
@@ -72,7 +73,13 @@ export function FileViewer({
       </div>
       <ScrollArea className="flex-1 border rounded-md">
         {fileContent ? (
-          <pre className="p-4 font-mono text-sm whitespace-pre-wrap">{fileContent}</pre>
+          <div className="p-4">
+            <Textarea
+              value={fileContent}
+              className="font-mono text-sm min-h-[300px] resize-none border-0 focus-visible:ring-0"
+              readOnly={false}
+            />
+          </div>
         ) : selectedDirectory ? (
           <div className="p-4 space-y-4">
             <h3 className="font-medium">Files in Directory:</h3>
