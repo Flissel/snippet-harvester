@@ -9,6 +9,7 @@ import PromptsManagement from "./pages/PromptsManagement";
 import TestChat from "./pages/TestChat";
 import NotFound from "./pages/NotFound";
 import Generate from "./pages/Generate";
+import { YMLMaker } from "./pages/yml-maker/YMLMaker";
 import { AuthProvider } from "./contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "./components/ui/toaster";
@@ -26,6 +27,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/snippets" element={<Snippets />} />
             <Route path="/analyze/:snippetId" element={<Analysis />} />
+            <Route path="/yml-maker/:snippetId" element={<YMLMaker />} />
             <Route path="/prompts" element={<PromptsManagement />} />
             <Route path="/test-chat" element={<TestChat />} />
             <Route path="/generate" element={<Generate />} />
