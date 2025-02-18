@@ -55,6 +55,10 @@ export function YMLMaker() {
     handleSave,
   } = useYMLMaker(snippet);
 
+  const handleCodeChange = (content: string) => {
+    setSelectedCode(content);
+  };
+
   if (isLoadingSnippet || isLoadingPrompts) {
     return <div>Loading...</div>;
   }
@@ -100,8 +104,10 @@ export function YMLMaker() {
                 toast.error("Please select a prompt first");
                 return;
               }
-              setSelectedCode(snippet.code_content);
-              detectConfigurations(snippet.code_content);
+              if (!selectedCode) {
+                setSelectedCode(snippet.code_content);
+              }
+              detectConfigurations(selectedCode || snippet.code_content);
             }}
             disabled={isProcessing || !selectedPrompt}
             className="flex items-center gap-2"
@@ -131,11 +137,12 @@ export function YMLMaker() {
                 url: '',
                 extension: snippet.language || 'py',
               }}
-              fileContent={snippet.code_content}
+              fileContent={selectedCode || snippet.code_content}
               selectedDirectory={null}
               isCreatingSnippets={false}
               onCreateSnippet={() => {}}
               onCreateDirectorySnippets={() => {}}
+              onContentChange={handleCodeChange}
             />
           </div>
         </div>
