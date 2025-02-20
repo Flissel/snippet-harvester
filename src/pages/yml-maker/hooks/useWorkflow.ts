@@ -57,7 +57,8 @@ export function useWorkflow() {
           description,
           workflow_type: workflowType,
           order_index: orderIndex,
-          status: 'pending'
+          status: 'pending',
+          result_data: null
         })
         .select()
         .single();
@@ -78,7 +79,9 @@ export function useWorkflow() {
 
       // Process each item in sequence
       for (const [index, item] of selectedItems.entries()) {
-        // Create workflow item if it doesn't exist
+        console.log('Processing workflow item:', index + 1);
+
+        // Create workflow item
         const workflowItem = await addWorkflowItem.mutateAsync({
           sessionId,
           title: item.title,
@@ -87,30 +90,51 @@ export function useWorkflow() {
           orderIndex: index,
         });
 
-        // Update item status
+        console.log('Created workflow item:', workflowItem.id);
+
+        // Update item status to in_progress
         await supabase
           .from('workflow_items')
           .update({ status: 'in_progress' })
           .eq('id', workflowItem.id);
 
-        // Execute analysis
-        const { data: analysisResult } = await supabase.functions.invoke('execute-analysis-step', {
-          body: {
-            workflowItemId: workflowItem.id,
-            step: index + 1,
-          },
-        });
+        try {
+          // Execute analysis
+          const { data: analysisResult, error } = await supabase.functions.invoke('execute-analysis-step', {
+            body: {
+              workflowItemId: workflowItem.id,
+              step: index + 1,
+            },
+          });
 
-        // Update item with results
-        await supabase
-          .from('workflow_items')
-          .update({
-            status: 'completed',
-            result_data: analysisResult,
-          })
-          .eq('id', workflowItem.id);
+          console.log('Analysis result:', analysisResult);
 
-        queryClient.invalidateQueries({ queryKey: ['workflow-items'] });
+          if (error) throw error;
+
+          // Update item with results
+          await supabase
+            .from('workflow_items')
+            .update({
+              status: 'completed',
+              result_data: analysisResult
+            })
+            .eq('id', workflowItem.id);
+
+          queryClient.invalidateQueries({ queryKey: ['workflow-items'] });
+        } catch (analysisError) {
+          console.error('Analysis error:', analysisError);
+          
+          // Update item status to failed
+          await supabase
+            .from('workflow_items')
+            .update({
+              status: 'failed',
+              result_data: { error: analysisError.message }
+            })
+            .eq('id', workflowItem.id);
+
+          throw analysisError;
+        }
       }
 
       // Update session status to completed
@@ -121,7 +145,9 @@ export function useWorkflow() {
 
       toast.success('Workflow completed successfully');
     } catch (error) {
+      console.error('Workflow error:', error);
       toast.error('Error executing workflow: ' + (error as Error).message);
+      
       await supabase
         .from('workflow_sessions')
         .update({ status: 'failed' })
