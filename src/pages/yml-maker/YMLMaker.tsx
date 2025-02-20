@@ -2,13 +2,12 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, FileCode, Brain } from 'lucide-react';
+import { ArrowLeft, Save, Brain } from 'lucide-react';
 import { FileViewer } from '@/pages/generate/components/FileViewer';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { YMLPreview } from './components/YMLPreview';
-import { ProcessedCode } from './components/ProcessedCode';
 import { useYMLMaker } from './hooks/useYMLMaker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Prompt } from '@/types/prompts';
@@ -47,9 +46,7 @@ export function YMLMaker() {
   });
 
   const {
-    ymlContent,
-    imports,
-    processedCode,
+    sections,
     isProcessing,
     detectConfigurations,
     handleSave,
@@ -117,7 +114,7 @@ export function YMLMaker() {
           </Button>
           <Button 
             onClick={handleSave}
-            disabled={!ymlContent}
+            disabled={sections.length === 0}
             className="flex items-center gap-2"
           >
             <Save className="h-4 w-4" />
@@ -148,39 +145,12 @@ export function YMLMaker() {
         </div>
 
         <div className="space-y-4">
-          {(ymlContent || processedCode) && (
-            <>
-              {imports && imports.length > 0 && (
-                <div className="rounded-lg border p-4">
-                  <h3 className="text-lg font-semibold mb-2">Required Imports</h3>
-                  <pre className="bg-muted p-2 rounded-md overflow-x-auto">
-                    {imports.join('\n')}
-                  </pre>
-                </div>
-              )}
-              {ymlContent && (
-                <div className="rounded-lg border p-4">
-                  <h3 className="text-lg font-semibold mb-2">YML Configuration</h3>
-                  <YMLPreview 
-                    ymlContent={ymlContent} 
-                    imports={imports}
-                  />
-                </div>
-              )}
-              {processedCode && (
-                <div className="rounded-lg border p-4">
-                  <h3 className="text-lg font-semibold mb-2">Processed Python Code</h3>
-                  <ProcessedCode 
-                    code={processedCode}
-                  />
-                </div>
-              )}
-            </>
-          )}
-          {isProcessing && (
+          {isProcessing ? (
             <div className="flex items-center justify-center p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
+          ) : (
+            <YMLPreview sections={sections} />
           )}
         </div>
       </div>

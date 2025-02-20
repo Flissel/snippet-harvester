@@ -3,23 +3,23 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { ResponseSection } from '../hooks/useYMLMaker';
 
 interface YMLPreviewProps {
-  ymlContent: string | null;
-  imports: string[] | null;
+  sections: ResponseSection[];
 }
 
-export function YMLPreview({ ymlContent, imports }: YMLPreviewProps) {
+export function YMLPreview({ sections }: YMLPreviewProps) {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard');
   };
 
-  if (!ymlContent && !imports) {
+  if (!sections || sections.length === 0) {
     return (
       <Card className="p-4">
         <div className="text-center text-muted-foreground">
-          Use the detect configurations button or select code manually to generate YML
+          Use the analyze code button or select code manually to generate configuration
         </div>
       </Card>
     );
@@ -27,41 +27,23 @@ export function YMLPreview({ ymlContent, imports }: YMLPreviewProps) {
 
   return (
     <div className="space-y-4">
-      {imports && imports.length > 0 && (
-        <Card className="p-4">
+      {sections.map((section, index) => (
+        <Card key={index} className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold">Imports</h3>
+            <h3 className="text-lg font-semibold">{section.title}</h3>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => copyToClipboard(imports.join('\n'))}
+              onClick={() => copyToClipboard(section.content)}
             >
               <Copy className="h-4 w-4" />
             </Button>
           </div>
-          <pre className="bg-muted p-2 rounded-md">
-            {imports.join('\n')}
+          <pre className="bg-muted p-2 rounded-md whitespace-pre-wrap">
+            {section.content}
           </pre>
         </Card>
-      )}
-
-      {ymlContent && (
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold">YML Configuration</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => copyToClipboard(ymlContent)}
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
-          <pre className="bg-muted p-2 rounded-md">
-            {ymlContent}
-          </pre>
-        </Card>
-      )}
+      ))}
     </div>
   );
 }
