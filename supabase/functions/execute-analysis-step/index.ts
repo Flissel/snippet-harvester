@@ -20,6 +20,7 @@ serve(async (req) => {
     );
 
     const { workflowItemId, step, snippetId } = await req.json();
+    console.log('[execute-analysis-step] Received request:', { workflowItemId, step, snippetId });
 
     if (!workflowItemId || !snippetId) {
       throw new Error('Workflow item ID and snippet ID are required');
@@ -32,8 +33,20 @@ serve(async (req) => {
       .eq('id', snippetId)
       .single();
 
-    if (snippetError) throw snippetError;
-    if (!snippet) throw new Error('Snippet not found');
+    if (snippetError) {
+      console.error('[execute-analysis-step] Error fetching snippet:', snippetError);
+      throw snippetError;
+    }
+    if (!snippet) {
+      console.error('[execute-analysis-step] Snippet not found:', snippetId);
+      throw new Error('Snippet not found');
+    }
+
+    console.log('[execute-analysis-step] Retrieved snippet:', {
+      id: snippetId,
+      codeLength: snippet.code_content?.length || 0,
+      codePreview: snippet.code_content?.substring(0, 100) + '...',
+    });
 
     // Get the workflow item to access the prompt information
     const { data: workflowItem, error: workflowError } = await supabaseClient
@@ -42,22 +55,55 @@ serve(async (req) => {
       .eq('id', workflowItemId)
       .single();
 
-    if (workflowError) throw workflowError;
-    if (!workflowItem) throw new Error('Workflow item not found');
+    if (workflowError) {
+      console.error('[execute-analysis-step] Error fetching workflow item:', workflowError);
+      throw workflowError;
+    }
+    if (!workflowItem) {
+      console.error('[execute-analysis-step] Workflow item not found:', workflowItemId);
+      throw new Error('Workflow item not found');
+    }
+
+    console.log('[execute-analysis-step] Retrieved workflow item:', {
+      id: workflowItem.id,
+      type: workflowItem.workflow_type,
+      analysisType: workflowItem.analysis_type,
+      systemMessageLength: workflowItem.system_message?.length || 0,
+      userMessageLength: workflowItem.user_message?.length || 0,
+      model: workflowItem.model,
+    });
+
+    // Prepare request body for detect-yml-config
+    const requestBody = { 
+      code: snippet.code_content,
+      systemMessage: workflowItem.system_message || "You are an AI assistant that analyzes code and generates YML configurations.",
+      userMessage: (workflowItem.user_message || "Analyze this code and generate a YML configuration that captures all configurable parameters.").replace('{code}', snippet.code_content),
+      model: workflowItem.model || 'gpt-4o-mini'
+    };
+
+    console.log('[execute-analysis-step] Calling detect-yml-config with:', {
+      codeLength: requestBody.code?.length || 0,
+      systemMessageLength: requestBody.systemMessage?.length || 0,
+      userMessageLength: requestBody.userMessage?.length || 0,
+      model: requestBody.model,
+    });
 
     // Call detect-yml-config with the proper prompt information
     const { data: ymlAnalysis, error: ymlError } = await supabaseClient.functions.invoke('detect-yml-config', {
-      body: { 
-        code: snippet.code_content,
-        systemMessage: workflowItem.system_message || "You are an AI assistant that analyzes code and generates YML configurations.",
-        userMessage: (workflowItem.user_message || "Analyze this code and generate a YML configuration that captures all configurable parameters.").replace('{code}', snippet.code_content),
-        model: workflowItem.model || 'gpt-4o-mini'
-      },
+      body: requestBody,
     });
 
-    if (ymlError) throw ymlError;
+    if (ymlError) {
+      console.error('[execute-analysis-step] Error from detect-yml-config:', ymlError);
+      throw ymlError;
+    }
 
-    console.log('YML Analysis completed:', ymlAnalysis);
+    console.log('[execute-analysis-step] YML Analysis completed:', {
+      hasYml: !!ymlAnalysis?.yml,
+      ymlLength: ymlAnalysis?.yml?.length || 0,
+      importsCount: ymlAnalysis?.imports?.length || 0,
+      processedCodeLength: ymlAnalysis?.processedCode?.length || 0,
+    });
 
     return new Response(
       JSON.stringify({
@@ -79,7 +125,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error executing analysis step:', error);
+    console.error('[execute-analysis-step] Error executing analysis step:', error);
     
     return new Response(
       JSON.stringify({ 

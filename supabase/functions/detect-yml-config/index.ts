@@ -16,10 +16,24 @@ serve(async (req) => {
 
   try {
     const { code, systemMessage, userMessage, model = 'gpt-4o-mini' } = await req.json();
+    console.log('[detect-yml-config] Received request:', {
+      codeLength: code?.length || 0,
+      codePreview: code?.substring(0, 100) + '...',
+      systemMessageLength: systemMessage?.length || 0,
+      userMessageLength: userMessage?.length || 0,
+      model,
+    });
 
     if (!code) {
+      console.error('[detect-yml-config] No code provided in request');
       throw new Error('No code provided');
     }
+
+    console.log('[detect-yml-config] Preparing OpenAI request with:', {
+      model,
+      messageCount: 2, // system + user
+      totalLength: (systemMessage?.length || 0) + (userMessage?.length || 0),
+    });
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -61,13 +75,19 @@ ${code}`
     });
 
     if (!response.ok) {
+      console.error('[detect-yml-config] OpenAI API error:', response.statusText);
       throw new Error(`OpenAI API error: ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log('[detect-yml-config] Received OpenAI response:', {
+      responseLength: data.choices[0].message.content.length,
+      finishReason: data.choices[0].finish_reason,
+    });
+
     const raw_response = data.choices[0].message.content;
 
-    // Also parse the response for structured data
+    // Parse the response for structured data
     const sections = raw_response.split('---').map(s => s.trim());
     let yml = '', imports: string[] = [], processedCode = '';
 
@@ -81,6 +101,12 @@ ${code}`
       }
     }
 
+    console.log('[detect-yml-config] Parsed response sections:', {
+      ymlLength: yml.length,
+      importsCount: imports.length,
+      processedCodeLength: processedCode.length,
+    });
+
     return new Response(
       JSON.stringify({
         raw_response,
@@ -93,7 +119,7 @@ ${code}`
       },
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('[detect-yml-config] Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
