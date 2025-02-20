@@ -27,7 +27,10 @@ export function useYMLMaker({ snippet, selectedPrompt }: UseYMLMakerProps) {
   };
 
   const detectConfigurations = async (code: string | null) => {
-    if (!code || !snippet) return;
+    if (!code || !snippet || !selectedPrompt) {
+      toast.error('Missing required data for analysis');
+      return;
+    }
 
     setIsProcessing(true);
     setSections([]);
@@ -36,26 +39,9 @@ export function useYMLMaker({ snippet, selectedPrompt }: UseYMLMakerProps) {
       const { data, error } = await supabase.functions.invoke('detect-yml-config', {
         body: { 
           code,
-          systemMessage: 'You are an AI assistant that analyzes Python code and generates YML configurations and required imports.',
-          userMessage: `Analyze this Python code and provide:
-1. A list of required imports
-2. A YML configuration that captures all configurable parameters
-3. The processed Python code with the configuration applied
-
-Format your response with sections separated by "---":
-
-Required Imports:
-<list imports here>
----
-YML Configuration:
-<yml configuration here>
----
-Processed Code:
-<processed code here>
-
-Code to analyze:
-{code}`,
-          model: 'gpt-4o-mini'
+          systemMessage: selectedPrompt.system_message,
+          userMessage: selectedPrompt.user_message.replace('{code}', code),
+          model: selectedPrompt.model || 'gpt-4o-mini'
         },
       });
 
@@ -74,10 +60,13 @@ Code to analyze:
           .filter(section => section.title && section.content);
 
         setSections(parsedSections);
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Error detecting configurations:', error);
       toast.error('Failed to detect configurations');
+      return false;
     } finally {
       setIsProcessing(false);
     }
@@ -116,9 +105,9 @@ Code to analyze:
   const handleAddToWorkflow = async () => {
     if (!selectedCode || !selectedPrompt) {
       toast.error('Please select code and a prompt first');
-      return;
+      return false;
     }
-    await detectConfigurations(selectedCode);
+    return await detectConfigurations(selectedCode);
   };
 
   const handleStartWorkflow = async () => {

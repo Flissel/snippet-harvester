@@ -85,6 +85,31 @@ export function YMLMaker() {
     }
   };
 
+  const handleWorkflowAdd = async () => {
+    if (!selectedPrompt || !snippet) {
+      toast.error('Please select a prompt and ensure snippet is loaded');
+      return;
+    }
+
+    try {
+      await handleAddToWorkflow();
+      
+      // Add the item to the workflow queue
+      addItem(
+        selectedPrompt.name,
+        selectedPrompt.description || undefined,
+        'yml_analysis',
+        snippet.id,
+        selectedPrompt.prompt_type
+      );
+
+      toast.success('Added to workflow queue');
+    } catch (error) {
+      console.error('Error adding to workflow:', error);
+      toast.error('Failed to add to workflow');
+    }
+  };
+
   return (
     <div className="container py-6 space-y-6">
       <Header
@@ -95,7 +120,7 @@ export function YMLMaker() {
         sectionsExist={workflow.sections.length > 0}
         onNavigateBack={handleNavigateBack}
         onPromptSelect={handlePromptSelect}
-        onAddToWorkflow={handleAddToWorkflow}
+        onAddToWorkflow={handleWorkflowAdd}
         onStartWorkflow={handleStartWorkflow}
         onSave={handleSaveConfig}
       />
