@@ -19,7 +19,11 @@ export async function executeSingleItem(
       functionId: 'workflow',
       message: 'Creating test session...',
       status: 'in_progress',
-      event_message: `Starting workflow for item: ${item.title}`
+      event_message: `Starting workflow for item: ${item.title}`,
+      request_data: {
+        name: 'Test Session',
+        snippetId: item.snippet_id
+      }
     });
 
     const session = await createSession.mutateAsync({
@@ -35,11 +39,12 @@ export async function executeSingleItem(
       message: `Created test session: ${session.id}`,
       status: 'completed',
       execution_time_ms: sessionTime,
-      event_message: `Session created successfully with ID: ${session.id}`
+      event_message: `Session created successfully with ID: ${session.id}`,
+      response_data: session
     });
 
     const workflowStartTime = Date.now();
-    const workflowItem = await addWorkflowItem.mutateAsync({
+    const workflowItemData = {
       sessionId: session.id,
       title: item.title,
       description: item.description,
@@ -50,7 +55,18 @@ export async function executeSingleItem(
       systemMessage: item.system_message,
       userMessage: item.user_message,
       model: item.model
+    };
+
+    onLog?.({
+      timestamp: new Date().toISOString(),
+      functionId: 'workflow',
+      message: 'Creating workflow item...',
+      status: 'in_progress',
+      event_message: `Creating workflow item for session: ${session.id}`,
+      request_data: workflowItemData
     });
+
+    const workflowItem = await addWorkflowItem.mutateAsync(workflowItemData);
 
     const workflowTime = Date.now() - workflowStartTime;
     console.log('Created test workflow item:', workflowItem.id);
@@ -60,7 +76,8 @@ export async function executeSingleItem(
       message: `Created workflow item: ${workflowItem.id}`,
       status: 'completed',
       execution_time_ms: workflowTime,
-      event_message: `Workflow item created with ID: ${workflowItem.id}`
+      event_message: `Workflow item created with ID: ${workflowItem.id}`,
+      response_data: workflowItem
     });
 
     await supabase
@@ -69,25 +86,28 @@ export async function executeSingleItem(
       .eq('id', workflowItem.id);
 
     const analysisStartTime = Date.now();
+    const analysisRequestData = {
+      workflowItemId: workflowItem.id,
+      step: 1,
+      snippetId: item.snippet_id,
+      analysisType: item.analysis_type,
+      systemMessage: item.system_message,
+      userMessage: item.user_message,
+      model: item.model
+    };
+
     onLog?.({
       timestamp: new Date().toISOString(),
       functionId: 'execute-analysis-step',
       message: 'Starting analysis...',
       status: 'in_progress',
-      event_message: `Analyzing snippet: ${item.snippet_id}`
+      event_message: `Analyzing snippet: ${item.snippet_id}`,
+      request_data: analysisRequestData
     });
 
     try {
       const { data: analysisResult, error } = await supabase.functions.invoke('execute-analysis-step', {
-        body: {
-          workflowItemId: workflowItem.id,
-          step: 1,
-          snippetId: item.snippet_id,
-          analysisType: item.analysis_type,
-          systemMessage: item.system_message,
-          userMessage: item.user_message,
-          model: item.model
-        },
+        body: analysisRequestData,
       });
 
       const analysisTime = Date.now() - analysisStartTime;
@@ -98,7 +118,8 @@ export async function executeSingleItem(
         message: 'Analysis completed successfully',
         status: 'completed',
         execution_time_ms: analysisTime,
-        event_message: `Analysis completed for workflow item: ${workflowItem.id}`
+        event_message: `Analysis completed for workflow item: ${workflowItem.id}`,
+        response_data: analysisResult
       });
 
       if (error) throw error;
@@ -127,7 +148,8 @@ export async function executeSingleItem(
         functionId: 'execute-analysis-step',
         message: `Analysis failed: ${analysisError.message}`,
         status: 'failed',
-        event_message: `Error during analysis: ${analysisError.message}`
+        event_message: `Error during analysis: ${analysisError.message}`,
+        response_data: analysisError
       });
       
       await supabase
@@ -152,7 +174,8 @@ export async function executeSingleItem(
       functionId: 'workflow',
       message: `Test execution failed: ${error.message}`,
       status: 'failed',
-      event_message: `Workflow execution error: ${error.message}`
+      event_message: `Workflow execution error: ${error.message}`,
+      response_data: error
     });
     toast.error('Error executing test: ' + (error as Error).message);
     throw error;

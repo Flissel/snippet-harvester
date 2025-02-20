@@ -12,6 +12,8 @@ export interface ExecutionLog {
   status?: 'pending' | 'in_progress' | 'completed' | 'failed';
   event_message?: string;
   execution_time_ms?: number;
+  request_data?: any;
+  response_data?: any;
 }
 
 export function useWorkflowExecution() {
