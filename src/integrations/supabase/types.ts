@@ -9,6 +9,89 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      analysis_results: {
+        Row: {
+          created_at: string | null
+          id: string
+          prompt_id: string
+          result_data: Json
+          session_id: string
+          step_number: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          prompt_id: string
+          result_data: Json
+          session_id: string
+          step_number: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          prompt_id?: string
+          result_data?: Json
+          session_id?: string
+          step_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_results_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analysis_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "analysis_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      analysis_sessions: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          current_step: number | null
+          id: string
+          metadata: Json | null
+          snippet_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          current_step?: number | null
+          id?: string
+          metadata?: Json | null
+          snippet_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          current_step?: number | null
+          id?: string
+          metadata?: Json | null
+          snippet_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_sessions_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           content: string
@@ -320,6 +403,7 @@ export type Database = {
           prompt_generation_guidelines: string | null
           prompt_generation_role: string | null
           prompt_generation_structure: string | null
+          prompt_type: Database["public"]["Enums"]["prompt_type"] | null
           system_message: string
           updated_at: string
           user_message: string
@@ -336,6 +420,7 @@ export type Database = {
           prompt_generation_guidelines?: string | null
           prompt_generation_role?: string | null
           prompt_generation_structure?: string | null
+          prompt_type?: Database["public"]["Enums"]["prompt_type"] | null
           system_message: string
           updated_at?: string
           user_message: string
@@ -352,6 +437,7 @@ export type Database = {
           prompt_generation_guidelines?: string | null
           prompt_generation_role?: string | null
           prompt_generation_structure?: string | null
+          prompt_type?: Database["public"]["Enums"]["prompt_type"] | null
           system_message?: string
           updated_at?: string
           user_message?: string
@@ -518,6 +604,11 @@ export type Database = {
     Enums: {
       message_role: "user" | "assistant" | "system"
       organization_role: "admin" | "member"
+      prompt_type:
+        | "yml_maker"
+        | "import_analyzer"
+        | "component_builder"
+        | "code_merger"
       team_role: "leader" | "member"
     }
     CompositeTypes: {

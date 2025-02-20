@@ -21,7 +21,7 @@ export function useAnalysisProcess(snippet: Snippet | null) {
         .not('prompt_type', 'is', null);
       
       if (error) throw error;
-      return data as Prompt[];
+      return data as (Prompt & { prompt_type: PromptType })[];
     },
   });
 
@@ -30,6 +30,18 @@ export function useAnalysisProcess(snippet: Snippet | null) {
     queryKey: ['analysis-session', snippet?.id],
     enabled: !!snippet,
     queryFn: async () => {
+      // Explicitly type the database response
+      type DBSession = {
+        id: string;
+        snippet_id: string;
+        created_at: string;
+        updated_at: string;
+        created_by: string;
+        status: string;
+        current_step: number;
+        metadata: Record<string, any>;
+      };
+
       const { data: existingSession } = await supabase
         .from('analysis_sessions')
         .select('*')
@@ -37,7 +49,7 @@ export function useAnalysisProcess(snippet: Snippet | null) {
         .eq('status', 'in_progress')
         .single();
 
-      if (existingSession) return existingSession;
+      if (existingSession) return existingSession as DBSession;
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -47,12 +59,15 @@ export function useAnalysisProcess(snippet: Snippet | null) {
         .insert({
           snippet_id: snippet?.id,
           created_by: user.id,
-        })
+          status: 'in_progress',
+          current_step: 1,
+          metadata: {},
+        } as DBSession)
         .select()
         .single();
 
       if (error) throw error;
-      return newSession;
+      return newSession as DBSession;
     },
   });
 
@@ -61,6 +76,15 @@ export function useAnalysisProcess(snippet: Snippet | null) {
     queryKey: ['analysis-results', session?.id],
     enabled: !!session,
     queryFn: async () => {
+      type DBResult = {
+        id: string;
+        session_id: string;
+        prompt_id: string;
+        step_number: number;
+        result_data: Record<string, any>;
+        created_at: string;
+      };
+
       const { data, error } = await supabase
         .from('analysis_results')
         .select('*')
@@ -68,12 +92,12 @@ export function useAnalysisProcess(snippet: Snippet | null) {
         .order('step_number', { ascending: true });
 
       if (error) throw error;
-      return data as AnalysisResult[];
+      return data as DBResult[];
     },
   });
 
   // Execute analysis step
-  const executeStep = async (prompt: Prompt, code: string, previousResults: AnalysisResult[] = []) => {
+  const executeStep = async (prompt: Prompt & { prompt_type: PromptType }, code: string, previousResults: AnalysisResult[] = []) => {
     if (!session || !snippet) return;
 
     const { data, error } = await supabase.functions.invoke('execute-analysis-step', {
@@ -91,10 +115,10 @@ export function useAnalysisProcess(snippet: Snippet | null) {
 
   // Mutation for saving step results
   const saveResultMutation = useMutation({
-    mutationFn: async (result: any) => {
+    mutationFn: async (result: { prompt_id: string; data: Record<string, any> }) => {
       if (!session) throw new Error('No active session');
 
-      const { error } = await supabase
+      const { error: resultError } = await supabase
         .from('analysis_results')
         .insert({
           session_id: session.id,
@@ -103,13 +127,18 @@ export function useAnalysisProcess(snippet: Snippet | null) {
           result_data: result.data,
         });
 
-      if (error) throw error;
+      if (resultError) throw resultError;
 
       // Update session progress
-      await supabase
+      const { error: sessionError } = await supabase
         .from('analysis_sessions')
-        .update({ current_step: currentStep + 1 })
+        .update({ 
+          current_step: currentStep + 1,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', session.id);
+
+      if (sessionError) throw sessionError;
 
       setCurrentStep(prev => prev + 1);
     },
@@ -127,7 +156,7 @@ export function useAnalysisProcess(snippet: Snippet | null) {
     if (!prompts || !session) return;
 
     const currentPrompt = prompts.find(p => 
-      p.prompt_type && currentStep === getStepNumberForType(p.prompt_type as PromptType)
+      p.prompt_type && currentStep === getStepNumberForType(p.prompt_type)
     );
 
     if (!currentPrompt) {
