@@ -14,14 +14,20 @@ export function useWorkflow() {
     description: string | undefined, 
     workflowType: string = 'generic',
     snippetId: string,
-    analysisType?: string
+    analysisType?: string,
+    systemMessage?: string,
+    userMessage?: string,
+    model?: string
   ) => {
     setSelectedItems(prev => [...prev, { 
       title, 
       description, 
       workflow_type: workflowType,
       snippet_id: snippetId,
-      analysis_type: analysisType
+      analysis_type: analysisType,
+      system_message: systemMessage,
+      user_message: userMessage,
+      model: model
     }]);
   };
 

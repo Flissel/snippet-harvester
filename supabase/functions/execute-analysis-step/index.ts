@@ -19,7 +19,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { workflowItemId, step, snippetId, analysisType } = await req.json();
+    const { workflowItemId, step, snippetId } = await req.json();
 
     if (!workflowItemId || !snippetId) {
       throw new Error('Workflow item ID and snippet ID are required');
@@ -45,13 +45,13 @@ serve(async (req) => {
     if (workflowError) throw workflowError;
     if (!workflowItem) throw new Error('Workflow item not found');
 
-    // Call detect-yml-config to get the OpenAI analysis
+    // Call detect-yml-config with the proper prompt information
     const { data: ymlAnalysis, error: ymlError } = await supabaseClient.functions.invoke('detect-yml-config', {
       body: { 
         code: snippet.code_content,
-        systemMessage: "You are an AI assistant that analyzes code and generates YML configurations.",
-        userMessage: "Analyze this code and generate a YML configuration that captures all configurable parameters.",
-        model: 'gpt-4o-mini'
+        systemMessage: workflowItem.system_message || "You are an AI assistant that analyzes code and generates YML configurations.",
+        userMessage: (workflowItem.user_message || "Analyze this code and generate a YML configuration that captures all configurable parameters.").replace('{code}', snippet.code_content),
+        model: workflowItem.model || 'gpt-4o-mini'
       },
     });
 
@@ -59,7 +59,6 @@ serve(async (req) => {
 
     console.log('YML Analysis completed:', ymlAnalysis);
 
-    // Return only the YML configuration part
     return new Response(
       JSON.stringify({
         step_number: step,

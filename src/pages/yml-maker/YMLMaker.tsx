@@ -15,7 +15,6 @@ import { AnalysisResults } from './components/AnalysisResults';
 import { CodeEditor } from './components/CodeEditor';
 import { AnalysisResponseCard } from './components/AnalysisResponseCard';
 
-// Import the AnalysisResult type from the same file where it's defined
 interface AnalysisResult {
   step_number: number;
   result_data: any;
@@ -125,7 +124,10 @@ export function YMLMaker() {
         selectedPrompt.description || undefined,
         'yml_analysis',
         snippet.id,
-        selectedPrompt.prompt_type
+        selectedPrompt.prompt_type,
+        selectedPrompt.system_message,
+        selectedPrompt.user_message,
+        selectedPrompt.model || 'gpt-4o-mini'
       );
 
       toast.success('Added to workflow queue');
