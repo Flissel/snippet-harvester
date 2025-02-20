@@ -41,6 +41,17 @@ serve(async (req) => {
 2. A YML configuration that captures all configurable parameters
 3. The processed Python code with the configuration applied
 
+Format your response with sections separated by "---":
+
+Required Imports:
+<list imports here>
+---
+YML Configuration:
+<yml configuration here>
+---
+Processed Code:
+<processed code here>
+
 Code to analyze:
 ${code}`
           }
@@ -54,10 +65,10 @@ ${code}`
     }
 
     const data = await response.json();
-    const result = data.choices[0].message.content;
+    const raw_response = data.choices[0].message.content;
 
-    // Parse the response to extract YML, imports, and processed code
-    const sections = result.split('---').map(s => s.trim());
+    // Also parse the response for structured data
+    const sections = raw_response.split('---').map(s => s.trim());
     let yml = '', imports: string[] = [], processedCode = '';
 
     for (const section of sections) {
@@ -72,6 +83,7 @@ ${code}`
 
     return new Response(
       JSON.stringify({
+        raw_response,
         yml,
         imports,
         processedCode,

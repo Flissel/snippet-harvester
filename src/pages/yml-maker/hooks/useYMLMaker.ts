@@ -53,15 +53,16 @@ Code to analyze:
         const parsedSections = data.raw_response
           .split('---')
           .map(section => {
-            const [title, ...content] = section.trim().split('\n');
+            const [title, ...contentLines] = section.trim().split('\n');
             return {
               title: title.trim(),
-              content: content.join('\n').trim()
+              content: contentLines.join('\n').trim()
             };
           })
           .filter(section => section.title && section.content);
 
         setSections(parsedSections);
+        console.log('Parsed sections:', parsedSections); // Debug log
       } else {
         throw new Error('Invalid response format from OpenAI');
       }
@@ -90,7 +91,7 @@ Code to analyze:
           snippet_id: snippet.id,
           config_type: 'model',
           yml_content: ymlSection?.content || '',
-          imports: importsSection ? importsSection.content.split('\n') : [],
+          imports: importsSection ? importsSection.content.split('\n').filter(Boolean) : [],
           processed_code: codeSection?.content || '',
           created_by: user.id,
         });

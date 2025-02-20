@@ -39,7 +39,7 @@ export function YMLPreview({ sections }: YMLPreviewProps) {
               <Copy className="h-4 w-4" />
             </Button>
           </div>
-          <pre className="bg-muted p-2 rounded-md whitespace-pre-wrap">
+          <pre className="bg-muted p-2 rounded-md whitespace-pre-wrap overflow-x-auto">
             {section.content}
           </pre>
         </Card>
