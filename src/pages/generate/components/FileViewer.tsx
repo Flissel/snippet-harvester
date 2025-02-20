@@ -6,6 +6,7 @@ import { FileNode, DirectoryNode, collectFilesFromDirectory } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { JupyterViewer } from './JupyterViewer';
+import { Card } from '@/components/ui/card';
 
 interface FileViewerProps {
   selectedFile: FileNode | null;
@@ -61,33 +62,69 @@ export function FileViewer({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold flex items-center">
-          {selectedFile ? (
-            <>
-              <span className="flex items-center">
-                {getFileIcon(selectedFile.extension)}
-                <span className="ml-2">File: {selectedFile.name}</span>
-                {getFileTypeBadge(selectedFile.extension)}
-              </span>
-            </>
+    <div className="flex h-full gap-4">
+      <div className="flex-1 flex flex-col">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold flex items-center">
+            {selectedFile ? (
+              <>
+                <span className="flex items-center">
+                  {getFileIcon(selectedFile.extension)}
+                  <span className="ml-2">File: {selectedFile.name}</span>
+                  {getFileTypeBadge(selectedFile.extension)}
+                </span>
+              </>
+            ) : selectedDirectory ? (
+              <>Directory: {selectedDirectory.name}</>
+            ) : (
+              'Select a file or directory'
+            )}
+          </h2>
+        </div>
+        <div className="flex-1 border rounded-md overflow-hidden">
+          {fileContent ? (
+            <div className="h-full">
+              {renderFileContent()}
+            </div>
           ) : selectedDirectory ? (
-            <>Directory: {selectedDirectory.name}</>
+            <ScrollArea className="h-full">
+              <div className="p-4 space-y-4">
+                <h3 className="font-medium">Files in Directory:</h3>
+                <div className="space-y-2">
+                  {collectFilesFromDirectory(selectedDirectory, []).map((file, index) => (
+                    <div 
+                      key={index}
+                      className="flex items-center gap-2 p-2 border rounded-md"
+                    >
+                      {getFileIcon(file.extension)}
+                      <span className="text-sm">{file.path}</span>
+                      {getFileTypeBadge(file.extension)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ScrollArea>
           ) : (
-            'Select a file or directory'
+            <div className="flex items-center justify-center h-full text-muted-foreground p-4">
+              Select a file or directory to view
+            </div>
           )}
-        </h2>
-        <div className="flex gap-2">
+        </div>
+      </div>
+
+      <Card className="w-60 h-fit p-4 space-y-4 sticky top-4">
+        <h3 className="font-semibold text-sm">Actions</h3>
+        <div className="space-y-2">
           {selectedFile && fileContent && (
             <Button 
               onClick={onCreateSnippet}
               disabled={isCreatingSnippets}
+              className="w-full"
             >
               {isCreatingSnippets ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Snippet...
+                  Creating...
                 </>
               ) : (
                 'Create Snippet'
@@ -98,11 +135,12 @@ export function FileViewer({
             <Button 
               onClick={onCreateDirectorySnippets}
               disabled={isCreatingSnippets}
+              className="w-full"
             >
               {isCreatingSnippets ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Snippets...
+                  Creating...
                 </>
               ) : (
                 'Create Directory Snippets'
@@ -110,36 +148,7 @@ export function FileViewer({
             </Button>
           )}
         </div>
-      </div>
-      <div className="flex-1 border rounded-md overflow-hidden">
-        {fileContent ? (
-          <div className="h-full">
-            {renderFileContent()}
-          </div>
-        ) : selectedDirectory ? (
-          <ScrollArea className="h-full">
-            <div className="p-4 space-y-4">
-              <h3 className="font-medium">Files in Directory:</h3>
-              <div className="space-y-2">
-                {collectFilesFromDirectory(selectedDirectory, []).map((file, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-2 p-2 border rounded-md"
-                  >
-                    {getFileIcon(file.extension)}
-                    <span className="text-sm">{file.path}</span>
-                    {getFileTypeBadge(file.extension)}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </ScrollArea>
-        ) : (
-          <div className="flex items-center justify-center h-full text-muted-foreground p-4">
-            Select a file or directory to view
-          </div>
-        )}
-      </div>
+      </Card>
     </div>
   );
 }
