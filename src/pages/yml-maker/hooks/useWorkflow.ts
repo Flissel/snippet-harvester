@@ -3,19 +3,15 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { WorkflowSession, WorkflowItem } from '@/types/workflow';
+import { WorkflowSession, WorkflowItem, SelectedWorkflowItem } from '@/types/workflow';
 
 export function useWorkflow() {
-  const [selectedItems, setSelectedItems] = useState<Array<{
-    title: string;
-    description?: string;
-    workflow_type: string;
-  }>>([]);
+  const [selectedItems, setSelectedItems] = useState<SelectedWorkflowItem[]>([]);
   const queryClient = useQueryClient();
 
   // Create workflow session
   const createSession = useMutation({
-    mutationFn: async (name: string = 'New Workflow') => {
+    mutationFn: async ({ name = 'New Workflow', snippetId }: { name?: string, snippetId: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -25,6 +21,7 @@ export function useWorkflow() {
           created_by: user.id,
           status: 'pending',
           name,
+          snippet_id: snippetId,
         })
         .select()
         .single();
@@ -41,13 +38,17 @@ export function useWorkflow() {
       title,
       description,
       workflowType,
-      orderIndex 
+      orderIndex,
+      snippetId,
+      analysisType 
     }: {
       sessionId: string;
       title: string;
       description?: string;
       workflowType: string;
       orderIndex: number;
+      snippetId: string;
+      analysisType?: string;
     }) => {
       const { data, error } = await supabase
         .from('workflow_items')
@@ -58,7 +59,9 @@ export function useWorkflow() {
           workflow_type: workflowType,
           order_index: orderIndex,
           status: 'pending',
-          result_data: null
+          result_data: null,
+          snippet_id: snippetId,
+          analysis_type: analysisType
         })
         .select()
         .single();
@@ -88,6 +91,8 @@ export function useWorkflow() {
           description: item.description,
           workflowType: item.workflow_type,
           orderIndex: index,
+          snippetId: item.snippet_id,
+          analysisType: item.analysis_type
         });
 
         console.log('Created workflow item:', workflowItem.id);
@@ -104,6 +109,8 @@ export function useWorkflow() {
             body: {
               workflowItemId: workflowItem.id,
               step: index + 1,
+              snippetId: item.snippet_id,
+              analysisType: item.analysis_type
             },
           });
 
@@ -155,8 +162,20 @@ export function useWorkflow() {
     }
   };
 
-  const addItem = (title: string, description?: string, workflowType: string = 'generic') => {
-    setSelectedItems(prev => [...prev, { title, description, workflow_type: workflowType }]);
+  const addItem = (
+    title: string, 
+    description: string | undefined, 
+    workflowType: string = 'generic',
+    snippetId: string,
+    analysisType?: string
+  ) => {
+    setSelectedItems(prev => [...prev, { 
+      title, 
+      description, 
+      workflow_type: workflowType,
+      snippet_id: snippetId,
+      analysis_type: analysisType
+    }]);
   };
 
   const removeItem = (index: number) => {
