@@ -47,6 +47,28 @@ export function filterTreeByExtensions(tree: DirectoryNode, extensions: string[]
   };
 }
 
+export function findSubdirectoryInTree(tree: DirectoryNode, targetPath: string): DirectoryNode | null {
+  if (!targetPath) return tree;
+
+  // Split the path and remove empty strings
+  const pathParts = targetPath.split('/').filter(Boolean);
+  let currentNode: DirectoryNode | null = tree;
+
+  // Traverse the tree following the path
+  for (const part of pathParts) {
+    if (!currentNode) return null;
+
+    const matchingChild = currentNode.children.find(
+      child => child.type === 'directory' && child.name === part
+    ) as DirectoryNode | undefined;
+
+    if (!matchingChild) return null;
+    currentNode = matchingChild;
+  }
+
+  return currentNode;
+}
+
 export function collectFilesFromDirectory(directory: DirectoryNode, fileExtensions: string[]): FileNode[] {
   const files: FileNode[] = [];
 

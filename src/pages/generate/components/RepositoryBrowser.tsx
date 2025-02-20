@@ -24,22 +24,6 @@ export function RepositoryBrowser({
   onDirectorySelect,
   onFileTypeChange
 }: RepositoryBrowserProps) {
-  // Find the root directory that matches the subdirectory path
-  const findSubdirectoryContent = (node: DirectoryNode): DirectoryNode | null => {
-    if (node.children.length === 0) return null;
-    
-    // If the root node only has one directory and no files, traverse into it
-    if (node.children.length === 1 && node.children[0].type === 'directory') {
-      return findSubdirectoryContent(node.children[0] as DirectoryNode);
-    }
-    
-    return node;
-  };
-
-  const subdirectoryContent = filteredTreeStructure 
-    ? findSubdirectoryContent(filteredTreeStructure)
-    : null;
-
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <div className="flex items-center justify-between mb-4">
@@ -56,10 +40,10 @@ export function RepositoryBrowser({
         <div className="flex justify-center">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
-      ) : subdirectoryContent ? (
+      ) : filteredTreeStructure ? (
         <ScrollArea className="flex-1 border rounded-md p-4">
           <TreeItem 
-            node={subdirectoryContent} 
+            node={filteredTreeStructure} 
             level={0} 
             onFileSelect={onFileSelect}
             onDirectorySelect={onDirectorySelect}

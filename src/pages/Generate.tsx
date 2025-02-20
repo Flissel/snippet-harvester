@@ -15,6 +15,7 @@ import {
   RepositoryTree, 
   isDirectoryNode, 
   filterTreeByExtensions,
+  findSubdirectoryInTree,
   collectFilesFromDirectory
 } from './generate/types';
 
@@ -167,9 +168,29 @@ export default function Generate() {
     enabled: !!user
   });
 
-  const filteredTreeStructure = treeData?.tree_structure && selectedFileTypes.length > 0
-    ? filterTreeByExtensions(treeData.tree_structure, selectedFileTypes)
+  // Extract subdirectory from URL
+  const getSubdirectoryFromUrl = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const parts = urlObj.pathname.split('/');
+      const treeIndex = parts.indexOf('tree');
+      if (treeIndex !== -1 && parts.length > treeIndex + 2) {
+        return parts.slice(treeIndex + 2).join('/');
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  };
+
+  const subdirectory = getSubdirectoryFromUrl(repositoryUrl);
+  const subdirectoryTree = treeData?.tree_structure && subdirectory
+    ? findSubdirectoryInTree(treeData.tree_structure, subdirectory)
     : treeData?.tree_structure;
+
+  const filteredTreeStructure = subdirectoryTree && selectedFileTypes.length > 0
+    ? filterTreeByExtensions(subdirectoryTree, selectedFileTypes)
+    : subdirectoryTree;
 
   return (
     <div className="container mx-auto p-4 h-[calc(100vh-6rem)]">
