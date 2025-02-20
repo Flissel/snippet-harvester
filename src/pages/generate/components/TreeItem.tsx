@@ -44,6 +44,10 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect }: TreeI
     );
   }
 
+  if (!node.children || node.children.length === 0) {
+    return null;
+  }
+
   return (
     <div>
       <div
@@ -75,7 +79,7 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect }: TreeI
           Create Snippets
         </Button>
       </div>
-      {isExpanded && node.type === 'directory' && node.children && (
+      {isExpanded && node.children && (
         <div>
           {node.children.map((child, index) => (
             <TreeItem 
