@@ -79,7 +79,7 @@ export function useWorkflow() {
       // Process each item in sequence
       for (const [index, item] of selectedItems.entries()) {
         // Create workflow item if it doesn't exist
-        const { data: workflowItem } = await addWorkflowItem.mutateAsync({
+        const workflowItem = await addWorkflowItem.mutateAsync({
           sessionId,
           title: item.title,
           description: item.description,
@@ -94,7 +94,7 @@ export function useWorkflow() {
           .eq('id', workflowItem.id);
 
         // Execute analysis
-        const response = await supabase.functions.invoke('execute-analysis-step', {
+        const { data: analysisResult } = await supabase.functions.invoke('execute-analysis-step', {
           body: {
             workflowItemId: workflowItem.id,
             step: index + 1,
@@ -106,7 +106,7 @@ export function useWorkflow() {
           .from('workflow_items')
           .update({
             status: 'completed',
-            result_data: response.data,
+            result_data: analysisResult,
           })
           .eq('id', workflowItem.id);
 
