@@ -34,7 +34,7 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect, onSetRo
   if (node.type === 'file') {
     return (
       <div
-        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer relative pr-32"
+        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer"
         style={{ paddingLeft }}
         onClick={() => onFileSelect(node)}
       >
@@ -52,10 +52,13 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect, onSetRo
   return (
     <div>
       <div
-        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer group relative pr-32"
+        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer group"
         style={{ paddingLeft }}
       >
-        <div className="flex items-center gap-2 flex-1 min-w-0" onClick={() => setIsExpanded(!isExpanded)}>
+        <div 
+          className="flex items-center gap-2 min-w-0" 
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
           {isExpanded ? (
             <ChevronDown className="h-4 w-4 shrink-0" />
           ) : (
@@ -68,7 +71,7 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect, onSetRo
           )}
           <span className="text-sm font-medium truncate">{node.name || 'Root'}</span>
         </div>
-        <div className="absolute right-2 flex gap-2 bg-background/95 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             variant="ghost"
             size="sm"
