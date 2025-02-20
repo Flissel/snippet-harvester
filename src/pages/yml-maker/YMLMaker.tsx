@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -68,6 +67,7 @@ export function YMLMaker() {
     createSession,
     addWorkflowItem,
     executeWorkflow,
+    executeSingleItem,
   } = useWorkflow();
 
   const handleCodeChange = (content: string) => {
@@ -80,15 +80,22 @@ export function YMLMaker() {
       return;
     }
     
-    // Use snippet title and description for workflow item
     addItem(
       snippet.title,
       snippet.description || undefined,
       'code_analysis',
       snippet.id,
-      selectedPrompt.prompt_type // Using prompt_type instead of type
+      selectedPrompt.prompt_type
     );
     toast.success("Added to workflow");
+  };
+
+  const handleTestItem = async (item: SelectedWorkflowItem) => {
+    try {
+      await executeSingleItem(item);
+    } catch (error) {
+      console.error('Test execution failed:', error);
+    }
   };
 
   const handleStartWorkflow = async () => {
@@ -150,6 +157,7 @@ export function YMLMaker() {
           <WorkflowQueue
             items={selectedItems}
             onRemoveItem={removeItem}
+            onTestItem={handleTestItem}
           />
 
           <AnalysisResults
