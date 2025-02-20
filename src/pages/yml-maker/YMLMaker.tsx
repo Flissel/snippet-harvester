@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -13,6 +14,15 @@ import { WorkflowQueue } from './components/WorkflowQueue';
 import { AnalysisResults } from './components/AnalysisResults';
 import { CodeEditor } from './components/CodeEditor';
 import { AnalysisResponseCard } from './components/AnalysisResponseCard';
+
+// Import the AnalysisResult type from the same file where it's defined
+interface AnalysisResult {
+  step_number: number;
+  result_data: any;
+  created_at?: string;
+  status?: 'pending' | 'in_progress' | 'completed' | 'failed';
+  title?: string;
+}
 
 export function YMLMaker() {
   const { snippetId } = useParams<{ snippetId: string }>();
