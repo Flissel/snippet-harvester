@@ -8,6 +8,8 @@ interface ExecutionLog {
   functionId: string;
   message: string;
   status?: 'pending' | 'in_progress' | 'completed' | 'failed';
+  event_message?: string;
+  execution_time_ms?: number;
 }
 
 interface ExecutionLogsProps {
@@ -38,9 +40,15 @@ export function ExecutionLogs({ logs }: ExecutionLogsProps) {
                 <span className="font-medium">{log.functionId}</span>
                 <span className="text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                  {log.execution_time_ms && ` • ${log.execution_time_ms}ms`}
                 </span>
               </div>
-              <p className="mt-1 whitespace-pre-wrap">{log.message}</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm">{log.message}</p>
+              {log.event_message && (
+                <p className="mt-1 text-xs text-muted-foreground whitespace-pre-wrap border-t border-border/50 pt-1">
+                  {log.event_message}
+                </p>
+              )}
             </div>
           ))}
         </div>
