@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Prompt } from '@/types/prompts';
+import { Prompt, PromptModel } from '@/types/prompts';
 import { useToast } from '@/components/ui/use-toast';
 import { ConfigurationsList } from './saved-configurations/ConfigurationsList';
 import { DeleteConfigurationDialog } from './saved-configurations/DeleteConfigurationDialog';
@@ -38,7 +38,12 @@ export function SavedConfigurationsDialog({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      
+      // Cast the model field to PromptModel type
+      return (data || []).map(config => ({
+        ...config,
+        model: config.model as PromptModel
+      })) as Prompt[];
     },
   });
 
@@ -111,7 +116,7 @@ export function SavedConfigurationsDialog({
           </DialogHeader>
           
           <ConfigurationsList
-            configurations={configurations}
+            configurations={configurations || []}
             isLoading={isLoading}
             onEdit={onConfigurationEdit || (() => {})}
             onDelete={handleDeleteClick}

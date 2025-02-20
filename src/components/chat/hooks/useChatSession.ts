@@ -1,120 +1,84 @@
-
 import { useState, useEffect } from 'react';
+import { Prompt, PromptModel } from '@/types/prompts';
+import { Message } from '../types';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
-import { ChatMessage, ChatSession } from '../types';
-import { Prompt } from '@/types/prompts';
 
-export function useChatSession(user: any, prompt?: Prompt) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [session, setSession] = useState<ChatSession | null>(null);
-  const [defaultPrompt, setDefaultPrompt] = useState<Prompt | null>(null);
-  const { toast } = useToast();
+export function useChatSession(prompt?: Prompt) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [sessionPrompt, setSessionPrompt] = useState<Prompt | undefined>(prompt);
 
-  // Fetch default prompt when no specific prompt is provided
   useEffect(() => {
-    const fetchDefaultPrompt = async () => {
-      if (!prompt) {
-        const { data, error } = await supabase
-          .from('prompts')
-          .select('*')
-          .eq('is_default', true)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error fetching default prompt:', error);
-          return;
-        }
-
-        if (data) {
-          setDefaultPrompt(data);
-        }
-      }
-    };
-
-    fetchDefaultPrompt();
+    if (prompt) {
+      setSessionPrompt({ ...prompt, model: prompt.model as PromptModel });
+    }
   }, [prompt]);
 
-  const createNewSession = async () => {
-    if (!user) {
-      toast({
-        title: 'Error',
-        description: 'You must be logged in to start a chat session.',
-        variant: 'destructive',
-      });
+  const sendMessage = async (messageContent: string) => {
+    if (!sessionPrompt) {
+      console.error('No prompt selected for the chat session.');
       return;
     }
 
+    const userMessage: Message = {
+      role: 'user',
+      content: messageContent,
+    };
+
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
+
+    setIsGenerating(true);
+
     try {
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('chat_sessions')
-        .insert({
-          title: `Chat ${new Date().toLocaleString()}`,
-          created_by: user.id
-        })
-        .select()
-        .single();
-
-      if (sessionError) throw sessionError;
-      setSession(sessionData);
-
-      // Add initial system message using either provided prompt or default
-      const { error: messageError } = await supabase
-        .from('chat_messages')
-        .insert({
-          session_id: sessionData.id,
-          role: 'system',
-          content: (prompt || defaultPrompt)?.system_message || 'I am an AI assistant. How can I help you today?'
-        });
-
-      if (messageError) throw messageError;
-      
-      // Load messages
-      await loadMessages(sessionData.id);
-    } catch (error) {
-      console.error('Error creating session:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to start chat session. Please try again.',
-        variant: 'destructive',
+      const { data } = await supabase.functions.invoke('agent-message', {
+        body: {
+          message: messageContent,
+          prompt: {
+            id: sessionPrompt.id,
+            name: sessionPrompt.name,
+            system_message: sessionPrompt.system_message,
+            user_message: sessionPrompt.user_message,
+            model: sessionPrompt.model,
+          },
+          chatHistory: messages,
+        },
       });
+
+      if (data && data.response) {
+        const aiMessage: Message = {
+          role: 'assistant',
+          content: data.response,
+        };
+        setMessages((prevMessages) => [...prevMessages, aiMessage]);
+      } else {
+        console.error('Error processing message:', data);
+        const errorAiMessage: Message = {
+          role: 'assistant',
+          content: 'Sorry, I encountered an error processing your message.',
+        };
+        setMessages((prevMessages) => [...prevMessages, errorAiMessage]);
+      }
+    } catch (error) {
+      console.error('Error processing message:', error);
+      const errorAiMessage: Message = {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error processing your message.',
+      };
+      setMessages((prevMessages) => [...prevMessages, errorAiMessage]);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const loadMessages = async (sessionId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      setMessages(data || []);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load messages. Please refresh the page.',
-        variant: 'destructive',
-      });
-    }
+  const resetChat = () => {
+    setMessages([]);
   };
-
-  // Clear session when prompt changes significantly
-  useEffect(() => {
-    if (session && prompt) {
-      setSession(null);
-      setMessages([]);
-      createNewSession();
-    }
-  }, [prompt?.id, prompt?.system_message]);
 
   return {
     messages,
-    session,
-    createNewSession,
-    loadMessages,
-    defaultPrompt,
+    isGenerating,
+    sendMessage,
+    resetChat,
+    sessionPrompt,
   };
 }

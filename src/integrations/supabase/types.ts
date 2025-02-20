@@ -406,7 +406,7 @@ export type Database = {
           prompt_type: Database["public"]["Enums"]["prompt_type"] | null
           system_message: string
           updated_at: string
-          user_message: string
+          user_message: string | null
           yaml_template: string | null
         }
         Insert: {
@@ -423,7 +423,7 @@ export type Database = {
           prompt_type?: Database["public"]["Enums"]["prompt_type"] | null
           system_message: string
           updated_at?: string
-          user_message: string
+          user_message?: string | null
           yaml_template?: string | null
         }
         Update: {
@@ -440,7 +440,7 @@ export type Database = {
           prompt_type?: Database["public"]["Enums"]["prompt_type"] | null
           system_message?: string
           updated_at?: string
-          user_message?: string
+          user_message?: string | null
           yaml_template?: string | null
         }
         Relationships: []
