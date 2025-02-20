@@ -16,15 +16,45 @@ interface GenerationSettings {
 
 const promptSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
+  description: z.string().refine(
+    (val) => {
+      const required = ['PURPOSE:', 'INPUT:', 'OUTPUT:', 'EXAMPLE:'];
+      const sections = val.split('\n');
+      
+      // Check all required sections exist and aren't empty
+      const hasAllSections = required.every(section => {
+        const sectionContent = sections.find(line => line.trim().startsWith(section));
+        return sectionContent && sectionContent.substring(section.length).trim().length > 0;
+      });
+      
+      // Ignore empty CONSIDERATIONS section if present
+      const considerationsSection = sections.find(line => line.trim().startsWith('CONSIDERATIONS:'));
+      if (considerationsSection) {
+        const content = considerationsSection.substring('CONSIDERATIONS:'.length).trim();
+        return content.length === 0 || hasAllSections;
+      }
+      
+      return hasAllSections;
+    },
+    {
+      message: 'Description must include non-empty PURPOSE, INPUT, OUTPUT, and EXAMPLE sections'
+    }
+  ),
   system_message: z.string().min(1, 'System message is required'),
-  user_message: z.string().min(1, 'User message is required'),
+  user_message: z.string().optional(),
   prompt_generation_role: z.string().optional(),
   prompt_generation_guidelines: z.string().optional(),
   prompt_generation_structure: z.string().optional(),
+  model: z.enum(['gpt-4o-mini', 'gpt-4o']).default('gpt-4o-mini'),
 });
 
 export type PromptFormValues = z.infer<typeof promptSchema>;
+
+const DESCRIPTION_TEMPLATE = `PURPOSE: 
+INPUT: 
+OUTPUT: 
+EXAMPLE:
+CONSIDERATIONS:`;
 
 export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void) {
   const [userId, setUserId] = useState<string | null>(null);
@@ -44,12 +74,13 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
     resolver: zodResolver(promptSchema),
     defaultValues: prompt || {
       name: '',
-      description: '',
+      description: DESCRIPTION_TEMPLATE,
       system_message: '',
       user_message: '',
       prompt_generation_role: '',
       prompt_generation_guidelines: '',
       prompt_generation_structure: '',
+      model: 'gpt-4o-mini',
     },
   });
 
@@ -88,9 +119,9 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
         name: values.name,
         description: values.description || null,
         system_message: values.system_message,
-        user_message: values.user_message,
+        user_message: values.user_message || null,
         created_by: userId,
-        model: 'gpt-4o',
+        model: values.model,
         prompt_generation_role: values.prompt_generation_role || null,
         prompt_generation_guidelines: values.prompt_generation_guidelines || null,
         prompt_generation_structure: values.prompt_generation_structure || null,

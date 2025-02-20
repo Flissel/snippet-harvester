@@ -2,53 +2,35 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface GenerationSettings {
-  role?: string;
-  guidelines?: string;
-  structure?: string;
-}
+const SYSTEM_PROMPT_TEMPLATE = `
+You are an AI assistant that creates system messages based on structured descriptions.
 
-const DEFAULT_ROLE = `You are an expert in creating highly effective system prompts for AI agents. Your goal is to craft precise, contextual, and well-structured system prompts that will guide AI assistants in providing accurate and relevant responses.`;
+Given a description with sections:
+- PURPOSE: Main objective
+- INPUT: Expected input format/type
+- OUTPUT: Required output format/type
+- EXAMPLE: Reference output
+- CONSIDERATIONS (optional): Special rules
 
-const DEFAULT_GUIDELINES = `Follow these guidelines when generating system prompts:
-1. Be specific about the agent's role and expertise domain
-2. Include clear constraints and boundaries
-3. Define the expected interaction style and tone
-4. Specify the format and structure of responses when relevant
-5. Include relevant domain-specific terminology and concepts
-6. Set clear ethical guidelines and bias prevention measures
-7. Define success criteria for responses
-8. Include error handling and edge case considerations`;
+Create a comprehensive system message that:
+1. Defines clear role and purpose
+2. Specifies input handling requirements
+3. Enforces output format requirements
+4. Uses the example as reference
+5. Incorporates any considerations as constraints
 
-const DEFAULT_STRUCTURE = `Your output should follow this structure:
-1. Role and Expertise Definition
-2. Primary Objectives
-3. Interaction Guidelines
-4. Response Requirements
-5. Constraints and Limitations
-6. Success Criteria
-
-Make the prompt concise yet comprehensive, focusing on the specific needs indicated in the context.`;
+The generated system message should be concise but complete.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
-  }
-
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAIApiKey) {
-    return new Response(
-      JSON.stringify({ error: 'OpenAI API key not configured' }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
   }
 
   try {
@@ -74,19 +56,15 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: settings?.model || 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: settings?.role || DEFAULT_ROLE
+            content: SYSTEM_PROMPT_TEMPLATE
           },
           {
             role: 'user',
-            content: `${settings?.guidelines || DEFAULT_GUIDELINES}
-
-Create a system prompt based on this context: "${context}"
-
-${settings?.structure || DEFAULT_STRUCTURE}`
+            content: `Create a system message based on this structured description:\n\n${context}`
           }
         ],
         temperature: 0.7,

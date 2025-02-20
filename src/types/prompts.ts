@@ -1,4 +1,3 @@
-
 import { PromptType } from './analysis';
 
 export interface Prompt {
@@ -6,7 +5,7 @@ export interface Prompt {
   name: string;
   description?: string;
   system_message: string;
-  user_message: string;
+  user_message?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
