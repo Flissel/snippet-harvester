@@ -1,9 +1,6 @@
 
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Brain, Plus, Trash2, Play } from 'lucide-react';
-import { FileViewer } from '@/pages/generate/components/FileViewer';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -11,11 +8,11 @@ import { YMLPreview } from './components/YMLPreview';
 import { useYMLMaker } from './hooks/useYMLMaker';
 import { useAnalysisProcess } from './hooks/useAnalysisProcess';
 import { useWorkflow } from './hooks/useWorkflow';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Prompt } from '@/types/prompts';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Header } from './components/Header';
+import { WorkflowQueue } from './components/WorkflowQueue';
+import { AnalysisResults } from './components/AnalysisResults';
+import { CodeEditor } from './components/CodeEditor';
 
 export function YMLMaker() {
   const navigate = useNavigate();
@@ -95,7 +92,6 @@ export function YMLMaker() {
     try {
       const session = await createSession.mutateAsync();
       
-      // Add all items to the workflow
       for (let i = 0; i < selectedItems.length; i++) {
         await addWorkflowItem.mutateAsync({
           sessionId: session.id,
@@ -105,7 +101,6 @@ export function YMLMaker() {
         });
       }
 
-      // Start execution
       await executeWorkflow(session.id);
     } catch (error) {
       toast.error("Failed to start workflow: " + (error as Error).message);
@@ -125,123 +120,41 @@ export function YMLMaker() {
 
   return (
     <div className="container mx-auto p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <Button 
-          variant="ghost" 
-          className="flex items-center gap-2"
-          onClick={() => navigate('/snippets')}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Snippets
-        </Button>
-        <div className="flex items-center gap-2">
-          <Select
-            value={selectedPrompt?.id}
-            onValueChange={(value) => {
-              const prompt = prompts?.find(p => p.id === value);
-              setSelectedPrompt(prompt || null);
-            }}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select analysis prompt" />
-            </SelectTrigger>
-            <SelectContent>
-              {prompts?.map((prompt) => (
-                <SelectItem key={prompt.id} value={prompt.id}>
-                  {prompt.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button 
-            variant="outline"
-            onClick={handleAddToWorkflow}
-            disabled={isProcessing || !selectedPrompt}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add to Workflow
-          </Button>
-          <Button
-            variant="default"
-            onClick={handleStartWorkflow}
-            disabled={isProcessing || selectedItems.length === 0}
-            className="flex items-center gap-2"
-          >
-            <Play className="h-4 w-4" />
-            Start Workflow
-          </Button>
-          <Button 
-            onClick={handleSave}
-            disabled={sections.length === 0}
-            className="flex items-center gap-2"
-          >
-            <Save className="h-4 w-4" />
-            Save Configuration
-          </Button>
-        </div>
-      </div>
+      <Header
+        selectedPrompt={selectedPrompt}
+        prompts={prompts}
+        isProcessing={isProcessing}
+        itemCount={selectedItems.length}
+        sectionsExist={sections.length > 0}
+        onNavigateBack={() => navigate('/snippets')}
+        onPromptSelect={(value) => {
+          const prompt = prompts?.find(p => p.id === value);
+          setSelectedPrompt(prompt || null);
+        }}
+        onAddToWorkflow={handleAddToWorkflow}
+        onStartWorkflow={handleStartWorkflow}
+        onSave={handleSave}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <div className="rounded-lg border">
-            <FileViewer
-              selectedFile={{
-                type: 'file',
-                name: snippet.title,
-                path: snippet.title,
-                url: '',
-                extension: snippet.language || 'py',
-              }}
-              fileContent={selectedCode || snippet.code_content}
-              selectedDirectory={null}
-              isCreatingSnippets={false}
-              onCreateSnippet={() => {}}
-              onCreateDirectorySnippets={() => {}}
-              onContentChange={handleCodeChange}
-            />
-          </div>
+          <CodeEditor
+            snippet={snippet}
+            selectedCode={selectedCode}
+            onCodeChange={handleCodeChange}
+          />
         </div>
 
         <div className="space-y-4">
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Workflow Queue</h3>
-              <Badge variant="outline">{selectedItems.length} items</Badge>
-            </div>
-            <ScrollArea className="h-[200px]">
-              {selectedItems.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-2 border-b">
-                  <div>
-                    <p className="font-medium">{item.snippet.title}</p>
-                    <p className="text-sm text-muted-foreground">{item.prompt.name}</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeItem(index)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </ScrollArea>
-          </Card>
+          <WorkflowQueue
+            items={selectedItems}
+            onRemoveItem={removeItem}
+          />
 
-          <Card className="p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <h3 className="text-lg font-semibold">Analysis Results</h3>
-              <Badge variant="outline">Step {currentStep} of 4</Badge>
-            </div>
-            {results?.map((result, index) => (
-              <div key={index} className="mb-4">
-                <h4 className="font-medium mb-2">Step {result.step_number} Result</h4>
-                <pre className="bg-muted p-2 rounded-md whitespace-pre-wrap overflow-x-auto">
-                  {JSON.stringify(result.result_data, null, 2)}
-                </pre>
-              </div>
-            ))}
-          </Card>
+          <AnalysisResults
+            currentStep={currentStep}
+            results={results}
+          />
 
           {isProcessing ? (
             <div className="flex items-center justify-center p-8">
