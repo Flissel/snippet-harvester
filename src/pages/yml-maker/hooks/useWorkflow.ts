@@ -57,6 +57,7 @@ export function useWorkflow() {
           description,
           workflow_type: workflowType,
           order_index: orderIndex,
+          status: 'pending'
         })
         .select()
         .single();
@@ -93,7 +94,7 @@ export function useWorkflow() {
           .eq('id', workflowItem.id);
 
         // Execute analysis
-        const result = await supabase.functions.invoke('execute-analysis-step', {
+        const response = await supabase.functions.invoke('execute-analysis-step', {
           body: {
             workflowItemId: workflowItem.id,
             step: index + 1,
@@ -105,7 +106,7 @@ export function useWorkflow() {
           .from('workflow_items')
           .update({
             status: 'completed',
-            result_data: result.data,
+            result_data: response.data,
           })
           .eq('id', workflowItem.id);
 

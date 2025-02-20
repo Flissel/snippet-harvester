@@ -79,7 +79,13 @@ export function YMLMaker() {
       toast.error("Please select a prompt first");
       return;
     }
-    addItem(snippet, selectedPrompt);
+    
+    // Use snippet title and description for workflow item
+    addItem(
+      snippet.title,
+      snippet.description || undefined,
+      'code_analysis'
+    );
     toast.success("Added to workflow");
   };
 
@@ -90,17 +96,7 @@ export function YMLMaker() {
     }
 
     try {
-      const session = await createSession.mutateAsync();
-      
-      for (let i = 0; i < selectedItems.length; i++) {
-        await addWorkflowItem.mutateAsync({
-          sessionId: session.id,
-          snippetId: selectedItems[i].snippet.id,
-          promptId: selectedItems[i].prompt.id,
-          orderIndex: i,
-        });
-      }
-
+      const session = await createSession.mutateAsync("Code Analysis Workflow");
       await executeWorkflow(session.id);
     } catch (error) {
       toast.error("Failed to start workflow: " + (error as Error).message);
