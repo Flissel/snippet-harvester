@@ -4,19 +4,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { WorkflowSession, WorkflowItem } from '@/types/workflow';
-import { Snippet } from '@/types/snippets';
-import { Prompt } from '@/types/prompts';
 
 export function useWorkflow() {
   const [selectedItems, setSelectedItems] = useState<Array<{
-    snippet: Snippet;
-    prompt: Prompt;
+    title: string;
+    description?: string;
+    workflow_type: string;
   }>>([]);
   const queryClient = useQueryClient();
 
   // Create workflow session
   const createSession = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (name: string = 'New Workflow') => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -25,6 +24,7 @@ export function useWorkflow() {
         .insert({
           created_by: user.id,
           status: 'pending',
+          name,
         })
         .select()
         .single();
@@ -38,21 +38,24 @@ export function useWorkflow() {
   const addWorkflowItem = useMutation({
     mutationFn: async ({ 
       sessionId, 
-      snippetId, 
-      promptId, 
+      title,
+      description,
+      workflowType,
       orderIndex 
     }: {
       sessionId: string;
-      snippetId: string;
-      promptId: string;
+      title: string;
+      description?: string;
+      workflowType: string;
       orderIndex: number;
     }) => {
       const { data, error } = await supabase
         .from('workflow_items')
         .insert({
           workflow_session_id: sessionId,
-          snippet_id: snippetId,
-          prompt_id: promptId,
+          title,
+          description,
+          workflow_type: workflowType,
           order_index: orderIndex,
         })
         .select()
@@ -73,15 +76,15 @@ export function useWorkflow() {
         .eq('id', sessionId);
 
       // Process each item in sequence
-      for (const item of selectedItems) {
-        const { data: workflowItem } = await supabase
-          .from('workflow_items')
-          .select()
-          .eq('workflow_session_id', sessionId)
-          .eq('snippet_id', item.snippet.id)
-          .single();
-
-        if (!workflowItem) continue;
+      for (const [index, item] of selectedItems.entries()) {
+        // Create workflow item if it doesn't exist
+        const { data: workflowItem } = await addWorkflowItem.mutateAsync({
+          sessionId,
+          title: item.title,
+          description: item.description,
+          workflowType: item.workflow_type,
+          orderIndex: index,
+        });
 
         // Update item status
         await supabase
@@ -92,9 +95,8 @@ export function useWorkflow() {
         // Execute analysis
         const result = await supabase.functions.invoke('execute-analysis-step', {
           body: {
-            code: item.snippet.code_content,
-            prompt: item.prompt,
-            step: 1,
+            workflowItemId: workflowItem.id,
+            step: index + 1,
           },
         });
 
@@ -126,8 +128,8 @@ export function useWorkflow() {
     }
   };
 
-  const addItem = (snippet: Snippet, prompt: Prompt) => {
-    setSelectedItems(prev => [...prev, { snippet, prompt }]);
+  const addItem = (title: string, description?: string, workflowType: string = 'generic') => {
+    setSelectedItems(prev => [...prev, { title, description, workflow_type: workflowType }]);
   };
 
   const removeItem = (index: number) => {

@@ -526,52 +526,41 @@ export type Database = {
       workflow_items: {
         Row: {
           created_at: string
+          description: string | null
           id: string
           order_index: number
-          prompt_id: string
           result_data: Json | null
-          snippet_id: string
           status: string
+          title: string
           updated_at: string
           workflow_session_id: string
+          workflow_type: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
           id?: string
           order_index: number
-          prompt_id: string
           result_data?: Json | null
-          snippet_id: string
           status?: string
+          title: string
           updated_at?: string
           workflow_session_id: string
+          workflow_type?: string
         }
         Update: {
           created_at?: string
+          description?: string | null
           id?: string
           order_index?: number
-          prompt_id?: string
           result_data?: Json | null
-          snippet_id?: string
           status?: string
+          title?: string
           updated_at?: string
           workflow_session_id?: string
+          workflow_type?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "workflow_items_prompt_id_fkey"
-            columns: ["prompt_id"]
-            isOneToOne: false
-            referencedRelation: "prompts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workflow_items_snippet_id_fkey"
-            columns: ["snippet_id"]
-            isOneToOne: false
-            referencedRelation: "snippets"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "workflow_items_workflow_session_id_fkey"
             columns: ["workflow_session_id"]
@@ -586,6 +575,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          name: string | null
           status: string
           updated_at: string
         }
@@ -593,6 +583,7 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          name?: string | null
           status?: string
           updated_at?: string
         }
@@ -600,6 +591,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          name?: string | null
           status?: string
           updated_at?: string
         }
