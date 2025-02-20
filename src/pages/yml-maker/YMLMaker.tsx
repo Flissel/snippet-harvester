@@ -9,8 +9,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { YMLPreview } from './components/YMLPreview';
 import { useYMLMaker } from './hooks/useYMLMaker';
+import { useAnalysisProcess } from './hooks/useAnalysisProcess';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Prompt } from '@/types/prompts';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 
 export function YMLMaker() {
   const navigate = useNavigate();
@@ -47,14 +50,23 @@ export function YMLMaker() {
 
   const {
     sections,
-    isProcessing,
+    isProcessing: isProcessingYML,
     detectConfigurations,
     handleSave,
   } = useYMLMaker(snippet);
 
+  const {
+    currentStep,
+    results,
+    processNextStep,
+    isProcessing: isProcessingAnalysis,
+  } = useAnalysisProcess(snippet);
+
   const handleCodeChange = (content: string) => {
     setSelectedCode(content);
   };
+
+  const isProcessing = isProcessingYML || isProcessingAnalysis;
 
   if (isLoadingSnippet || isLoadingPrompts) {
     return <div>Loading...</div>;
@@ -104,13 +116,13 @@ export function YMLMaker() {
               if (!selectedCode) {
                 setSelectedCode(snippet.code_content);
               }
-              detectConfigurations(selectedCode || snippet.code_content);
+              processNextStep(selectedCode || snippet.code_content);
             }}
             disabled={isProcessing || !selectedPrompt}
             className="flex items-center gap-2"
           >
             <Brain className="h-4 w-4" />
-            Analyze Code
+            Process Step {currentStep}
           </Button>
           <Button 
             onClick={handleSave}
@@ -145,6 +157,20 @@ export function YMLMaker() {
         </div>
 
         <div className="space-y-4">
+          <Card className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="text-lg font-semibold">Analysis Progress</h3>
+              <Badge variant="outline">Step {currentStep} of 4</Badge>
+            </div>
+            {results?.map((result, index) => (
+              <div key={index} className="mb-4">
+                <h4 className="font-medium mb-2">Step {result.step_number} Result</h4>
+                <pre className="bg-muted p-2 rounded-md whitespace-pre-wrap overflow-x-auto">
+                  {JSON.stringify(result.result_data, null, 2)}
+                </pre>
+              </div>
+            ))}
+          </Card>
           {isProcessing ? (
             <div className="flex items-center justify-center p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
