@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -14,6 +13,8 @@ import { WorkflowQueue } from './components/WorkflowQueue';
 import { AnalysisResults } from './components/AnalysisResults';
 import { CodeEditor } from './components/CodeEditor';
 import { AnalysisResponseCard } from './components/AnalysisResponseCard';
+import { ExecutionLog } from './hooks/workflow/useWorkflowExecution';
+import { ExecutionLogs } from './components/ExecutionLogs';
 
 interface AnalysisResult {
   step_number: number;
@@ -31,6 +32,7 @@ export function YMLMaker() {
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
   const [workflowResults, setWorkflowResults] = useState<AnalysisResult[]>([]);
   const [isSingleExecution, setIsSingleExecution] = useState(false);
+  const [executionLogs, setExecutionLogs] = useState<ExecutionLog[]>([]);
 
   const { data: prompts } = useQuery({
     queryKey: ['prompts'],
@@ -82,11 +84,16 @@ export function YMLMaker() {
     navigate('/snippets');
   };
 
+  const handleLog = (log: ExecutionLog) => {
+    setExecutionLogs(prev => [...prev, log]);
+  };
+
   const handleTestItem = async (item: SelectedWorkflowItem) => {
     try {
       setIsLoadingResponse(true);
       setIsSingleExecution(true);
-      const result = await executeSingleItem(item);
+      setExecutionLogs([]); // Clear previous logs
+      const result = await executeSingleItem(item, handleLog);
       setAnalysisResponse(result);
       setWorkflowResults([{
         step_number: 1,
@@ -180,6 +187,8 @@ export function YMLMaker() {
             results={isSingleExecution ? workflowResults : workflow.results}
             isSingleExecution={isSingleExecution}
           />
+
+          <ExecutionLogs logs={executionLogs} />
 
           <YMLPreview sections={workflow.sections} />
         </div>

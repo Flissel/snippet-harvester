@@ -5,18 +5,38 @@ import { SelectedWorkflowItem } from '@/types/workflow';
 import { useWorkflowMutations } from './useWorkflowMutations';
 import { useQueryClient } from '@tanstack/react-query';
 
+export interface ExecutionLog {
+  timestamp: string;
+  functionId: string;
+  message: string;
+  status?: 'pending' | 'in_progress' | 'completed' | 'failed';
+}
+
 export function useWorkflowExecution() {
   const { createSession, addWorkflowItem } = useWorkflowMutations();
   const queryClient = useQueryClient();
 
-  const executeSingleItem = async (item: SelectedWorkflowItem) => {
+  const executeSingleItem = async (item: SelectedWorkflowItem, onLog?: (log: ExecutionLog) => void) => {
     try {
+      onLog?.({
+        timestamp: new Date().toISOString(),
+        functionId: 'workflow',
+        message: 'Creating test session...',
+        status: 'in_progress'
+      });
+
       const session = await createSession.mutateAsync({
         name: 'Test Session',
         snippetId: item.snippet_id
       });
 
       console.log('Created test session:', session.id);
+      onLog?.({
+        timestamp: new Date().toISOString(),
+        functionId: 'workflow',
+        message: `Created test session: ${session.id}`,
+        status: 'completed'
+      });
 
       const workflowItem = await addWorkflowItem.mutateAsync({
         sessionId: session.id,
@@ -32,11 +52,24 @@ export function useWorkflowExecution() {
       });
 
       console.log('Created test workflow item:', workflowItem.id);
+      onLog?.({
+        timestamp: new Date().toISOString(),
+        functionId: 'workflow',
+        message: `Created workflow item: ${workflowItem.id}`,
+        status: 'completed'
+      });
 
       await supabase
         .from('workflow_items')
         .update({ status: 'in_progress' })
         .eq('id', workflowItem.id);
+
+      onLog?.({
+        timestamp: new Date().toISOString(),
+        functionId: 'execute-analysis-step',
+        message: 'Starting analysis...',
+        status: 'in_progress'
+      });
 
       try {
         const { data: analysisResult, error } = await supabase.functions.invoke('execute-analysis-step', {
@@ -52,6 +85,12 @@ export function useWorkflowExecution() {
         });
 
         console.log('Analysis result:', analysisResult);
+        onLog?.({
+          timestamp: new Date().toISOString(),
+          functionId: 'execute-analysis-step',
+          message: 'Analysis completed successfully',
+          status: 'completed'
+        });
 
         if (error) throw error;
 
@@ -74,6 +113,12 @@ export function useWorkflowExecution() {
         return analysisResult;
       } catch (analysisError) {
         console.error('Analysis error:', analysisError);
+        onLog?.({
+          timestamp: new Date().toISOString(),
+          functionId: 'execute-analysis-step',
+          message: `Analysis failed: ${analysisError.message}`,
+          status: 'failed'
+        });
         
         await supabase
           .from('workflow_items')
@@ -92,20 +137,39 @@ export function useWorkflowExecution() {
       }
     } catch (error) {
       console.error('Test execution error:', error);
+      onLog?.({
+        timestamp: new Date().toISOString(),
+        functionId: 'workflow',
+        message: `Test execution failed: ${error.message}`,
+        status: 'failed'
+      });
       toast.error('Error executing test: ' + (error as Error).message);
       throw error;
     }
   };
 
-  const executeWorkflow = async (sessionId: string, items: SelectedWorkflowItem[]) => {
+  const executeWorkflow = async (sessionId: string, items: SelectedWorkflowItem[], onLog?: (log: ExecutionLog) => void) => {
     try {
       await supabase
         .from('workflow_sessions')
         .update({ status: 'in_progress' })
         .eq('id', sessionId);
 
+      onLog?.({
+        timestamp: new Date().toISOString(),
+        functionId: 'workflow',
+        message: 'Starting workflow execution...',
+        status: 'in_progress'
+      });
+
       for (const [index, item] of items.entries()) {
         console.log('Processing workflow item:', index + 1);
+        onLog?.({
+          timestamp: new Date().toISOString(),
+          functionId: 'workflow',
+          message: `Processing item ${index + 1}: ${item.title}`,
+          status: 'in_progress'
+        });
 
         const workflowItem = await addWorkflowItem.mutateAsync({
           sessionId,
@@ -128,6 +192,13 @@ export function useWorkflowExecution() {
           .eq('id', workflowItem.id);
 
         try {
+          onLog?.({
+            timestamp: new Date().toISOString(),
+            functionId: 'execute-analysis-step',
+            message: `Starting analysis for step ${index + 1}...`,
+            status: 'in_progress'
+          });
+
           const { data: analysisResult, error } = await supabase.functions.invoke('execute-analysis-step', {
             body: {
               workflowItemId: workflowItem.id,
@@ -141,6 +212,12 @@ export function useWorkflowExecution() {
           });
 
           console.log('Analysis result:', analysisResult);
+          onLog?.({
+            timestamp: new Date().toISOString(),
+            functionId: 'execute-analysis-step',
+            message: `Analysis completed for step ${index + 1}`,
+            status: 'completed'
+          });
 
           if (error) throw error;
 
@@ -155,6 +232,12 @@ export function useWorkflowExecution() {
           queryClient.invalidateQueries({ queryKey: ['workflow-items'] });
         } catch (analysisError) {
           console.error('Analysis error:', analysisError);
+          onLog?.({
+            timestamp: new Date().toISOString(),
+            functionId: 'execute-analysis-step',
+            message: `Analysis failed for step ${index + 1}: ${analysisError.message}`,
+            status: 'failed'
+          });
           
           await supabase
             .from('workflow_items')
@@ -173,9 +256,22 @@ export function useWorkflowExecution() {
         .update({ status: 'completed' })
         .eq('id', sessionId);
 
+      onLog?.({
+        timestamp: new Date().toISOString(),
+        functionId: 'workflow',
+        message: 'Workflow completed successfully',
+        status: 'completed'
+      });
+
       toast.success('Workflow completed successfully');
     } catch (error) {
       console.error('Workflow error:', error);
+      onLog?.({
+        timestamp: new Date().toISOString(),
+        functionId: 'workflow',
+        message: `Workflow failed: ${error.message}`,
+        status: 'failed'
+      });
       toast.error('Error executing workflow: ' + (error as Error).message);
       
       await supabase
