@@ -523,6 +523,88 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_index: number
+          prompt_id: string
+          result_data: Json | null
+          snippet_id: string
+          status: string
+          updated_at: string
+          workflow_session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_index: number
+          prompt_id: string
+          result_data?: Json | null
+          snippet_id: string
+          status?: string
+          updated_at?: string
+          workflow_session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_index?: number
+          prompt_id?: string
+          result_data?: Json | null
+          snippet_id?: string
+          status?: string
+          updated_at?: string
+          workflow_session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_items_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_items_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_items_workflow_session_id_fkey"
+            columns: ["workflow_session_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_sessions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       yml_configurations: {
         Row: {
           config_type: string

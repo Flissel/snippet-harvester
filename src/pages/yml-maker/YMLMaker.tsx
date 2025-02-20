@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Brain } from 'lucide-react';
+import { ArrowLeft, Save, Brain, Plus, Trash2, Play } from 'lucide-react';
 import { FileViewer } from '@/pages/generate/components/FileViewer';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,10 +10,12 @@ import { toast } from 'sonner';
 import { YMLPreview } from './components/YMLPreview';
 import { useYMLMaker } from './hooks/useYMLMaker';
 import { useAnalysisProcess } from './hooks/useAnalysisProcess';
+import { useWorkflow } from './hooks/useWorkflow';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Prompt } from '@/types/prompts';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function YMLMaker() {
   const navigate = useNavigate();
@@ -62,11 +64,56 @@ export function YMLMaker() {
     isProcessing: isProcessingAnalysis,
   } = useAnalysisProcess(snippet);
 
+  const {
+    selectedItems,
+    addItem,
+    removeItem,
+    createSession,
+    addWorkflowItem,
+    executeWorkflow,
+  } = useWorkflow();
+
   const handleCodeChange = (content: string) => {
     setSelectedCode(content);
   };
 
-  const isProcessing = isProcessingYML || isProcessingAnalysis;
+  const handleAddToWorkflow = () => {
+    if (!selectedPrompt || !snippet) {
+      toast.error("Please select a prompt first");
+      return;
+    }
+    addItem(snippet, selectedPrompt);
+    toast.success("Added to workflow");
+  };
+
+  const handleStartWorkflow = async () => {
+    if (selectedItems.length === 0) {
+      toast.error("Please add items to the workflow first");
+      return;
+    }
+
+    try {
+      const session = await createSession.mutateAsync();
+      
+      // Add all items to the workflow
+      for (let i = 0; i < selectedItems.length; i++) {
+        await addWorkflowItem.mutateAsync({
+          sessionId: session.id,
+          snippetId: selectedItems[i].snippet.id,
+          promptId: selectedItems[i].prompt.id,
+          orderIndex: i,
+        });
+      }
+
+      // Start execution
+      await executeWorkflow(session.id);
+    } catch (error) {
+      toast.error("Failed to start workflow: " + (error as Error).message);
+    }
+  };
+
+  const isProcessing = isProcessingYML || isProcessingAnalysis || 
+                      createSession.isPending || addWorkflowItem.isPending;
 
   if (isLoadingSnippet || isLoadingPrompts) {
     return <div>Loading...</div>;
@@ -108,21 +155,21 @@ export function YMLMaker() {
           </Select>
           <Button 
             variant="outline"
-            onClick={() => {
-              if (!selectedPrompt) {
-                toast.error("Please select a prompt first");
-                return;
-              }
-              if (!selectedCode) {
-                setSelectedCode(snippet.code_content);
-              }
-              processNextStep(selectedCode || snippet.code_content);
-            }}
+            onClick={handleAddToWorkflow}
             disabled={isProcessing || !selectedPrompt}
             className="flex items-center gap-2"
           >
-            <Brain className="h-4 w-4" />
-            Process Step {currentStep}
+            <Plus className="h-4 w-4" />
+            Add to Workflow
+          </Button>
+          <Button
+            variant="default"
+            onClick={handleStartWorkflow}
+            disabled={isProcessing || selectedItems.length === 0}
+            className="flex items-center gap-2"
+          >
+            <Play className="h-4 w-4" />
+            Start Workflow
           </Button>
           <Button 
             onClick={handleSave}
@@ -158,8 +205,32 @@ export function YMLMaker() {
 
         <div className="space-y-4">
           <Card className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Workflow Queue</h3>
+              <Badge variant="outline">{selectedItems.length} items</Badge>
+            </div>
+            <ScrollArea className="h-[200px]">
+              {selectedItems.map((item, index) => (
+                <div key={index} className="flex items-center justify-between p-2 border-b">
+                  <div>
+                    <p className="font-medium">{item.snippet.title}</p>
+                    <p className="text-sm text-muted-foreground">{item.prompt.name}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeItem(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </ScrollArea>
+          </Card>
+
+          <Card className="p-4">
             <div className="flex items-center gap-2 mb-4">
-              <h3 className="text-lg font-semibold">Analysis Progress</h3>
+              <h3 className="text-lg font-semibold">Analysis Results</h3>
               <Badge variant="outline">Step {currentStep} of 4</Badge>
             </div>
             {results?.map((result, index) => (
@@ -171,6 +242,7 @@ export function YMLMaker() {
               </div>
             ))}
           </Card>
+
           {isProcessing ? (
             <div className="flex items-center justify-center p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
