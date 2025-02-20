@@ -55,7 +55,7 @@ export function FileViewer({
       <Textarea
         value={fileContent}
         onChange={handleContentChange}
-        className="font-mono text-sm w-full h-auto resize-none border-0 focus-visible:ring-0"
+        className="font-mono text-sm w-full min-h-screen resize-none border-0 focus-visible:ring-0"
       />
     );
   };
@@ -96,9 +96,9 @@ export function FileViewer({
           )}
         </div>
       </div>
-      <div className="flex-1 border rounded-md">
+      <div className="flex-1 border rounded-md overflow-hidden">
         {fileContent ? (
-          <div className="p-4">
+          <div className="h-full">
             {renderFileContent()}
           </div>
         ) : selectedDirectory ? (
