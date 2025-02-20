@@ -525,11 +525,13 @@ export type Database = {
       }
       workflow_items: {
         Row: {
+          analysis_type: string | null
           created_at: string
           description: string | null
           id: string
           order_index: number
           result_data: Json | null
+          snippet_id: string | null
           status: string
           title: string
           updated_at: string
@@ -537,11 +539,13 @@ export type Database = {
           workflow_type: string
         }
         Insert: {
+          analysis_type?: string | null
           created_at?: string
           description?: string | null
           id?: string
           order_index: number
           result_data?: Json | null
+          snippet_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -549,11 +553,13 @@ export type Database = {
           workflow_type?: string
         }
         Update: {
+          analysis_type?: string | null
           created_at?: string
           description?: string | null
           id?: string
           order_index?: number
           result_data?: Json | null
+          snippet_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -561,6 +567,13 @@ export type Database = {
           workflow_type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "workflow_items_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workflow_items_workflow_session_id_fkey"
             columns: ["workflow_session_id"]
