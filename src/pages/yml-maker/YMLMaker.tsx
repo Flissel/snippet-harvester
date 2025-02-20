@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -14,166 +13,148 @@ import { Header } from './components/Header';
 import { WorkflowQueue } from './components/WorkflowQueue';
 import { AnalysisResults } from './components/AnalysisResults';
 import { CodeEditor } from './components/CodeEditor';
+import { AnalysisResponseCard } from './components/AnalysisResponseCard';
 
 export function YMLMaker() {
-  const navigate = useNavigate();
   const { snippetId } = useParams<{ snippetId: string }>();
-  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
-  
-  const { data: snippet, isLoading: isLoadingSnippet } = useQuery({
-    queryKey: ['snippet', snippetId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('snippets')
-        .select('*')
-        .eq('id', snippetId)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [analysisResponse, setAnalysisResponse] = useState<any | null>(null);
+  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
 
-  const { data: prompts, isLoading: isLoadingPrompts } = useQuery({
+  const { data: prompts } = useQuery({
     queryKey: ['prompts'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('prompts')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       return data as Prompt[];
     },
   });
 
-  const {
-    sections,
-    isProcessing: isProcessingYML,
-    detectConfigurations,
-    handleSave,
-  } = useYMLMaker(snippet);
+  const { data: snippet } = useQuery({
+    queryKey: ['snippets', snippetId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('snippets')
+        .select('*')
+        .eq('id', snippetId)
+        .single();
 
-  const {
-    currentStep,
-    results,
-    processNextStep,
-    isProcessing: isProcessingAnalysis,
-  } = useAnalysisProcess(snippet);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!snippetId,
+  });
 
-  const {
-    selectedItems,
-    addItem,
-    removeItem,
-    createSession,
-    addWorkflowItem,
-    executeWorkflow,
-    executeSingleItem,
-  } = useWorkflow();
+  const { workflow, handleAddToWorkflow, handleStartWorkflow } = useYMLMaker({
+    snippet,
+    selectedPrompt,
+  });
 
-  const handleCodeChange = (content: string) => {
-    setSelectedCode(content);
+  const { selectedItems, addItem, removeItem, executeSingleItem } = useWorkflow();
+
+  const handlePromptSelect = (promptId: string) => {
+    const prompt = prompts?.find((p) => p.id === promptId) ?? null;
+    setSelectedPrompt(prompt);
   };
 
-  const handleAddToWorkflow = () => {
-    if (!selectedPrompt || !snippet) {
-      toast.error("Please select a prompt first");
-      return;
+  const handleNavigateBack = () => {
+    navigate('/snippets');
+  };
+
+  const handleSaveConfig = async () => {
+    if (!snippet || workflow.sections.length === 0) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const ymlSection = workflow.sections.find(s => s.title.toLowerCase().includes('yml configuration'));
+      const importsSection = workflow.sections.find(s => s.title.toLowerCase().includes('required imports'));
+      const codeSection = workflow.sections.find(s => s.title.toLowerCase().includes('processed code'));
+
+      const { error } = await supabase
+        .from('yml_configurations')
+        .insert({
+          snippet_id: snippet.id,
+          config_type: 'model',
+          yml_content: ymlSection?.content || '',
+          imports: importsSection ? importsSection.content.split('\n').filter(Boolean) : [],
+          processed_code: codeSection?.content || '',
+          created_by: user.id,
+        });
+
+      if (error) throw error;
+
+      toast.success('Configuration saved successfully');
+    } catch (error) {
+      console.error('Error saving configuration:', error);
+      toast.error('Failed to save configuration');
     }
-    
-    addItem(
-      snippet.title,
-      snippet.description || undefined,
-      'code_analysis',
-      snippet.id,
-      selectedPrompt.prompt_type
-    );
-    toast.success("Added to workflow");
   };
 
   const handleTestItem = async (item: SelectedWorkflowItem) => {
     try {
-      await executeSingleItem(item);
+      setIsLoadingResponse(true);
+      const result = await executeSingleItem(item);
+      setAnalysisResponse(result);
     } catch (error) {
-      console.error('Test execution failed:', error);
+      console.error('Test execution error:', error);
+      setAnalysisResponse({ error: (error as Error).message });
+    } finally {
+      setIsLoadingResponse(false);
     }
   };
-
-  const handleStartWorkflow = async () => {
-    if (!snippetId || selectedItems.length === 0) {
-      toast.error("Please add items to the workflow first");
-      return;
-    }
-
-    try {
-      const session = await createSession.mutateAsync({
-        name: "Code Analysis Workflow",
-        snippetId: snippetId
-      });
-      await executeWorkflow(session.id);
-    } catch (error) {
-      toast.error("Failed to start workflow: " + (error as Error).message);
-    }
-  };
-
-  const isProcessing = isProcessingYML || isProcessingAnalysis || 
-                      createSession.isPending || addWorkflowItem.isPending;
-
-  if (isLoadingSnippet || isLoadingPrompts) {
-    return <div>Loading...</div>;
-  }
-
-  if (!snippet) {
-    return <div>Snippet not found</div>;
-  }
 
   return (
-    <div className="container mx-auto p-4 space-y-4">
+    <div className="container py-6 space-y-6">
       <Header
         selectedPrompt={selectedPrompt}
         prompts={prompts}
         isProcessing={isProcessing}
         itemCount={selectedItems.length}
-        sectionsExist={sections.length > 0}
-        onNavigateBack={() => navigate('/snippets')}
-        onPromptSelect={(value) => {
-          const prompt = prompts?.find(p => p.id === value);
-          setSelectedPrompt(prompt || null);
-        }}
+        sectionsExist={workflow.sections.length > 0}
+        onNavigateBack={handleNavigateBack}
+        onPromptSelect={handlePromptSelect}
         onAddToWorkflow={handleAddToWorkflow}
         onStartWorkflow={handleStartWorkflow}
-        onSave={handleSave}
+        onSave={handleSaveConfig}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <CodeEditor
-            snippet={snippet}
-            selectedCode={selectedCode}
-            onCodeChange={handleCodeChange}
-          />
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          {snippet && (
+            <CodeEditor
+              snippet={snippet}
+              selectedCode={workflow.selectedCode}
+              onCodeChange={workflow.handleCodeChange}
+            />
+          )}
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <WorkflowQueue
             items={selectedItems}
             onRemoveItem={removeItem}
             onTestItem={handleTestItem}
           />
 
-          <AnalysisResults
-            currentStep={currentStep}
-            results={results}
+          <AnalysisResponseCard
+            response={analysisResponse}
+            isLoading={isLoadingResponse}
           />
 
-          {isProcessing ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <YMLPreview sections={sections} />
-          )}
+          <AnalysisResults
+            currentStep={workflow.currentStep}
+            results={workflow.results}
+          />
+
+          <YMLPreview sections={workflow.sections} />
         </div>
       </div>
     </div>
