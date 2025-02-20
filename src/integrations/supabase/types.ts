@@ -576,6 +576,7 @@ export type Database = {
           created_by: string
           id: string
           name: string | null
+          snippet_id: string | null
           status: string
           updated_at: string
         }
@@ -584,6 +585,7 @@ export type Database = {
           created_by: string
           id?: string
           name?: string | null
+          snippet_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -592,10 +594,19 @@ export type Database = {
           created_by?: string
           id?: string
           name?: string | null
+          snippet_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workflow_sessions_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       yml_configurations: {
         Row: {
