@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -21,6 +20,8 @@ export function YMLMaker() {
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [analysisResponse, setAnalysisResponse] = useState<any | null>(null);
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
+  const [workflowResults, setWorkflowResults] = useState<AnalysisResult[]>([]);
+  const [isSingleExecution, setIsSingleExecution] = useState(false);
 
   const { data: prompts } = useQuery({
     queryKey: ['prompts'],
@@ -75,11 +76,26 @@ export function YMLMaker() {
   const handleTestItem = async (item: SelectedWorkflowItem) => {
     try {
       setIsLoadingResponse(true);
+      setIsSingleExecution(true);
       const result = await executeSingleItem(item);
       setAnalysisResponse(result);
+      setWorkflowResults([{
+        step_number: 1,
+        result_data: result,
+        created_at: new Date().toISOString(),
+        status: 'completed',
+        title: item.title
+      }]);
     } catch (error) {
       console.error('Test execution error:', error);
       setAnalysisResponse({ error: (error as Error).message });
+      setWorkflowResults([{
+        step_number: 1,
+        result_data: { error: (error as Error).message },
+        created_at: new Date().toISOString(),
+        status: 'failed',
+        title: item.title
+      }]);
     } finally {
       setIsLoadingResponse(false);
     }
@@ -94,7 +110,6 @@ export function YMLMaker() {
     try {
       await handleAddToWorkflow();
       
-      // Add the item to the workflow queue
       addItem(
         selectedPrompt.name,
         selectedPrompt.description || undefined,
@@ -150,7 +165,8 @@ export function YMLMaker() {
 
           <AnalysisResults
             currentStep={workflow.currentStep}
-            results={workflow.results}
+            results={isSingleExecution ? workflowResults : workflow.results}
+            isSingleExecution={isSingleExecution}
           />
 
           <YMLPreview sections={workflow.sections} />
