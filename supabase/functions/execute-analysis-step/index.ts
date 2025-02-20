@@ -1,4 +1,5 @@
 
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
@@ -8,7 +9,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -19,56 +19,57 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { workflowItemId, step } = await req.json();
+    const { workflowItemId, step, snippetId, analysisType } = await req.json();
 
-    if (!workflowItemId) {
-      throw new Error('Workflow item ID is required');
+    if (!workflowItemId || !snippetId) {
+      throw new Error('Workflow item ID and snippet ID are required');
     }
 
-    // Get the workflow item
-    const { data: workflowItem, error: fetchError } = await supabaseClient
+    // Get the snippet's code content
+    const { data: snippet, error: snippetError } = await supabaseClient
+      .from('snippets')
+      .select('code_content')
+      .eq('id', snippetId)
+      .single();
+
+    if (snippetError) throw snippetError;
+    if (!snippet) throw new Error('Snippet not found');
+
+    // Get the workflow item to access the prompt information
+    const { data: workflowItem, error: workflowError } = await supabaseClient
       .from('workflow_items')
       .select('*')
       .eq('id', workflowItemId)
       .single();
 
-    if (fetchError) throw fetchError;
+    if (workflowError) throw workflowError;
     if (!workflowItem) throw new Error('Workflow item not found');
 
-    // Process based on workflow type
-    let analysisResult;
-    switch (workflowItem.workflow_type) {
-      case 'code_analysis':
-        analysisResult = {
-          step_number: step,
-          analysis_type: 'code_analysis',
-          findings: [
-            {
-              type: 'configuration',
-              description: 'Code analysis completed successfully',
-              details: {
-                configType: 'yml',
-                recommendations: ['Add proper documentation', 'Include version control']
-              }
-            }
-          ],
-          timestamp: new Date().toISOString()
-        };
-        break;
-      default:
-        analysisResult = {
-          step_number: step,
-          analysis_type: 'generic',
-          message: 'Generic analysis completed',
-          timestamp: new Date().toISOString()
-        };
-    }
+    // Call detect-yml-config to get the OpenAI analysis
+    const { data: ymlAnalysis, error: ymlError } = await supabaseClient.functions.invoke('detect-yml-config', {
+      body: { 
+        code: snippet.code_content,
+        systemMessage: "You are an AI assistant that analyzes code and generates YML configurations.",
+        userMessage: "Analyze this code and generate a YML configuration that captures all configurable parameters.",
+        model: 'gpt-4o-mini'
+      },
+    });
 
-    console.log('Analysis completed for workflow item:', workflowItemId);
-    console.log('Result:', analysisResult);
+    if (ymlError) throw ymlError;
 
+    console.log('YML Analysis completed:', ymlAnalysis);
+
+    // Return only the YML configuration part
     return new Response(
-      JSON.stringify(analysisResult),
+      JSON.stringify({
+        step_number: step,
+        result_data: {
+          yml_config: ymlAnalysis.yml || 'No YML configuration generated'
+        },
+        title: 'YML Configuration',
+        status: 'completed',
+        created_at: new Date().toISOString()
+      }),
       { 
         headers: { 
           ...corsHeaders,
@@ -82,7 +83,11 @@ serve(async (req) => {
     console.error('Error executing analysis step:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        status: 'failed',
+        created_at: new Date().toISOString()
+      }),
       { 
         headers: { 
           ...corsHeaders,
