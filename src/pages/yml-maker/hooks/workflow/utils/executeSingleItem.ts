@@ -5,6 +5,25 @@ import { SelectedWorkflowItem } from '@/types/workflow';
 import { ExecutionLog } from '../useWorkflowExecution';
 import { QueryClient } from '@tanstack/react-query';
 
+const DEFAULT_USER_MESSAGE = `Analyze this code and provide:
+1. A list of required imports
+2. A YML configuration that captures all configurable parameters
+3. The processed Python code with the configuration applied
+
+Format your response with sections separated by "---":
+
+Required Imports:
+<list imports here>
+---
+YML Configuration:
+<yml configuration here>
+---
+Processed Code:
+<processed code here>
+
+Code to analyze:
+{code}`;
+
 export async function executeSingleItem(
   item: SelectedWorkflowItem,
   createSession: any,
@@ -14,6 +33,18 @@ export async function executeSingleItem(
 ) {
   const startTime = Date.now();
   try {
+    // First, fetch the code content
+    const { data: snippet, error: snippetError } = await supabase
+      .from('snippets')
+      .select('code_content')
+      .eq('id', item.snippet_id)
+      .single();
+
+    if (snippetError) throw snippetError;
+
+    // Use provided user message or default, and replace {code} placeholder
+    const userMessage = (item.user_message || DEFAULT_USER_MESSAGE).replace('{code}', snippet.code_content);
+
     onLog?.({
       timestamp: new Date().toISOString(),
       functionId: 'workflow',
@@ -53,7 +84,7 @@ export async function executeSingleItem(
       snippetId: item.snippet_id,
       analysisType: item.analysis_type,
       systemMessage: item.system_message,
-      userMessage: item.user_message,
+      userMessage: userMessage, // Use our processed user message
       model: item.model
     };
 
@@ -92,7 +123,7 @@ export async function executeSingleItem(
       snippetId: item.snippet_id,
       analysisType: item.analysis_type,
       systemMessage: item.system_message,
-      userMessage: item.user_message,
+      userMessage: userMessage, // Use our processed user message
       model: item.model
     };
 
