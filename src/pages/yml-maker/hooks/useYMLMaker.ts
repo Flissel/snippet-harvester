@@ -3,18 +3,31 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Snippet } from '@/types/snippets';
+import { Prompt } from '@/types/prompts';
 
 export interface ResponseSection {
   title: string;
   content: string;
 }
 
-export function useYMLMaker(snippet: Snippet | null) {
+interface UseYMLMakerProps {
+  snippet: Snippet | null;
+  selectedPrompt: Prompt | null;
+}
+
+export function useYMLMaker({ snippet, selectedPrompt }: UseYMLMakerProps) {
   const [sections, setSections] = useState<ResponseSection[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [results, setResults] = useState<any[]>([]);
 
-  const detectConfigurations = async (selectedCode: string | null) => {
-    if (!selectedCode || !snippet) return;
+  const handleCodeChange = (code: string) => {
+    setSelectedCode(code);
+  };
+
+  const detectConfigurations = async (code: string | null) => {
+    if (!code || !snippet) return;
 
     setIsProcessing(true);
     setSections([]);
@@ -22,7 +35,7 @@ export function useYMLMaker(snippet: Snippet | null) {
     try {
       const { data, error } = await supabase.functions.invoke('detect-yml-config', {
         body: { 
-          code: selectedCode,
+          code,
           systemMessage: 'You are an AI assistant that analyzes Python code and generates YML configurations and required imports.',
           userMessage: `Analyze this Python code and provide:
 1. A list of required imports
@@ -48,7 +61,6 @@ Code to analyze:
 
       if (error) throw error;
 
-      // Parse the response into sections
       if (data.raw_response) {
         const parsedSections = data.raw_response
           .split('---')
@@ -62,9 +74,6 @@ Code to analyze:
           .filter(section => section.title && section.content);
 
         setSections(parsedSections);
-        console.log('Parsed sections:', parsedSections); // Debug log
-      } else {
-        throw new Error('Invalid response format from OpenAI');
       }
     } catch (error) {
       console.error('Error detecting configurations:', error);
@@ -97,7 +106,6 @@ Code to analyze:
         });
 
       if (error) throw error;
-
       toast.success('Configuration saved successfully');
     } catch (error) {
       console.error('Error saving configuration:', error);
@@ -105,10 +113,33 @@ Code to analyze:
     }
   };
 
+  const handleAddToWorkflow = async () => {
+    if (!selectedCode || !selectedPrompt) {
+      toast.error('Please select code and a prompt first');
+      return;
+    }
+    await detectConfigurations(selectedCode);
+  };
+
+  const handleStartWorkflow = async () => {
+    setCurrentStep(1);
+    setResults([]);
+    if (selectedCode) {
+      await detectConfigurations(selectedCode);
+    }
+  };
+
   return {
-    sections,
+    workflow: {
+      sections,
+      selectedCode,
+      currentStep,
+      results,
+      handleCodeChange,
+    },
     isProcessing,
-    detectConfigurations,
+    handleAddToWorkflow,
+    handleStartWorkflow,
     handleSave,
   };
 }

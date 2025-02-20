@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -5,7 +6,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { YMLPreview } from './components/YMLPreview';
 import { useYMLMaker } from './hooks/useYMLMaker';
-import { useAnalysisProcess } from './hooks/useAnalysisProcess';
 import { useWorkflow } from './hooks/useWorkflow';
 import { Prompt } from '@/types/prompts';
 import { SelectedWorkflowItem } from '@/types/workflow';
@@ -19,7 +19,6 @@ export function YMLMaker() {
   const { snippetId } = useParams<{ snippetId: string }>();
   const navigate = useNavigate();
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [analysisResponse, setAnalysisResponse] = useState<any | null>(null);
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
 
@@ -51,7 +50,13 @@ export function YMLMaker() {
     enabled: !!snippetId,
   });
 
-  const { workflow, handleAddToWorkflow, handleStartWorkflow } = useYMLMaker({
+  const { 
+    workflow, 
+    isProcessing,
+    handleAddToWorkflow,
+    handleStartWorkflow,
+    handleSave: handleSaveConfig 
+  } = useYMLMaker({
     snippet,
     selectedPrompt,
   });
@@ -65,37 +70,6 @@ export function YMLMaker() {
 
   const handleNavigateBack = () => {
     navigate('/snippets');
-  };
-
-  const handleSaveConfig = async () => {
-    if (!snippet || workflow.sections.length === 0) return;
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const ymlSection = workflow.sections.find(s => s.title.toLowerCase().includes('yml configuration'));
-      const importsSection = workflow.sections.find(s => s.title.toLowerCase().includes('required imports'));
-      const codeSection = workflow.sections.find(s => s.title.toLowerCase().includes('processed code'));
-
-      const { error } = await supabase
-        .from('yml_configurations')
-        .insert({
-          snippet_id: snippet.id,
-          config_type: 'model',
-          yml_content: ymlSection?.content || '',
-          imports: importsSection ? importsSection.content.split('\n').filter(Boolean) : [],
-          processed_code: codeSection?.content || '',
-          created_by: user.id,
-        });
-
-      if (error) throw error;
-
-      toast.success('Configuration saved successfully');
-    } catch (error) {
-      console.error('Error saving configuration:', error);
-      toast.error('Failed to save configuration');
-    }
   };
 
   const handleTestItem = async (item: SelectedWorkflowItem) => {
