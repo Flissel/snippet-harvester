@@ -10,6 +10,7 @@ export interface Prompt {
   updated_at: string;
   yaml_template?: string;
   model: string;
+  prompt_type?: PromptType;
   prompt_generation_role?: string;
   prompt_generation_guidelines?: string;
   prompt_generation_structure?: string;
