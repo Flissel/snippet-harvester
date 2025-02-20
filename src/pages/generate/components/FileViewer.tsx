@@ -55,7 +55,7 @@ export function FileViewer({
       <Textarea
         value={fileContent}
         onChange={handleContentChange}
-        className="font-mono text-sm min-h-[300px] resize-none border-0 focus-visible:ring-0"
+        className="font-mono text-sm w-full h-auto resize-none border-0 focus-visible:ring-0"
       />
     );
   };
@@ -96,33 +96,35 @@ export function FileViewer({
           )}
         </div>
       </div>
-      <ScrollArea className="flex-1 border rounded-md">
+      <div className="flex-1 border rounded-md">
         {fileContent ? (
           <div className="p-4">
             {renderFileContent()}
           </div>
         ) : selectedDirectory ? (
-          <div className="p-4 space-y-4">
-            <h3 className="font-medium">Files in Directory:</h3>
-            <div className="space-y-2">
-              {collectFilesFromDirectory(selectedDirectory, []).map((file, index) => (
-                <div 
-                  key={index}
-                  className="flex items-center gap-2 p-2 border rounded-md"
-                >
-                  {getFileIcon(file.extension)}
-                  <span className="text-sm">{file.path}</span>
-                  {getFileTypeBadge(file.extension)}
-                </div>
-              ))}
+          <ScrollArea className="h-full">
+            <div className="p-4 space-y-4">
+              <h3 className="font-medium">Files in Directory:</h3>
+              <div className="space-y-2">
+                {collectFilesFromDirectory(selectedDirectory, []).map((file, index) => (
+                  <div 
+                    key={index}
+                    className="flex items-center gap-2 p-2 border rounded-md"
+                  >
+                    {getFileIcon(file.extension)}
+                    <span className="text-sm">{file.path}</span>
+                    {getFileTypeBadge(file.extension)}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          </ScrollArea>
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground p-4">
             Select a file or directory to view
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 }
