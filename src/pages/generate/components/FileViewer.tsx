@@ -55,7 +55,7 @@ export function FileViewer({
       <Textarea
         value={fileContent}
         onChange={handleContentChange}
-        className="font-mono text-sm min-h-[300px] resize-none border-0 focus-visible:ring-0"
+        className="font-mono text-sm w-full min-h-fit h-auto resize-none border-0 focus-visible:ring-0"
       />
     );
   };
