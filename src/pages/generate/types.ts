@@ -67,6 +67,31 @@ export function findSubdirectoryInTree(tree: DirectoryNode, targetPath: string):
   return currentNode;
 }
 
+export function buildPathToNode(tree: DirectoryNode, targetNode: DirectoryNode): DirectoryNode[] {
+  const path: DirectoryNode[] = [];
+  
+  const findPath = (node: DirectoryNode): boolean => {
+    if (node.path === targetNode.path) {
+      path.push(node);
+      return true;
+    }
+
+    for (const child of node.children) {
+      if (child.type === 'directory') {
+        if (findPath(child)) {
+          path.unshift(node);
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  findPath(tree);
+  return path;
+}
+
 export function collectFilesFromDirectory(directory: DirectoryNode, fileExtensions: string[]): FileNode[] {
   const files: FileNode[] = [];
 

@@ -1,11 +1,12 @@
+
+import { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TreeItem } from './TreeItem';
 import { FileTypeFilter } from './FileTypeFilter';
-import { DirectoryNode, FileNode, RepositoryTree } from '../types';
+import { DirectoryNode, FileNode, RepositoryTree, buildPathToNode } from '../types';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
 
 interface RepositoryBrowserProps {
   treeData: RepositoryTree | null;
@@ -30,13 +31,25 @@ export function RepositoryBrowser({
   const [pathHistory, setPathHistory] = useState<DirectoryNode[]>([]);
 
   useEffect(() => {
-    setCurrentRoot(filteredTreeStructure);
-    setPathHistory(filteredTreeStructure ? [filteredTreeStructure] : []);
+    if (filteredTreeStructure) {
+      setCurrentRoot(filteredTreeStructure);
+      setPathHistory([filteredTreeStructure]);
+    } else {
+      setCurrentRoot(null);
+      setPathHistory([]);
+    }
   }, [filteredTreeStructure]);
 
   const handleSetRoot = (directory: DirectoryNode) => {
-    setCurrentRoot(directory);
-    setPathHistory(prev => [...prev, directory]);
+    if (!filteredTreeStructure) return;
+    
+    // Build the complete path from root to the selected directory
+    const newPath = buildPathToNode(filteredTreeStructure, directory);
+    
+    if (newPath.length > 0) {
+      setCurrentRoot(directory);
+      setPathHistory(newPath);
+    }
   };
 
   const handleNavigateBack = (index: number) => {
