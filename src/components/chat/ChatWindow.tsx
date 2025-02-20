@@ -1,5 +1,4 @@
 
-import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,11 +12,11 @@ import { MessageBubble } from './MessageBubble';
 
 export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
   const { user } = useAuth();
-  const { messages, isGenerating, sendMessage, resetChat, sessionPrompt } = useChatSession(prompt);
+  const { messages, isGenerating, sendMessage, resetChat } = useChatSession(prompt);
   const { input, setInput, handleSend, useTemplate } = useMessageHandler({
     sendMessage,
     prompt,
-    isGenerating
+    isGenerating,
   });
 
   if (!user) {

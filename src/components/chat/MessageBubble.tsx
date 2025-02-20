@@ -1,8 +1,8 @@
 
-import { ChatMessage } from './types';
+import { Message } from './types';
 
 interface MessageBubbleProps {
-  message: ChatMessage;
+  message: Message;
 }
 
 export function MessageBubble({ message }: MessageBubbleProps) {
@@ -22,9 +22,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         }`}
       >
         <p className="whitespace-pre-wrap">{message.content}</p>
-        <span className="text-xs opacity-70 mt-1 block">
-          {new Date(message.created_at).toLocaleTimeString()}
-        </span>
       </div>
     </div>
   );
