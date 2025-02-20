@@ -15,7 +15,6 @@ interface FileViewerProps {
   onCreateSnippet: () => void;
   onCreateDirectorySnippets: () => void;
   onContentChange?: (content: string) => void;
-  onSetRoot?: (directory: DirectoryNode) => void;
 }
 
 export function FileViewer({
@@ -26,7 +25,6 @@ export function FileViewer({
   onCreateSnippet,
   onCreateDirectorySnippets,
   onContentChange,
-  onSetRoot,
 }: FileViewerProps) {
   const getFileIcon = (extension?: string) => {
     return <FileCode2 className="h-4 w-4 text-blue-500" />;
@@ -57,7 +55,7 @@ export function FileViewer({
       <Textarea
         value={fileContent}
         onChange={handleContentChange}
-        className="font-mono text-sm w-full min-h-fit h-auto resize-none border-0 focus-visible:ring-0"
+        className="font-mono text-sm min-h-[300px] resize-none border-0 focus-visible:ring-0"
       />
     );
   };
@@ -82,27 +80,19 @@ export function FileViewer({
         </h2>
         <div className="flex gap-2">
           {selectedDirectory && (
-            <>
-              <Button 
-                variant="outline"
-                onClick={() => onSetRoot?.(selectedDirectory)}
-              >
-                Set as Root
-              </Button>
-              <Button 
-                onClick={onCreateDirectorySnippets}
-                disabled={isCreatingSnippets}
-              >
-                {isCreatingSnippets ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Snippets...
-                  </>
-                ) : (
-                  'Create Directory Snippets'
-                )}
-              </Button>
-            </>
+            <Button 
+              onClick={onCreateDirectorySnippets}
+              disabled={isCreatingSnippets}
+            >
+              {isCreatingSnippets ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Snippets...
+                </>
+              ) : (
+                'Create Directory Snippets'
+              )}
+            </Button>
           )}
         </div>
       </div>
