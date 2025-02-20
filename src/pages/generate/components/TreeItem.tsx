@@ -10,9 +10,10 @@ interface TreeItemProps {
   level: number;
   onFileSelect: (file: FileNode) => void;
   onDirectorySelect: (directory: DirectoryNode) => void;
+  onSetRoot: (directory: DirectoryNode) => void;
 }
 
-export function TreeItem({ node, level, onFileSelect, onDirectorySelect }: TreeItemProps) {
+export function TreeItem({ node, level, onFileSelect, onDirectorySelect, onSetRoot }: TreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const paddingLeft = `${level * 1.5}rem`;
 
@@ -67,17 +68,28 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect }: TreeI
           )}
           <span className="text-sm font-medium">{node.name || 'Root'}</span>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDirectorySelect(node);
-          }}
-        >
-          Create Snippets
-        </Button>
+        <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSetRoot(node);
+            }}
+          >
+            Set as Root
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDirectorySelect(node);
+            }}
+          >
+            Create Snippets
+          </Button>
+        </div>
       </div>
       {isExpanded && node.children && (
         <div>
@@ -88,6 +100,7 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect }: TreeI
               level={level + 1} 
               onFileSelect={onFileSelect}
               onDirectorySelect={onDirectorySelect}
+              onSetRoot={onSetRoot}
             />
           ))}
         </div>
