@@ -34,12 +34,12 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect, onSetRo
   if (node.type === 'file') {
     return (
       <div
-        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer"
+        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer relative pr-32"
         style={{ paddingLeft }}
         onClick={() => onFileSelect(node)}
       >
         {getFileIcon(node.extension)}
-        <span className="text-sm">{node.name}</span>
+        <span className="text-sm truncate">{node.name}</span>
         {getFileTypeBadge(node.extension)}
       </div>
     );
@@ -52,23 +52,23 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect, onSetRo
   return (
     <div>
       <div
-        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer group"
+        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer group relative pr-32"
         style={{ paddingLeft }}
       >
-        <div className="flex items-center gap-2" onClick={() => setIsExpanded(!isExpanded)}>
+        <div className="flex items-center gap-2 flex-1 min-w-0" onClick={() => setIsExpanded(!isExpanded)}>
           {isExpanded ? (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-4 w-4 shrink-0" />
           ) : (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4 shrink-0" />
           )}
           {isExpanded ? (
-            <FolderOpen className="h-4 w-4 text-yellow-500" />
+            <FolderOpen className="h-4 w-4 text-yellow-500 shrink-0" />
           ) : (
-            <Folder className="h-4 w-4 text-yellow-500" />
+            <Folder className="h-4 w-4 text-yellow-500 shrink-0" />
           )}
-          <span className="text-sm font-medium">{node.name || 'Root'}</span>
+          <span className="text-sm font-medium truncate">{node.name || 'Root'}</span>
         </div>
-        <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+        <div className="absolute right-2 flex gap-2 bg-background/95 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             variant="ghost"
             size="sm"
