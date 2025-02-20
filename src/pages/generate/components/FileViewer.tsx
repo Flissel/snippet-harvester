@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileNode, DirectoryNode, collectFilesFromDirectory } from '../types';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { JupyterViewer } from './JupyterViewer';
 
 interface FileViewerProps {
   selectedFile: FileNode | null;
@@ -41,6 +42,22 @@ export function FileViewer({
     if (onContentChange) {
       onContentChange(e.target.value);
     }
+  };
+
+  const renderFileContent = () => {
+    if (!fileContent) return null;
+
+    if (selectedFile?.extension === 'ipynb') {
+      return <JupyterViewer content={fileContent} />;
+    }
+
+    return (
+      <Textarea
+        value={fileContent}
+        onChange={handleContentChange}
+        className="font-mono text-sm min-h-[300px] resize-none border-0 focus-visible:ring-0"
+      />
+    );
   };
 
   return (
@@ -82,11 +99,7 @@ export function FileViewer({
       <ScrollArea className="flex-1 border rounded-md">
         {fileContent ? (
           <div className="p-4">
-            <Textarea
-              value={fileContent}
-              onChange={handleContentChange}
-              className="font-mono text-sm min-h-[300px] resize-none border-0 focus-visible:ring-0"
-            />
+            {renderFileContent()}
           </div>
         ) : selectedDirectory ? (
           <div className="p-4 space-y-4">
