@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
-import { Prompt } from '@/types/prompts';
+import { Prompt, PromptModel } from '@/types/prompts';
 
 interface GenerationSettings {
   role?: string;
@@ -70,18 +70,24 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
     getCurrentUser();
   }, []);
 
+  const defaultValues: PromptFormValues = {
+    name: '',
+    description: DESCRIPTION_TEMPLATE,
+    system_message: '',
+    user_message: '',
+    prompt_generation_role: '',
+    prompt_generation_guidelines: '',
+    prompt_generation_structure: '',
+    model: 'gpt-4o-mini',
+    ...(prompt && {
+      ...prompt,
+      model: prompt.model as PromptModel,
+    })
+  };
+
   const form = useForm<PromptFormValues>({
     resolver: zodResolver(promptSchema),
-    defaultValues: prompt || {
-      name: '',
-      description: DESCRIPTION_TEMPLATE,
-      system_message: '',
-      user_message: '',
-      prompt_generation_role: '',
-      prompt_generation_guidelines: '',
-      prompt_generation_structure: '',
-      model: 'gpt-4o-mini',
-    },
+    defaultValues,
   });
 
   const generateSystemMessage = async (
@@ -121,7 +127,7 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
         system_message: values.system_message,
         user_message: values.user_message || null,
         created_by: userId,
-        model: values.model,
+        model: values.model as PromptModel,
         prompt_generation_role: values.prompt_generation_role || null,
         prompt_generation_guidelines: values.prompt_generation_guidelines || null,
         prompt_generation_structure: values.prompt_generation_structure || null,

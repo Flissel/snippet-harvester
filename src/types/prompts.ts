@@ -1,4 +1,7 @@
+
 import { PromptType } from './analysis';
+
+export type PromptModel = 'gpt-4o-mini' | 'gpt-4o';
 
 export interface Prompt {
   id: string;
@@ -10,7 +13,7 @@ export interface Prompt {
   created_at: string;
   updated_at: string;
   yaml_template?: string;
-  model: string;
+  model: PromptModel;
   prompt_type?: PromptType;
   prompt_generation_role?: string;
   prompt_generation_guidelines?: string;
