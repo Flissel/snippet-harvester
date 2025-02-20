@@ -16,6 +16,7 @@ interface RepositoryBrowserProps {
   onFileSelect: (file: FileNode) => void;
   onDirectorySelect: (directory: DirectoryNode) => void;
   onFileTypeChange: (value: string) => void;
+  onSetRoot: (directory: DirectoryNode) => void;
 }
 
 export function RepositoryBrowser({
@@ -25,7 +26,8 @@ export function RepositoryBrowser({
   filteredTreeStructure,
   onFileSelect,
   onDirectorySelect,
-  onFileTypeChange
+  onFileTypeChange,
+  onSetRoot
 }: RepositoryBrowserProps) {
   const [currentRoot, setCurrentRoot] = useState<DirectoryNode | null>(filteredTreeStructure);
   const [pathHistory, setPathHistory] = useState<DirectoryNode[]>([]);
@@ -41,15 +43,7 @@ export function RepositoryBrowser({
   }, [filteredTreeStructure]);
 
   const handleSetRoot = (directory: DirectoryNode) => {
-    if (!filteredTreeStructure) return;
-    
-    // Build the complete path from root to the selected directory
-    const newPath = buildPathToNode(filteredTreeStructure, directory);
-    
-    if (newPath.length > 0) {
-      setCurrentRoot(directory);
-      setPathHistory(newPath);
-    }
+    onSetRoot(directory);
   };
 
   const handleNavigateBack = (index: number) => {

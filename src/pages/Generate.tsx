@@ -29,6 +29,7 @@ export default function Generate() {
   const [selectedDirectory, setSelectedDirectory] = useState<DirectoryNode | null>(null);
   const [isCreatingSnippets, setIsCreatingSnippets] = useState(false);
   const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([]);
+  const [currentRoot, setCurrentRoot] = useState<DirectoryNode | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +43,8 @@ export default function Generate() {
 
       if (error) throw error;
       toast.success('Repository scanned successfully');
+      // Reset current root when scanning a new repository
+      setCurrentRoot(null);
     } catch (error: any) {
       toast.error('Failed to scan repository: ' + error.message);
     } finally {
@@ -67,6 +70,11 @@ export default function Generate() {
     setSelectedFile(null);
     setFileContent(null);
     setSelectedDirectory(directory);
+  };
+
+  const handleSetRoot = (directory: DirectoryNode) => {
+    setCurrentRoot(directory);
+    toast.success(`Set "${directory.name}" as root directory`);
   };
 
   const handleCreateSnippet = async () => {
@@ -188,9 +196,10 @@ export default function Generate() {
     ? findSubdirectoryInTree(treeData.tree_structure, subdirectory)
     : treeData?.tree_structure;
 
-  const filteredTreeStructure = subdirectoryTree && selectedFileTypes.length > 0
+  // Use currentRoot if set, otherwise use filtered tree structure
+  const effectiveRoot = currentRoot || (subdirectoryTree && selectedFileTypes.length > 0
     ? filterTreeByExtensions(subdirectoryTree, selectedFileTypes)
-    : subdirectoryTree;
+    : subdirectoryTree);
 
   return (
     <div className="container mx-auto p-4 h-[calc(100vh-6rem)]">
@@ -208,10 +217,11 @@ export default function Generate() {
             treeData={treeData}
             isLoading={isTreeLoading}
             selectedFileTypes={selectedFileTypes}
-            filteredTreeStructure={filteredTreeStructure}
+            filteredTreeStructure={effectiveRoot}
             onFileSelect={handleFileSelect}
             onDirectorySelect={handleDirectorySelect}
             onFileTypeChange={(value) => setSelectedFileTypes(value === "all" ? [] : value.split(','))}
+            onSetRoot={handleSetRoot}
           />
         </Card>
 
