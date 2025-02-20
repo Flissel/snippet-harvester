@@ -86,7 +86,7 @@ export function YMLMaker() {
       snippet.description || undefined,
       'code_analysis',
       snippet.id,
-      selectedPrompt.type // Adding analysis type from the prompt
+      selectedPrompt.prompt_type // Using prompt_type instead of type
     );
     toast.success("Added to workflow");
   };

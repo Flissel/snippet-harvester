@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,6 +69,97 @@ export function useWorkflow() {
       return data as WorkflowItem;
     },
   });
+
+  // Execute single workflow item
+  const executeSingleItem = async (item: SelectedWorkflowItem) => {
+    try {
+      // Create a temporary session for testing
+      const session = await createSession.mutateAsync({
+        name: 'Test Session',
+        snippetId: item.snippet_id
+      });
+
+      console.log('Created test session:', session.id);
+
+      // Create and execute the workflow item
+      const workflowItem = await addWorkflowItem.mutateAsync({
+        sessionId: session.id,
+        title: item.title,
+        description: item.description,
+        workflowType: item.workflow_type,
+        orderIndex: 0,
+        snippetId: item.snippet_id,
+        analysisType: item.analysis_type
+      });
+
+      console.log('Created test workflow item:', workflowItem.id);
+
+      // Update item status to in_progress
+      await supabase
+        .from('workflow_items')
+        .update({ status: 'in_progress' })
+        .eq('id', workflowItem.id);
+
+      try {
+        // Execute analysis
+        const { data: analysisResult, error } = await supabase.functions.invoke('execute-analysis-step', {
+          body: {
+            workflowItemId: workflowItem.id,
+            step: 1,
+            snippetId: item.snippet_id,
+            analysisType: item.analysis_type
+          },
+        });
+
+        console.log('Analysis result:', analysisResult);
+
+        if (error) throw error;
+
+        // Update item with results
+        await supabase
+          .from('workflow_items')
+          .update({
+            status: 'completed',
+            result_data: analysisResult
+          })
+          .eq('id', workflowItem.id);
+
+        // Update session status
+        await supabase
+          .from('workflow_sessions')
+          .update({ status: 'completed' })
+          .eq('id', session.id);
+
+        queryClient.invalidateQueries({ queryKey: ['workflow-items'] });
+        toast.success('Test execution completed successfully');
+        
+        return analysisResult;
+      } catch (analysisError) {
+        console.error('Analysis error:', analysisError);
+        
+        // Update item status to failed
+        await supabase
+          .from('workflow_items')
+          .update({
+            status: 'failed',
+            result_data: { error: analysisError.message }
+          })
+          .eq('id', workflowItem.id);
+
+        // Update session status
+        await supabase
+          .from('workflow_sessions')
+          .update({ status: 'failed' })
+          .eq('id', session.id);
+
+        throw analysisError;
+      }
+    } catch (error) {
+      console.error('Test execution error:', error);
+      toast.error('Error executing test: ' + (error as Error).message);
+      throw error;
+    }
+  };
 
   // Start workflow execution
   const executeWorkflow = async (sessionId: string) => {
@@ -189,5 +279,6 @@ export function useWorkflow() {
     createSession,
     addWorkflowItem,
     executeWorkflow,
+    executeSingleItem,
   };
 }
