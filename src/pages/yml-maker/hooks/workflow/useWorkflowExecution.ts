@@ -25,7 +25,10 @@ export function useWorkflowExecution() {
         workflowType: item.workflow_type,
         orderIndex: 0,
         snippetId: item.snippet_id,
-        analysisType: item.analysis_type
+        analysisType: item.analysis_type,
+        systemMessage: item.system_message,
+        userMessage: item.user_message,
+        model: item.model
       });
 
       console.log('Created test workflow item:', workflowItem.id);
@@ -41,7 +44,10 @@ export function useWorkflowExecution() {
             workflowItemId: workflowItem.id,
             step: 1,
             snippetId: item.snippet_id,
-            analysisType: item.analysis_type
+            analysisType: item.analysis_type,
+            systemMessage: item.system_message,
+            userMessage: item.user_message,
+            model: item.model
           },
         });
 
@@ -108,7 +114,10 @@ export function useWorkflowExecution() {
           workflowType: item.workflow_type,
           orderIndex: index,
           snippetId: item.snippet_id,
-          analysisType: item.analysis_type
+          analysisType: item.analysis_type,
+          systemMessage: item.system_message,
+          userMessage: item.user_message,
+          model: item.model
         });
 
         console.log('Created workflow item:', workflowItem.id);
@@ -124,7 +133,10 @@ export function useWorkflowExecution() {
               workflowItemId: workflowItem.id,
               step: index + 1,
               snippetId: item.snippet_id,
-              analysisType: item.analysis_type
+              analysisType: item.analysis_type,
+              systemMessage: item.system_message,
+              userMessage: item.user_message,
+              model: item.model
             },
           });
 

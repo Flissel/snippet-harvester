@@ -529,12 +529,15 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          model: string | null
           order_index: number
           result_data: Json | null
           snippet_id: string | null
           status: string
+          system_message: string | null
           title: string
           updated_at: string
+          user_message: string | null
           workflow_session_id: string
           workflow_type: string
         }
@@ -543,12 +546,15 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          model?: string | null
           order_index: number
           result_data?: Json | null
           snippet_id?: string | null
           status?: string
+          system_message?: string | null
           title: string
           updated_at?: string
+          user_message?: string | null
           workflow_session_id: string
           workflow_type?: string
         }
@@ -557,12 +563,15 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          model?: string | null
           order_index?: number
           result_data?: Json | null
           snippet_id?: string | null
           status?: string
+          system_message?: string | null
           title?: string
           updated_at?: string
+          user_message?: string | null
           workflow_session_id?: string
           workflow_type?: string
         }

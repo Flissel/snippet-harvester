@@ -36,7 +36,10 @@ export function useWorkflowMutations() {
       workflowType,
       orderIndex,
       snippetId,
-      analysisType 
+      analysisType,
+      systemMessage,
+      userMessage,
+      model 
     }: {
       sessionId: string;
       title: string;
@@ -45,6 +48,9 @@ export function useWorkflowMutations() {
       orderIndex: number;
       snippetId: string;
       analysisType?: string;
+      systemMessage?: string;
+      userMessage?: string;
+      model?: string;
     }) => {
       const { data, error } = await supabase
         .from('workflow_items')
@@ -57,7 +63,10 @@ export function useWorkflowMutations() {
           status: 'pending',
           result_data: null,
           snippet_id: snippetId,
-          analysis_type: analysisType
+          analysis_type: analysisType,
+          system_message: systemMessage,
+          user_message: userMessage,
+          model: model || 'gpt-4o-mini'
         })
         .select()
         .single();
