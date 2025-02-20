@@ -15,6 +15,7 @@ interface FileViewerProps {
   onCreateSnippet: () => void;
   onCreateDirectorySnippets: () => void;
   onContentChange?: (content: string) => void;
+  onSetRoot?: (directory: DirectoryNode) => void;
 }
 
 export function FileViewer({
@@ -25,6 +26,7 @@ export function FileViewer({
   onCreateSnippet,
   onCreateDirectorySnippets,
   onContentChange,
+  onSetRoot,
 }: FileViewerProps) {
   const getFileIcon = (extension?: string) => {
     return <FileCode2 className="h-4 w-4 text-blue-500" />;
@@ -80,19 +82,27 @@ export function FileViewer({
         </h2>
         <div className="flex gap-2">
           {selectedDirectory && (
-            <Button 
-              onClick={onCreateDirectorySnippets}
-              disabled={isCreatingSnippets}
-            >
-              {isCreatingSnippets ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Snippets...
-                </>
-              ) : (
-                'Create Directory Snippets'
-              )}
-            </Button>
+            <>
+              <Button 
+                variant="outline"
+                onClick={() => onSetRoot?.(selectedDirectory)}
+              >
+                Set as Root
+              </Button>
+              <Button 
+                onClick={onCreateDirectorySnippets}
+                disabled={isCreatingSnippets}
+              >
+                {isCreatingSnippets ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Snippets...
+                  </>
+                ) : (
+                  'Create Directory Snippets'
+                )}
+              </Button>
+            </>
           )}
         </div>
       </div>
