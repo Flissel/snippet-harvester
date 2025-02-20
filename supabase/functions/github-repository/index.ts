@@ -22,17 +22,62 @@ interface DirectoryNode {
   children: (DirectoryNode | FileNode)[];
 }
 
+interface GitHubPathInfo {
+  owner: string;
+  repo: string;
+  branch: string;
+  subdirectory: string;
+}
+
 function getFileExtension(filename: string): string {
   const parts = filename.split('.');
   return parts.length > 1 ? parts.pop()!.toLowerCase() : '';
 }
 
-function buildDirectoryTree(files: { path: string; type: string; sha: string }[], baseUrl: string): DirectoryNode {
+function parseGitHubUrl(urlString: string): GitHubPathInfo {
+  const url = new URL(urlString);
+  const pathParts = url.pathname.split('/').filter(Boolean);
+  
+  // Extract owner and repo
+  const owner = pathParts[0];
+  const repo = pathParts[1];
+  
+  if (!owner || !repo) {
+    throw new Error('Invalid GitHub URL: Missing owner or repository name');
+  }
+
+  let branch = 'main';
+  let subdirectory = '';
+
+  // Check for tree/blob paths
+  const treeIndex = pathParts.indexOf('tree');
+  const blobIndex = pathParts.indexOf('blob');
+  const branchIndex = treeIndex !== -1 ? treeIndex : blobIndex;
+
+  if (branchIndex !== -1 && pathParts.length > branchIndex + 1) {
+    branch = pathParts[branchIndex + 1];
+    subdirectory = pathParts.slice(branchIndex + 2).join('/');
+  }
+
+  return { owner, repo, branch, subdirectory };
+}
+
+function buildDirectoryTree(files: { path: string; type: string; sha: string }[], baseUrl: string, subdirectory: string): DirectoryNode {
   const root: DirectoryNode = { name: '', type: 'directory', children: [] };
   const extensions = new Set<string>();
 
-  for (const file of files) {
-    const parts = file.path.split('/');
+  // Filter files based on subdirectory
+  const relevantFiles = subdirectory
+    ? files.filter(file => file.path.startsWith(subdirectory))
+    : files;
+
+  for (const file of relevantFiles) {
+    // Remove subdirectory prefix from path if it exists
+    const relativePath = subdirectory
+      ? file.path.slice(subdirectory.length + (subdirectory.endsWith('/') ? 0 : 1))
+      : file.path;
+    
+    const parts = relativePath.split('/');
     let currentNode = root;
 
     // Create or traverse the directory structure
@@ -71,39 +116,34 @@ function buildDirectoryTree(files: { path: string; type: string; sha: string }[]
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { repository_url } = await req.json()
+    const { repository_url } = await req.json();
+    console.log('Processing repository URL:', repository_url);
     
-    const url = new URL(repository_url)
-    if (!url.hostname.includes('github.com')) {
-      throw new Error('Invalid GitHub URL')
-    }
+    const { owner, repo, branch, subdirectory } = parseGitHubUrl(repository_url);
+    console.log('Parsed URL info:', { owner, repo, branch, subdirectory });
 
-    const [_, owner, repo] = url.pathname.split('/')
-    if (!owner || !repo) {
-      throw new Error('Invalid GitHub repository URL format')
-    }
-
-    const githubToken = Deno.env.get('GITHUB_TOKEN')
+    const githubToken = Deno.env.get('GITHUB_TOKEN');
     if (!githubToken) {
-      throw new Error('GitHub token not configured')
+      throw new Error('GitHub token not configured');
     }
 
-    const authHeader = req.headers.get('authorization')
+    const authHeader = req.headers.get('authorization');
     if (!authHeader) {
-      throw new Error('No authorization header')
+      throw new Error('No authorization header');
     }
     
-    const jwt = authHeader.replace('Bearer ', '')
-    const [_header, payload] = jwt.split('.')
-    const decodedPayload = JSON.parse(atob(payload))
-    const userId = decodedPayload.sub
+    const jwt = authHeader.replace('Bearer ', '');
+    const [_header, payload] = jwt.split('.');
+    const decodedPayload = JSON.parse(atob(payload));
+    const userId = decodedPayload.sub;
 
-    const githubResponse = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`,
+    // First, get repository metadata to verify access and default branch
+    const repoResponse = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}`,
       {
         headers: {
           'Accept': 'application/vnd.github+json',
@@ -111,15 +151,37 @@ serve(async (req) => {
           'X-GitHub-Api-Version': '2022-11-28'
         }
       }
-    )
+    );
 
-    if (!githubResponse.ok) {
-      const errorData = await githubResponse.json()
-      console.error('GitHub API error:', errorData)
-      throw new Error(`GitHub API error: ${githubResponse.statusText}`)
+    if (!repoResponse.ok) {
+      const errorData = await repoResponse.json();
+      console.error('GitHub API error:', errorData);
+      throw new Error(`Repository not found or not accessible: ${repoResponse.statusText}`);
     }
 
-    const data = await githubResponse.json()
+    const repoData = await repoResponse.json();
+    const defaultBranch = repoData.default_branch;
+    const branchToUse = branch || defaultBranch;
+
+    // Get the tree for the specified branch
+    const treeResponse = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/git/trees/${branchToUse}?recursive=1`,
+      {
+        headers: {
+          'Accept': 'application/vnd.github+json',
+          'Authorization': `Bearer ${githubToken}`,
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      }
+    );
+
+    if (!treeResponse.ok) {
+      const errorData = await treeResponse.json();
+      console.error('GitHub API error:', errorData);
+      throw new Error(`Failed to fetch repository tree: ${treeResponse.statusText}`);
+    }
+
+    const data = await treeResponse.json();
     
     // Include all files
     const allFiles = data.tree.filter((item: any) => item.type === 'blob');
@@ -127,7 +189,8 @@ serve(async (req) => {
     // Build the directory tree and collect extensions
     const treeStructure = buildDirectoryTree(
       allFiles,
-      `https://raw.githubusercontent.com/${owner}/${repo}/main`
+      `https://raw.githubusercontent.com/${owner}/${repo}/${branchToUse}`,
+      subdirectory
     );
 
     // Get unique file extensions
@@ -140,10 +203,11 @@ serve(async (req) => {
     ).sort();
 
     console.log('Available file types:', availableFileTypes);
+    console.log('Subdirectory being processed:', subdirectory);
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    const supabase = createClient(supabaseUrl!, supabaseKey!)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabase = createClient(supabaseUrl!, supabaseKey!);
 
     const { data: insertedTree, error: treeError } = await supabase
       .from('repository_trees')
@@ -154,11 +218,11 @@ serve(async (req) => {
         created_by: userId
       })
       .select()
-      .single()
+      .single();
 
     if (treeError) {
-      console.error('Supabase error:', treeError)
-      throw treeError
+      console.error('Supabase error:', treeError);
+      throw treeError;
     }
 
     return new Response(
@@ -169,9 +233,9 @@ serve(async (req) => {
           'Content-Type': 'application/json'
         } 
       }
-    )
+    );
   } catch (error) {
-    console.error('Function error:', error)
+    console.error('Function error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -181,6 +245,6 @@ serve(async (req) => {
           'Content-Type': 'application/json'
         }
       }
-    )
+    );
   }
-})
+});
