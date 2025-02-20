@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Prompt, PromptModel } from '@/types/prompts';
 import { Message } from '../types';
@@ -26,7 +27,6 @@ export function useChatSession(prompt?: Prompt) {
     };
 
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-
     setIsGenerating(true);
 
     try {

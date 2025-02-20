@@ -13,21 +13,12 @@ import { MessageBubble } from './MessageBubble';
 
 export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
   const { user } = useAuth();
-  const { messages, session, createNewSession, loadMessages } = useChatSession(user, prompt);
-  const { input, setInput, isLoading, sendMessage, useTemplate } = useMessageHandler(session, loadMessages, prompt);
-
-  useEffect(() => {
-    if (user && !session) {
-      createNewSession();
-    }
-  }, [user, session]);
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
+  const { messages, isGenerating, sendMessage, resetChat, sessionPrompt } = useChatSession(prompt);
+  const { input, setInput, handleSend, useTemplate } = useMessageHandler({
+    sendMessage,
+    prompt,
+    isGenerating
+  });
 
   if (!user) {
     return (
@@ -37,12 +28,19 @@ export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
     );
   }
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   return (
     <Card className="flex flex-col h-[600px] w-full max-w-2xl mx-auto">
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+          {messages.map((message, index) => (
+            <MessageBubble key={index} message={message} />
           ))}
         </div>
       </ScrollArea>
@@ -62,7 +60,10 @@ export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
             )}
             <Button
               variant="outline"
-              onClick={onResetChat}
+              onClick={() => {
+                resetChat();
+                onResetChat?.();
+              }}
               size="sm"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -76,14 +77,14 @@ export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
               onKeyDown={handleKeyPress}
               placeholder="Type your message..."
               className="min-h-[60px]"
-              disabled={isLoading || !session}
+              disabled={isGenerating}
             />
             <Button
-              onClick={sendMessage}
-              disabled={isLoading || !input.trim() || !session}
+              onClick={handleSend}
+              disabled={isGenerating || !input.trim()}
               className="self-end"
             >
-              {isLoading ? (
+              {isGenerating ? (
                 <Loader className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />

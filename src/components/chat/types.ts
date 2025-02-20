@@ -1,6 +1,11 @@
 
 import { Prompt } from '@/types/prompts';
 
+export interface Message {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
