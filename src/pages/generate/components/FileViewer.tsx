@@ -79,6 +79,21 @@ export function FileViewer({
           )}
         </h2>
         <div className="flex gap-2">
+          {selectedFile && fileContent && (
+            <Button 
+              onClick={onCreateSnippet}
+              disabled={isCreatingSnippets}
+            >
+              {isCreatingSnippets ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Snippet...
+                </>
+              ) : (
+                'Create Snippet'
+              )}
+            </Button>
+          )}
           {selectedDirectory && (
             <Button 
               onClick={onCreateDirectorySnippets}
