@@ -191,7 +191,10 @@ export function YMLMaker() {
             isSingleExecution={isSingleExecution}
           />
 
-          <YMLPreview sections={workflow.sections} />
+          <YMLPreview 
+            sections={workflow.sections} 
+            resultData={workflowResults[0]?.result_data}
+          />
         </div>
       </div>
     </div>
