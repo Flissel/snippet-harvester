@@ -21,50 +21,61 @@ interface AnalysisResultsProps {
   isSingleExecution?: boolean;
 }
 
-interface ParsedSection {
-  title: string;
-  content: string;
-  language: string;
-}
+const cleanYamlContent = (content: string): string => {
+  if (!content) return '';
+  return content
+    .replace(/```yaml\n/g, '')
+    .replace(/```\n?/g, '')
+    .trim();
+};
 
-const parseContent = (content: string): ParsedSection[] => {
-  if (typeof content !== 'string') {
-    return [];
+const renderResultContent = (result: AnalysisResult) => {
+  // Handle case where result_data contains yml_config
+  if (result.result_data?.yml_config) {
+    return [{
+      title: 'YML Configuration',
+      content: cleanYamlContent(result.result_data.yml_config),
+      language: 'yaml'
+    }];
   }
 
-  // Split the content by the "---" delimiter
-  const sections = content.split('---').map(section => section.trim());
-  
-  return sections.map(section => {
-    // Try to identify the section by its header
-    if (section.startsWith('Required Imports:')) {
+  // Handle case where result_data is a string with sections
+  if (typeof result.result_data === 'string') {
+    const sections = result.result_data.split('---').map(section => section.trim());
+    return sections.map(section => {
+      if (section.startsWith('Required Imports:')) {
+        return {
+          title: 'Required Imports',
+          content: section.replace('Required Imports:', '').trim(),
+          language: 'python'
+        };
+      } else if (section.includes('YML Configuration:')) {
+        return {
+          title: 'YML Configuration',
+          content: cleanYamlContent(section.replace('YML Configuration:', '')),
+          language: 'yaml'
+        };
+      } else if (section.includes('Processed Code:')) {
+        return {
+          title: 'Processed Code',
+          content: section.replace('Processed Code:', '').trim(),
+          language: 'python'
+        };
+      }
       return {
-        title: 'Required Imports',
-        content: section.replace('Required Imports:', '').trim(),
-        language: 'python'
+        title: 'Analysis',
+        content: section,
+        language: 'text'
       };
-    } else if (section.includes('YML Configuration:')) {
-      return {
-        title: 'YML Configuration',
-        content: section.replace('YML Configuration:', '').trim()
-          .replace(/```yaml\n/g, '')
-          .replace(/```\n?/g, '')
-          .trim(),
-        language: 'yaml'
-      };
-    } else if (section.includes('Processed Code:')) {
-      return {
-        title: 'Processed Code',
-        content: section.replace('Processed Code:', '').trim(),
-        language: 'python'
-      };
-    }
-    return {
-      title: 'Analysis',
-      content: section,
-      language: 'text'
-    };
-  }).filter(section => section.content.length > 0);
+    }).filter(section => section.content.length > 0);
+  }
+
+  // Handle case where result_data is an object but not in expected format
+  return [{
+    title: 'Result',
+    content: JSON.stringify(result.result_data, null, 2),
+    language: 'json'
+  }];
 };
 
 export function AnalysisResults({ currentStep, results, isSingleExecution }: AnalysisResultsProps) {
@@ -108,7 +119,7 @@ export function AnalysisResults({ currentStep, results, isSingleExecution }: Ana
               </div>
               
               <CardContent className="p-0 mt-4 space-y-4">
-                {parseContent(result.result_data?.content || result.result_data || '').map((section, sIdx) => (
+                {renderResultContent(result).map((section, sIdx) => (
                   <div key={sIdx} className="space-y-2">
                     <h5 className="font-medium text-sm text-muted-foreground">
                       {section.title}
@@ -128,7 +139,7 @@ export function AnalysisResults({ currentStep, results, isSingleExecution }: Ana
                         {section.content}
                       </SyntaxHighlighter>
                     </div>
-                    {sIdx < parseContent(result.result_data?.content || result.result_data || '').length - 1 && (
+                    {sIdx < renderResultContent(result).length - 1 && (
                       <Separator className="my-4" />
                     )}
                   </div>
