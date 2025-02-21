@@ -391,6 +391,39 @@ export type Database = {
           },
         ]
       }
+      prompt_templates: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string
+          id: string
+          is_default: boolean | null
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          is_default?: boolean | null
+          name: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       prompts: {
         Row: {
           created_at: string

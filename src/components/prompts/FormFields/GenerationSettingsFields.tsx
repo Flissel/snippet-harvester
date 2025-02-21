@@ -10,7 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PromptTemplate } from '@/types/prompts';
 import { toast } from 'sonner';
-import { Plus, Save } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
@@ -24,7 +24,7 @@ export function GenerationSettingsFields() {
   const [newTemplateName, setNewTemplateName] = React.useState('');
   const [selectedTemplateType, setSelectedTemplateType] = React.useState<'guidelines' | 'structure'>('guidelines');
 
-  const { data: templates } = useQuery({
+  const { data: templates = [] } = useQuery({
     queryKey: ['prompt_templates'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -33,7 +33,7 @@ export function GenerationSettingsFields() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as PromptTemplate[];
+      return (data || []) as PromptTemplate[];
     },
   });
 
