@@ -161,7 +161,7 @@ export function YMLMaker() {
       />
 
       <div className="grid grid-cols-2 gap-6">
-        <div>
+        <div className="space-y-6">
           {snippet && (
             <CodeEditor
               snippet={snippet}
@@ -169,6 +169,8 @@ export function YMLMaker() {
               onCodeChange={workflow.handleCodeChange}
             />
           )}
+          
+          <ExecutionLogs logs={executionLogs} />
         </div>
 
         <div className="space-y-6">
@@ -188,8 +190,6 @@ export function YMLMaker() {
             results={isSingleExecution ? workflowResults : workflow.results}
             isSingleExecution={isSingleExecution}
           />
-
-          <ExecutionLogs logs={executionLogs} />
 
           <YMLPreview sections={workflow.sections} />
         </div>
