@@ -1,28 +1,19 @@
+
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { YMLPreview } from './components/YMLPreview';
 import { useYMLMaker } from './hooks/useYMLMaker';
 import { useWorkflow } from './hooks/useWorkflow';
+import { usePrompts } from './hooks/usePrompts';
 import { Prompt } from '@/types/prompts';
-import { SelectedWorkflowItem } from '@/types/workflow';
 import { Header } from './components/Header';
-import { WorkflowQueue } from './components/WorkflowQueue';
-import { AnalysisResults } from './components/analysis-results';
 import { CodeEditor } from './components/CodeEditor';
-import { AnalysisResponseCard } from './components/AnalysisResponseCard';
 import { ExecutionLog } from './hooks/workflow/useWorkflowExecution';
 import { ExecutionLogs } from './components/ExecutionLogs';
-
-interface AnalysisResult {
-  step_number: number;
-  result_data: any;
-  created_at?: string;
-  status?: 'pending' | 'in_progress' | 'completed' | 'failed';
-  title?: string;
-}
+import { Sidebar } from './components/Sidebar';
+import { AnalysisResult } from './types';
 
 export function YMLMaker() {
   const { snippetId } = useParams<{ snippetId: string }>();
@@ -34,18 +25,7 @@ export function YMLMaker() {
   const [isSingleExecution, setIsSingleExecution] = useState(false);
   const [executionLogs, setExecutionLogs] = useState<ExecutionLog[]>([]);
 
-  const { data: prompts } = useQuery({
-    queryKey: ['prompts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('prompts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Prompt[];
-    },
-  });
+  const { prompts } = usePrompts();
 
   const { data: snippet } = useQuery({
     queryKey: ['snippets', snippetId],
@@ -88,7 +68,7 @@ export function YMLMaker() {
     setExecutionLogs(prev => [...prev, log]);
   };
 
-  const handleTestItem = async (item: SelectedWorkflowItem) => {
+  const handleTestItem = async (item: any) => {
     try {
       setIsLoadingResponse(true);
       setIsSingleExecution(true);
@@ -144,20 +124,6 @@ export function YMLMaker() {
     }
   };
 
-  // Helper function to safely get result data as string
-  const getResultDataAsString = (result: AnalysisResult | undefined): string | undefined => {
-    if (!result) return undefined;
-    if (typeof result.result_data === 'string') return result.result_data;
-    if (typeof result.result_data === 'object') {
-      try {
-        return JSON.stringify(result.result_data, null, 2);
-      } catch {
-        return undefined;
-      }
-    }
-    return undefined;
-  };
-
   return (
     <div className="container py-6 space-y-6">
       <Header
@@ -186,29 +152,18 @@ export function YMLMaker() {
           <ExecutionLogs logs={executionLogs} />
         </div>
 
-        <div className="space-y-6">
-          <WorkflowQueue
-            items={selectedItems}
-            onRemoveItem={removeItem}
-            onTestItem={handleTestItem}
-          />
-
-          <AnalysisResponseCard
-            response={analysisResponse}
-            isLoading={isLoadingResponse}
-          />
-
-          <AnalysisResults
-            currentStep={workflow.currentStep}
-            results={isSingleExecution ? workflowResults : workflow.results}
-            isSingleExecution={isSingleExecution}
-          />
-
-          <YMLPreview 
-            sections={workflow.sections} 
-            resultData={getResultDataAsString(workflowResults[0])}
-          />
-        </div>
+        <Sidebar
+          selectedItems={selectedItems}
+          onRemoveItem={removeItem}
+          onTestItem={handleTestItem}
+          analysisResponse={analysisResponse}
+          isLoadingResponse={isLoadingResponse}
+          currentStep={workflow.currentStep}
+          workflowResults={workflowResults}
+          results={workflow.results}
+          isSingleExecution={isSingleExecution}
+          sections={workflow.sections}
+        />
       </div>
     </div>
   );
