@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,7 +11,7 @@ import { Prompt } from '@/types/prompts';
 import { SelectedWorkflowItem } from '@/types/workflow';
 import { Header } from './components/Header';
 import { WorkflowQueue } from './components/WorkflowQueue';
-import { AnalysisResults } from './components/AnalysisResults';
+import { AnalysisResults } from './components/analysis-results';
 import { CodeEditor } from './components/CodeEditor';
 import { AnalysisResponseCard } from './components/AnalysisResponseCard';
 import { ExecutionLog } from './hooks/workflow/useWorkflowExecution';

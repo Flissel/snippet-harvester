@@ -1,5 +1,5 @@
 
-import { SyntaxHighlighter } from 'react-syntax-highlighter';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { Separator } from '@/components/ui/separator';
 import type { ResultSection } from './types';
