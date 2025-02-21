@@ -76,19 +76,18 @@ export function YMLMaker() {
       setExecutionLogs([]); // Clear previous logs
       const result = await executeSingleItem(item, handleLog);
       setAnalysisResponse(result);
+      
+      // Here's the key change - we spread the result since it's already in the correct format
       setWorkflowResults([{
-        step_number: 1,
-        result_data: result,
+        ...result,
         created_at: new Date().toISOString(),
-        status: 'completed',
-        title: item.title
       }]);
     } catch (error) {
       console.error('Test execution error:', error);
       setAnalysisResponse({ error: (error as Error).message });
       setWorkflowResults([{
         step_number: 1,
-        result_data: { error: (error as Error).message },
+        result_data: (error as Error).message,
         created_at: new Date().toISOString(),
         status: 'failed',
         title: item.title
@@ -169,3 +168,4 @@ export function YMLMaker() {
     </div>
   );
 }
+
