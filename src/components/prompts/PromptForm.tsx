@@ -1,7 +1,7 @@
 
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { Prompt } from '@/types/prompts';
+import { Prompt, PromptDescription } from '@/types/prompts';
 import { useState } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,15 @@ interface PromptFormProps {
   prompt?: Prompt;
   onCancel: () => void;
 }
+
+// Default values for required fields
+const EMPTY_DESCRIPTION: PromptDescription = {
+  purpose: '',
+  input: '',
+  output: '',
+  example: '',
+  considerations: ''
+};
 
 export function PromptForm({ prompt, onCancel }: PromptFormProps) {
   const [step, setStep] = useState(1);
@@ -34,9 +43,16 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
       if (!fieldsValid) return;
       
       setIsGenerating(true);
+      const description = form.getValues('description_structured');
+      // Ensure all required fields are present
+      const completeDescription: PromptDescription = {
+        ...EMPTY_DESCRIPTION,
+        ...description
+      };
+      
       await generateSystemMessage(
         form.getValues('name'), 
-        form.getValues('description_structured'),
+        completeDescription,
         {
           role: form.getValues('prompt_generation_role'),
           guidelines: form.getValues('prompt_generation_guidelines'),
@@ -57,7 +73,14 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
     e.preventDefault();
     const valid = await form.trigger();
     if (valid) {
-      onSubmit(form.getValues());
+      const values = form.getValues();
+      // Ensure description has all required fields
+      const completeDescription: PromptDescription = {
+        ...EMPTY_DESCRIPTION,
+        ...values.description_structured
+      };
+      values.description_structured = completeDescription;
+      onSubmit(values);
     }
   };
 
@@ -211,15 +234,22 @@ export function PromptForm({ prompt, onCancel }: PromptFormProps) {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => generateSystemMessage(
-                          form.getValues('name'),
-                          form.getValues('description_structured'),
-                          {
-                            role: form.getValues('prompt_generation_role'),
-                            guidelines: form.getValues('prompt_generation_guidelines'),
-                            structure: form.getValues('prompt_generation_structure'),
-                          }
-                        )}
+                        onClick={() => {
+                          const description = form.getValues('description_structured');
+                          const completeDescription: PromptDescription = {
+                            ...EMPTY_DESCRIPTION,
+                            ...description
+                          };
+                          generateSystemMessage(
+                            form.getValues('name'),
+                            completeDescription,
+                            {
+                              role: form.getValues('prompt_generation_role'),
+                              guidelines: form.getValues('prompt_generation_guidelines'),
+                              structure: form.getValues('prompt_generation_structure'),
+                            }
+                          );
+                        }}
                       >
                         Regenerate
                       </Button>
