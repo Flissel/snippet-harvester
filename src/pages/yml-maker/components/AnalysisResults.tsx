@@ -25,12 +25,13 @@ interface AnalysisResultsProps {
 }
 
 const extractCodeBlock = (content: string, language: string): string => {
-  const regex = new RegExp(`\`\`\`${language}\\n([\\s\\S]*?)\`\`\``, 'g');
-  const matches = content.match(regex);
+  const codeBlockRegex = new RegExp(`\`\`\`${language}[\\s\\S]*?([\\s\\S]*?)\`\`\``, 'g');
+  const matches = content.match(codeBlockRegex);
+  
   if (matches && matches.length > 0) {
     return matches[0]
-      .replace(`\`\`\`${language}\n`, '')
-      .replace(/```\n?$/, '')
+      .replace(`\`\`\`${language}`, '')
+      .replace(/```/g, '')
       .trim();
   }
   return content.trim();
@@ -48,14 +49,15 @@ const renderResultContent = (result: AnalysisResult) => {
   if (!raw_response) return [];
 
   if (typeof raw_response === 'string') {
-    const sections = raw_response.split('---').map(section => section.trim());
+    // Split by actual newline character followed by three dashes
+    const sections = raw_response.split('\n---\n').map(section => section.trim());
     
     return sections.map(section => {
       if (section.includes('Required Imports:')) {
         const content = cleanContent(section);
         return {
           title: 'Required Imports',
-          content: extractCodeBlock(content, 'python') || content,
+          content: extractCodeBlock(content, 'python'),
           language: 'python'
         };
       } 
@@ -63,7 +65,7 @@ const renderResultContent = (result: AnalysisResult) => {
         const content = cleanContent(section);
         return {
           title: 'YML Configuration',
-          content: extractCodeBlock(content, 'yaml') || content,
+          content: extractCodeBlock(content, 'yaml'),
           language: 'yaml'
         };
       }
@@ -71,7 +73,7 @@ const renderResultContent = (result: AnalysisResult) => {
         const content = cleanContent(section);
         return {
           title: 'Processed Code',
-          content: extractCodeBlock(content, 'python') || content,
+          content: extractCodeBlock(content, 'python'),
           language: 'python'
         };
       }
