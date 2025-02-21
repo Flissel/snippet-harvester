@@ -77,7 +77,6 @@ export function YMLMaker() {
       const result = await executeSingleItem(item, handleLog);
       setAnalysisResponse(result);
       
-      // Here's the key change - we spread the result since it's already in the correct format
       setWorkflowResults([{
         ...result,
         created_at: new Date().toISOString(),
@@ -95,6 +94,48 @@ export function YMLMaker() {
     } finally {
       setIsLoadingResponse(false);
     }
+  };
+
+  const executeWorkflowItems = async () => {
+    try {
+      setIsLoadingResponse(true);
+      setIsSingleExecution(false);
+      setExecutionLogs([]);
+      setWorkflowResults([]);
+
+      for (const [index, item] of selectedItems.entries()) {
+        try {
+          const result = await executeSingleItem(item, handleLog);
+          setWorkflowResults(prev => [...prev, {
+            ...result,
+            step_number: index + 1,
+            created_at: new Date().toISOString(),
+          }]);
+        } catch (error) {
+          console.error(`Error executing item ${index + 1}:`, error);
+          setWorkflowResults(prev => [...prev, {
+            step_number: index + 1,
+            result_data: (error as Error).message,
+            created_at: new Date().toISOString(),
+            status: 'failed',
+            title: item.title
+          }]);
+        }
+      }
+    } catch (error) {
+      console.error('Workflow execution error:', error);
+      toast.error('Error executing workflow');
+    } finally {
+      setIsLoadingResponse(false);
+    }
+  };
+
+  const handleWorkflowStart = async () => {
+    if (selectedItems.length === 0) {
+      toast.error('No workflow items to execute');
+      return;
+    }
+    await executeWorkflowItems();
   };
 
   const handleWorkflowAdd = async () => {
@@ -135,7 +176,7 @@ export function YMLMaker() {
         onNavigateBack={handleNavigateBack}
         onPromptSelect={handlePromptSelect}
         onAddToWorkflow={handleWorkflowAdd}
-        onStartWorkflow={handleStartWorkflow}
+        onStartWorkflow={handleWorkflowStart}
         onSave={handleSaveConfig}
       />
 
@@ -168,4 +209,3 @@ export function YMLMaker() {
     </div>
   );
 }
-

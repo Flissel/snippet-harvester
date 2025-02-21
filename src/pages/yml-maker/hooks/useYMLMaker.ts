@@ -113,6 +113,7 @@ export function useYMLMaker({ snippet, selectedPrompt }: UseYMLMakerProps) {
   const handleStartWorkflow = async () => {
     setCurrentStep(1);
     setResults([]);
+    setSections([]);
     if (selectedCode) {
       await detectConfigurations(selectedCode);
     }
@@ -132,3 +133,4 @@ export function useYMLMaker({ snippet, selectedPrompt }: UseYMLMakerProps) {
     handleSave,
   };
 }
+
