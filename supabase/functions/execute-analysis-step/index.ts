@@ -28,6 +28,29 @@ serve(async (req) => {
     
     console.log('Analyzing step:', step, 'for workflow item:', workflowItemId);
 
+    // Create Supabase client
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Fetch the snippet code content
+    const { data: snippet, error: snippetError } = await supabaseAdmin
+      .from('snippets')
+      .select('code_content')
+      .eq('id', snippetId)
+      .single();
+
+    if (snippetError) {
+      throw new Error(`Failed to fetch snippet: ${snippetError.message}`);
+    }
+
+    if (!snippet?.code_content) {
+      throw new Error('No code content found in snippet');
+    }
+
+    console.log('Fetched code content for snippet:', snippetId);
+
     const ymlAnalysisResponse = await fetch(
       `${Deno.env.get('SUPABASE_URL')}/functions/v1/detect-yml-config`,
       {
@@ -37,9 +60,10 @@ serve(async (req) => {
           'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
         },
         body: JSON.stringify({
+          code: snippet.code_content,
           snippetId,
           systemMessage,
-          userMessage,
+          userMessage: userMessage.replace('{code}', snippet.code_content),
           model,
         }),
       }
@@ -51,7 +75,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         step_number: step,
-        result_data: ymlAnalysis.raw_response, // Just pass through the raw response
+        result_data: ymlAnalysis.raw_response,
         title: 'Code Analysis',
         status: 'completed'
       }),
