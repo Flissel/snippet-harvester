@@ -30,18 +30,14 @@ const cleanYamlContent = (content: string): string => {
 };
 
 const renderResultContent = (result: AnalysisResult) => {
-  // Handle case where result_data contains yml_config
-  if (result.result_data?.yml_config) {
-    return [{
-      title: 'YML Configuration',
-      content: cleanYamlContent(result.result_data.yml_config),
-      language: 'yaml'
-    }];
-  }
+  const raw_response = result.result_data;
+  
+  // If no result data, return empty array
+  if (!raw_response) return [];
 
-  // Handle case where result_data is a string with sections
-  if (typeof result.result_data === 'string') {
-    const sections = result.result_data.split('---').map(section => section.trim());
+  // If raw_response is a string, split by sections
+  if (typeof raw_response === 'string') {
+    const sections = raw_response.split('---').map(section => section.trim());
     return sections.map(section => {
       if (section.startsWith('Required Imports:')) {
         return {
@@ -70,10 +66,10 @@ const renderResultContent = (result: AnalysisResult) => {
     }).filter(section => section.content.length > 0);
   }
 
-  // Handle case where result_data is an object but not in expected format
+  // If result_data is an object, display as JSON
   return [{
-    title: 'Result',
-    content: JSON.stringify(result.result_data, null, 2),
+    title: 'Raw Response',
+    content: JSON.stringify(raw_response, null, 2),
     language: 'json'
   }];
 };
@@ -152,3 +148,4 @@ export function AnalysisResults({ currentStep, results, isSingleExecution }: Ana
     </Card>
   );
 }
+
