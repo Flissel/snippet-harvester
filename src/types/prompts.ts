@@ -38,3 +38,15 @@ export interface PromptLabelMapping {
   label_template_id: string;
   created_at: string;
 }
+
+export interface PromptTemplate {
+  id: string;
+  name: string;
+  type: 'guidelines' | 'structure';
+  content: string;
+  is_default: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
