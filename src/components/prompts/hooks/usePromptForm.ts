@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
-import { Prompt, PromptModel } from '@/types/prompts';
+import { Prompt, PromptModel, PromptDescription } from '@/types/prompts';
 
 interface GenerationSettings {
   role?: string;
@@ -14,32 +14,17 @@ interface GenerationSettings {
   structure?: string;
 }
 
+const promptDescriptionSchema = z.object({
+  purpose: z.string().min(1, 'Purpose is required'),
+  input: z.string().min(1, 'Input is required'),
+  output: z.string().min(1, 'Output is required'),
+  example: z.string().min(1, 'Example is required'),
+  considerations: z.string().optional(),
+});
+
 const promptSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  description: z.string().refine(
-    (val) => {
-      const required = ['PURPOSE:', 'INPUT:', 'OUTPUT:', 'EXAMPLE:'];
-      const sections = val.split('\n');
-      
-      // Check all required sections exist and aren't empty
-      const hasAllSections = required.every(section => {
-        const sectionContent = sections.find(line => line.trim().startsWith(section));
-        return sectionContent && sectionContent.substring(section.length).trim().length > 0;
-      });
-      
-      // Ignore empty CONSIDERATIONS section if present
-      const considerationsSection = sections.find(line => line.trim().startsWith('CONSIDERATIONS:'));
-      if (considerationsSection) {
-        const content = considerationsSection.substring('CONSIDERATIONS:'.length).trim();
-        return content.length === 0 || hasAllSections;
-      }
-      
-      return hasAllSections;
-    },
-    {
-      message: 'Description must include non-empty PURPOSE, INPUT, OUTPUT, and EXAMPLE sections'
-    }
-  ),
+  description_structured: promptDescriptionSchema,
   system_message: z.string().min(1, 'System message is required'),
   user_message: z.string().optional(),
   prompt_generation_role: z.string().optional(),
@@ -50,11 +35,13 @@ const promptSchema = z.object({
 
 export type PromptFormValues = z.infer<typeof promptSchema>;
 
-const DESCRIPTION_TEMPLATE = `PURPOSE: 
-INPUT: 
-OUTPUT: 
-EXAMPLE:
-CONSIDERATIONS:`;
+const DEFAULT_DESCRIPTION: PromptDescription = {
+  purpose: '',
+  input: '',
+  output: '',
+  example: '',
+  considerations: '',
+};
 
 export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void) {
   const [userId, setUserId] = useState<string | null>(null);
@@ -70,9 +57,35 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
     getCurrentUser();
   }, []);
 
+  const parseExistingDescription = (description?: string): PromptDescription => {
+    if (!description) return DEFAULT_DESCRIPTION;
+
+    const sections = description.split('\n');
+    const result: Partial<PromptDescription> = {};
+
+    sections.forEach(section => {
+      if (section.startsWith('PURPOSE:')) {
+        result.purpose = section.substring('PURPOSE:'.length).trim();
+      } else if (section.startsWith('INPUT:')) {
+        result.input = section.substring('INPUT:'.length).trim();
+      } else if (section.startsWith('OUTPUT:')) {
+        result.output = section.substring('OUTPUT:'.length).trim();
+      } else if (section.startsWith('EXAMPLE:')) {
+        result.example = section.substring('EXAMPLE:'.length).trim();
+      } else if (section.startsWith('CONSIDERATIONS:')) {
+        result.considerations = section.substring('CONSIDERATIONS:'.length).trim();
+      }
+    });
+
+    return {
+      ...DEFAULT_DESCRIPTION,
+      ...result
+    };
+  };
+
   const defaultValues: PromptFormValues = {
     name: '',
-    description: DESCRIPTION_TEMPLATE,
+    description_structured: DEFAULT_DESCRIPTION,
     system_message: '',
     user_message: '',
     prompt_generation_role: '',
@@ -81,6 +94,7 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
     model: 'gpt-4o-mini',
     ...(prompt && {
       ...prompt,
+      description_structured: parseExistingDescription(prompt.description),
       model: prompt.model as PromptModel,
     })
   };
@@ -92,11 +106,22 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
 
   const generateSystemMessage = async (
     title: string, 
-    description?: string, 
+    description?: PromptDescription, 
     settings?: GenerationSettings
   ) => {
     try {
-      const context = `Title: ${title}${description ? `\nDescription: ${description}` : ''}`;
+      let descriptionText = '';
+      if (description) {
+        descriptionText = [
+          `PURPOSE: ${description.purpose}`,
+          `INPUT: ${description.input}`,
+          `OUTPUT: ${description.output}`,
+          `EXAMPLE: ${description.example}`,
+          description.considerations ? `CONSIDERATIONS: ${description.considerations}` : ''
+        ].filter(Boolean).join('\n');
+      }
+
+      const context = `Title: ${title}${description ? `\nDescription: ${descriptionText}` : ''}`;
       
       const response = await supabase.functions.invoke('generate-system-prompt', {
         body: { 
@@ -121,9 +146,17 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
     mutationFn: async (values: PromptFormValues) => {
       if (!userId) throw new Error('No user found');
 
+      const descriptionText = [
+        `PURPOSE: ${values.description_structured.purpose}`,
+        `INPUT: ${values.description_structured.input}`,
+        `OUTPUT: ${values.description_structured.output}`,
+        `EXAMPLE: ${values.description_structured.example}`,
+        values.description_structured.considerations ? `CONSIDERATIONS: ${values.description_structured.considerations}` : ''
+      ].filter(Boolean).join('\n');
+
       const promptData = {
         name: values.name,
-        description: values.description || null,
+        description: descriptionText,
         system_message: values.system_message,
         user_message: values.user_message || null,
         created_by: userId,

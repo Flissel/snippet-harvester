@@ -3,10 +3,19 @@ import { PromptType } from './analysis';
 
 export type PromptModel = 'gpt-4o-mini' | 'gpt-4o';
 
+export interface PromptDescription {
+  purpose: string;
+  input: string;
+  output: string;
+  example: string;
+  considerations?: string;
+}
+
 export interface Prompt {
   id: string;
   name: string;
   description?: string;
+  description_structured?: PromptDescription;
   system_message: string;
   user_message?: string;
   created_by: string;
