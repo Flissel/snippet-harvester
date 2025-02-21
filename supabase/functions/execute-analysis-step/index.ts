@@ -51,7 +51,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         step_number: step,
-        result_data: ymlAnalysis.raw_response,
+        result_data: ymlAnalysis.raw_response, // Just pass through the raw response
         title: 'Code Analysis',
         status: 'completed'
       }),

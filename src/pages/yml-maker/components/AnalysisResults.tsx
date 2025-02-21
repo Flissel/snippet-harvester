@@ -21,11 +21,21 @@ interface AnalysisResultsProps {
   isSingleExecution?: boolean;
 }
 
-const cleanYamlContent = (content: string): string => {
-  if (!content) return '';
-  return content
-    .replace(/```yaml\n/g, '')
-    .replace(/```\n?/g, '')
+const extractCodeBlock = (content: string, language: string): string => {
+  const regex = new RegExp(`\`\`\`${language}\\n([\\s\\S]*?)\`\`\``, 'g');
+  const matches = content.match(regex);
+  if (matches && matches.length > 0) {
+    return matches[0]
+      .replace(`\`\`\`${language}\n`, '')
+      .replace(/```\n?$/, '')
+      .trim();
+  }
+  return content.trim();
+};
+
+const cleanContent = (section: string): string => {
+  return section
+    .replace(/^.*?:/, '') // Remove section title
     .trim();
 };
 
@@ -37,27 +47,36 @@ const renderResultContent = (result: AnalysisResult) => {
 
   // If raw_response is a string, split by sections
   if (typeof raw_response === 'string') {
+    // Split the response by "---" section markers
     const sections = raw_response.split('---').map(section => section.trim());
+    
     return sections.map(section => {
-      if (section.startsWith('Required Imports:')) {
+      // Determine section type and format accordingly
+      if (section.includes('Required Imports:')) {
+        const content = cleanContent(section);
         return {
           title: 'Required Imports',
-          content: section.replace('Required Imports:', '').trim(),
+          content: extractCodeBlock(content, 'python') || content,
           language: 'python'
         };
-      } else if (section.includes('YML Configuration:')) {
+      } 
+      else if (section.includes('YML Configuration:')) {
+        const content = cleanContent(section);
         return {
           title: 'YML Configuration',
-          content: cleanYamlContent(section.replace('YML Configuration:', '')),
+          content: extractCodeBlock(content, 'yaml') || content,
           language: 'yaml'
         };
-      } else if (section.includes('Processed Code:')) {
+      }
+      else if (section.includes('Processed Code:')) {
+        const content = cleanContent(section);
         return {
           title: 'Processed Code',
-          content: section.replace('Processed Code:', '').trim(),
+          content: extractCodeBlock(content, 'python') || content,
           language: 'python'
         };
       }
+      // If no specific section marker is found, treat as analysis text
       return {
         title: 'Analysis',
         content: section,
@@ -66,7 +85,7 @@ const renderResultContent = (result: AnalysisResult) => {
     }).filter(section => section.content.length > 0);
   }
 
-  // If result_data is an object, display as JSON
+  // If result_data is an object or another type, display as JSON
   return [{
     title: 'Raw Response',
     content: JSON.stringify(raw_response, null, 2),
