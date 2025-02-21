@@ -1,4 +1,7 @@
 
+import { SelectedWorkflowItem } from '@/types/workflow';
+import { ResponseSection } from './hooks/useYMLMaker';
+
 export interface AnalysisResult {
   step_number: number;
   result_data: any;
@@ -12,15 +15,14 @@ export interface YMLMakerProps {
 }
 
 export interface SidebarProps {
-  selectedItems: any[];
+  selectedItems: SelectedWorkflowItem[];
   onRemoveItem: (index: number) => void;
-  onTestItem: (item: any) => void;
+  onTestItem: (item: SelectedWorkflowItem) => Promise<void>;
   analysisResponse: any;
   isLoadingResponse: boolean;
   currentStep: number;
   workflowResults: AnalysisResult[];
   results: any[];
   isSingleExecution: boolean;
-  sections: any[];
-  resultData?: string;
+  sections: ResponseSection[];
 }

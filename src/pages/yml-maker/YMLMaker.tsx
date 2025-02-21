@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -68,7 +67,7 @@ export function YMLMaker() {
     setExecutionLogs(prev => [...prev, log]);
   };
 
-  const handleTestItem = async (item: any) => {
+  const handleTestItem = async (item: SelectedWorkflowItem): Promise<void> => {
     try {
       setIsLoadingResponse(true);
       setIsSingleExecution(true);
