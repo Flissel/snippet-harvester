@@ -35,6 +35,7 @@ const promptSchema = z.object({
 
 export type PromptFormValues = z.infer<typeof promptSchema>;
 
+// Ensure all required fields have default values
 const DEFAULT_DESCRIPTION: PromptDescription = {
   purpose: '',
   input: '',
@@ -61,7 +62,7 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
     if (!description) return DEFAULT_DESCRIPTION;
 
     const sections = description.split('\n');
-    const result: Partial<PromptDescription> = {};
+    const result: PromptDescription = { ...DEFAULT_DESCRIPTION };
 
     sections.forEach(section => {
       if (section.startsWith('PURPOSE:')) {
@@ -77,10 +78,7 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
       }
     });
 
-    return {
-      ...DEFAULT_DESCRIPTION,
-      ...result
-    };
+    return result;
   };
 
   const defaultValues: PromptFormValues = {
@@ -106,22 +104,19 @@ export function usePromptForm(prompt: Prompt | undefined, onSuccess: () => void)
 
   const generateSystemMessage = async (
     title: string, 
-    description?: PromptDescription, 
+    description: PromptDescription, 
     settings?: GenerationSettings
   ) => {
     try {
-      let descriptionText = '';
-      if (description) {
-        descriptionText = [
-          `PURPOSE: ${description.purpose}`,
-          `INPUT: ${description.input}`,
-          `OUTPUT: ${description.output}`,
-          `EXAMPLE: ${description.example}`,
-          description.considerations ? `CONSIDERATIONS: ${description.considerations}` : ''
-        ].filter(Boolean).join('\n');
-      }
+      const descriptionText = [
+        `PURPOSE: ${description.purpose}`,
+        `INPUT: ${description.input}`,
+        `OUTPUT: ${description.output}`,
+        `EXAMPLE: ${description.example}`,
+        description.considerations ? `CONSIDERATIONS: ${description.considerations}` : ''
+      ].filter(Boolean).join('\n');
 
-      const context = `Title: ${title}${description ? `\nDescription: ${descriptionText}` : ''}`;
+      const context = `Title: ${title}\nDescription: ${descriptionText}`;
       
       const response = await supabase.functions.invoke('generate-system-prompt', {
         body: { 
