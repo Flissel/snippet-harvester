@@ -6,6 +6,9 @@ import { formatDistanceToNow } from 'date-fns';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AnalysisResult {
   step_number: number;
@@ -35,23 +38,19 @@ const extractCodeBlock = (content: string, language: string): string => {
 
 const cleanContent = (section: string): string => {
   return section
-    .replace(/^.*?:/, '') // Remove section title
+    .replace(/^.*?:/, '')
     .trim();
 };
 
 const renderResultContent = (result: AnalysisResult) => {
   const raw_response = result.result_data;
   
-  // If no result data, return empty array
   if (!raw_response) return [];
 
-  // If raw_response is a string, split by sections
   if (typeof raw_response === 'string') {
-    // Split the response by "---" section markers
     const sections = raw_response.split('---').map(section => section.trim());
     
     return sections.map(section => {
-      // Determine section type and format accordingly
       if (section.includes('Required Imports:')) {
         const content = cleanContent(section);
         return {
@@ -76,7 +75,6 @@ const renderResultContent = (result: AnalysisResult) => {
           language: 'python'
         };
       }
-      // If no specific section marker is found, treat as analysis text
       return {
         title: 'Analysis',
         content: section,
@@ -85,7 +83,6 @@ const renderResultContent = (result: AnalysisResult) => {
     }).filter(section => section.content.length > 0);
   }
 
-  // If result_data is an object or another type, display as JSON
   return [{
     title: 'Raw Response',
     content: JSON.stringify(raw_response, null, 2),
@@ -95,6 +92,16 @@ const renderResultContent = (result: AnalysisResult) => {
 
 export function AnalysisResults({ currentStep, results, isSingleExecution }: AnalysisResultsProps) {
   if (!results?.length) return null;
+
+  const handleCopyRaw = (data: any) => {
+    if (typeof data === 'string') {
+      navigator.clipboard.writeText(data);
+      toast.success("Raw response copied to clipboard");
+    } else {
+      navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      toast.success("Raw response copied to clipboard");
+    }
+  };
 
   return (
     <Card className="p-4">
@@ -132,33 +139,73 @@ export function AnalysisResults({ currentStep, results, isSingleExecution }: Ana
                   </span>
                 )}
               </div>
-              
+
               <CardContent className="p-0 mt-4 space-y-4">
-                {renderResultContent(result).map((section, sIdx) => (
-                  <div key={sIdx} className="space-y-2">
-                    <h5 className="font-medium text-sm text-muted-foreground">
-                      {section.title}
-                    </h5>
-                    <div className="rounded-md overflow-hidden">
-                      <SyntaxHighlighter
-                        language={section.language}
-                        style={docco}
-                        customStyle={{
-                          margin: 0,
-                          padding: '1rem',
-                          borderRadius: '0.5rem',
-                          fontSize: '0.875rem',
-                          backgroundColor: 'hsl(var(--muted))',
-                        }}
-                      >
-                        {section.content}
-                      </SyntaxHighlighter>
-                    </div>
-                    {sIdx < renderResultContent(result).length - 1 && (
-                      <Separator className="my-4" />
-                    )}
+                {/* Raw Response Section */}
+                <div className="space-y-2 mb-6">
+                  <div className="flex items-center justify-between">
+                    <h5 className="font-medium text-sm text-muted-foreground">Raw Response</h5>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="h-8"
+                      onClick={() => handleCopyRaw(result.result_data)}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Raw
+                    </Button>
                   </div>
-                ))}
+                  <div className="rounded-md overflow-hidden">
+                    <SyntaxHighlighter
+                      language="text"
+                      style={docco}
+                      customStyle={{
+                        margin: 0,
+                        padding: '1rem',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.875rem',
+                        backgroundColor: 'hsl(var(--muted))',
+                      }}
+                    >
+                      {typeof result.result_data === 'string' 
+                        ? result.result_data 
+                        : JSON.stringify(result.result_data, null, 2)
+                      }
+                    </SyntaxHighlighter>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Parsed Sections */}
+                <div className="space-y-4 mt-6">
+                  <h5 className="font-medium text-sm text-muted-foreground">Parsed Sections</h5>
+                  {renderResultContent(result).map((section, sIdx) => (
+                    <div key={sIdx} className="space-y-2">
+                      <h5 className="font-medium text-sm text-muted-foreground">
+                        {section.title}
+                      </h5>
+                      <div className="rounded-md overflow-hidden">
+                        <SyntaxHighlighter
+                          language={section.language}
+                          style={docco}
+                          customStyle={{
+                            margin: 0,
+                            padding: '1rem',
+                            borderRadius: '0.5rem',
+                            fontSize: '0.875rem',
+                            backgroundColor: 'hsl(var(--muted))',
+                          }}
+                        >
+                          {section.content}
+                        </SyntaxHighlighter>
+                      </div>
+                      {sIdx < renderResultContent(result).length - 1 && (
+                        <Separator className="my-4" />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -167,4 +214,3 @@ export function AnalysisResults({ currentStep, results, isSingleExecution }: Ana
     </Card>
   );
 }
-
