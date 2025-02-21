@@ -17,7 +17,7 @@ export function YMLPreview({ sections, resultData }: YMLPreviewProps) {
   };
 
   if (!sections || sections.length === 0) {
-    if (resultData) {
+    if (resultData && resultData.trim()) {
       return (
         <Card className="p-4">
           <div className="flex items-center justify-between mb-2">

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -145,6 +144,20 @@ export function YMLMaker() {
     }
   };
 
+  // Helper function to safely get result data as string
+  const getResultDataAsString = (result: AnalysisResult | undefined): string | undefined => {
+    if (!result) return undefined;
+    if (typeof result.result_data === 'string') return result.result_data;
+    if (typeof result.result_data === 'object') {
+      try {
+        return JSON.stringify(result.result_data, null, 2);
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
+  };
+
   return (
     <div className="container py-6 space-y-6">
       <Header
@@ -193,7 +206,7 @@ export function YMLMaker() {
 
           <YMLPreview 
             sections={workflow.sections} 
-            resultData={workflowResults[0]?.result_data}
+            resultData={getResultDataAsString(workflowResults[0])}
           />
         </div>
       </div>
