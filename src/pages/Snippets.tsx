@@ -11,6 +11,9 @@ import { toast } from "sonner";
 import { Snippet } from "@/types/snippets";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { Search, Sparkles, Code2, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const Snippets = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -90,13 +93,16 @@ const Snippets = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex bg-background">
+      <div className="min-h-screen flex">
         <Sidebar />
         <div className="flex-1 ml-64">
           <Header />
-          <main className="p-6">
-            <div className="text-red-500">
-              Error loading snippets: {error.message}
+          <main className="p-8">
+            <div className="card-enhanced rounded-xl p-6 text-center">
+              <div className="text-destructive text-xl mb-2">⚠️ Error</div>
+              <p className="text-muted-foreground">
+                Error loading snippets: {error.message}
+              </p>
             </div>
           </main>
         </div>
@@ -105,23 +111,69 @@ const Snippets = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-background relative">
+    <div className="min-h-screen flex relative">
       <Sidebar />
       <div className="flex-1 ml-64">
         <Header />
-        <main className="p-6">
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex-1 max-w-2xl">
-              <input
+        <main className="p-8 space-y-8">
+          {/* Hero Section */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/5 rounded-2xl blur-xl"></div>
+            <div className="relative card-enhanced rounded-2xl p-8 text-center">
+              <div className="inline-flex items-center gap-3 mb-4">
+                <div className="p-3 rounded-full bg-primary/10 animate-glow">
+                  <Code2 className="h-8 w-8 text-primary" />
+                </div>
+                <h1 className="text-4xl font-bold gradient-text">
+                  Code Snippets
+                </h1>
+              </div>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Organize, analyze, and transform your code snippets with AI-powered insights
+              </p>
+            </div>
+          </div>
+
+          {/* Search and Actions */}
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
                 type="text"
                 placeholder="Search snippets..."
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background"
+                className="pl-10 glass border-border/50 focus:border-primary/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <SnippetFormModal />
           </div>
+
+          {/* Stats */}
+          {snippets && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="card-enhanced rounded-xl p-6 text-center">
+                <div className="text-2xl font-bold text-primary mb-1">
+                  {snippets.length}
+                </div>
+                <div className="text-sm text-muted-foreground">Total Snippets</div>
+              </div>
+              <div className="card-enhanced rounded-xl p-6 text-center">
+                <div className="text-2xl font-bold text-primary mb-1">
+                  {new Set(snippets.map(s => s.language)).size}
+                </div>
+                <div className="text-sm text-muted-foreground">Languages</div>
+              </div>
+              <div className="card-enhanced rounded-xl p-6 text-center">
+                <div className="text-2xl font-bold text-primary mb-1">
+                  {filteredSnippets?.length || 0}
+                </div>
+                <div className="text-sm text-muted-foreground">Filtered Results</div>
+              </div>
+            </div>
+          )}
+
+          {/* Snippets Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <SnippetList
               snippets={filteredSnippets}
@@ -134,6 +186,7 @@ const Snippets = () => {
               onSnippetAnalyze={handleSnippetAnalyze}
             />
           </div>
+
           {selectedSnippet && (
             <SnippetViewModal
               isOpen={!!selectedSnippet}

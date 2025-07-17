@@ -25,15 +25,17 @@ export const Header = () => {
   };
 
   return (
-    <header className="border-b border-border px-6 py-3 flex items-center justify-between">
-      <h1 className="text-xl font-semibold">Snippet Harvester</h1>
+    <header className="glass border-b border-border/50 px-8 py-4 flex items-center justify-between backdrop-blur-md">
+      <h1 className="text-2xl font-bold gradient-text">
+        Snippet Harvester
+      </h1>
       <div className="flex items-center gap-4">
         {user && (
           <>
-            <span className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground bg-card/50 px-3 py-1 rounded-full border border-border/30">
               {user.email}
-            </span>
-            <Button onClick={handleLogout} variant="outline">
+            </div>
+            <Button onClick={handleLogout} variant="outline" className="btn-glass">
               Logout
             </Button>
           </>

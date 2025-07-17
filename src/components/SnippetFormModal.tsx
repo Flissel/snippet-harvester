@@ -6,6 +6,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFoo
 import { SnippetForm } from "./snippets/SnippetForm";
 import { SnippetPreview } from "./snippets/SnippetPreview";
 import { useSnippetForm, SnippetFormValues } from "./snippets/hooks/useSnippetForm";
+import { Plus } from "lucide-react";
 
 export function SnippetFormModal() {
   const [open, setOpen] = React.useState(false);
@@ -56,7 +57,10 @@ export function SnippetFormModal() {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button>New Snippet</Button>
+          <Button className="btn-gradient flex items-center gap-2 animate-glow">
+            <Plus className="h-4 w-4" />
+            New Snippet
+          </Button>
         </DialogTrigger>
         <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-6">
           <DialogHeader>
