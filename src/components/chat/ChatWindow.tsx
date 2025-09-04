@@ -35,7 +35,7 @@ export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
   };
 
   return (
-    <Card className="flex flex-col h-[600px] w-full max-w-2xl mx-auto">
+    <Card className="flex flex-col h-full w-full">
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
           {messages.map((message, index) => (
