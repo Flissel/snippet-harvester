@@ -36,15 +36,15 @@ export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
 
   return (
     <Card className="flex flex-col h-full w-full">
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 p-3">
+        <div className="space-y-3">
           {messages.map((message, index) => (
             <MessageBubble key={index} message={message} />
           ))}
         </div>
       </ScrollArea>
 
-      <div className="p-4 border-t">
+      <div className="p-3 border-t">
         <div className="flex flex-col gap-2">
           <div className="flex gap-2 justify-end">
             {prompt?.user_message && (
@@ -53,8 +53,8 @@ export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
                 onClick={useTemplate}
                 size="sm"
               >
-                <Copy className="h-4 w-4 mr-2" />
-                Use Template
+                <Copy className="h-3 w-3 mr-1" />
+                Template
               </Button>
             )}
             <Button
@@ -65,8 +65,8 @@ export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
               }}
               size="sm"
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Reset Chat
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Reset
             </Button>
           </div>
           <div className="flex gap-2">
@@ -75,13 +75,14 @@ export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder="Type your message..."
-              className="min-h-[60px]"
+              className="min-h-[50px] resize-none"
               disabled={isGenerating}
             />
             <Button
               onClick={handleSend}
               disabled={isGenerating || !input.trim()}
               className="self-end"
+              size="sm"
             >
               {isGenerating ? (
                 <Loader className="h-4 w-4 animate-spin" />

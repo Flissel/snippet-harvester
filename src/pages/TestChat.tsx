@@ -84,34 +84,36 @@ export default function TestChat() {
   }, [setSelectedPrompt, setSystemMessage, setUserMessage]);
 
   return (
-    <div className="min-h-screen w-full p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+    <div className="min-h-screen w-full p-2 space-y-2">
+      <div className="flex items-center justify-between py-2">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold">Test Chat with Agent</h1>
+          <h1 className="text-xl font-semibold">Test Chat with Agent</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button 
             variant="outline"
+            size="sm"
             onClick={() => setShowLoadDialog(true)}
           >
-            <FolderOpen className="h-4 w-4 mr-2" />
-            Load Configuration
+            <FolderOpen className="h-4 w-4 mr-1" />
+            Load
           </Button>
           <Button 
+            size="sm"
             onClick={() => setShowSaveDialog(true)} 
             disabled={!selectedPrompt || !hasUnsavedChanges}
           >
-            <Save className="h-4 w-4 mr-2" />
-            Save Configuration
+            <Save className="h-4 w-4 mr-1" />
+            Save
           </Button>
         </div>
       </div>
       
       {!isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[calc(100vh-12rem)]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 h-[calc(100vh-8rem)]">
           <PromptConfiguration
             prompts={prompts}
             selectedPrompt={selectedPrompt}
