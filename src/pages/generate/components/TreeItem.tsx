@@ -33,14 +33,30 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect, onSetRo
 
   if (node.type === 'file') {
     return (
-      <div
-        className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer"
-        style={{ paddingLeft }}
-        onClick={() => onFileSelect(node)}
-      >
-        {getFileIcon(node.extension)}
-        <span className="text-sm truncate">{node.name}</span>
-        {getFileTypeBadge(node.extension)}
+      <div className="relative">
+        {/* Vertical line for hierarchy */}
+        {level > 0 && (
+          <div 
+            className="absolute left-0 top-0 bottom-0 w-px bg-border" 
+            style={{ left: `${(level - 1) * 1.5 + 0.75}rem` }}
+          />
+        )}
+        {/* Horizontal connector line */}
+        {level > 0 && (
+          <div 
+            className="absolute top-1/2 w-3 h-px bg-border" 
+            style={{ left: `${(level - 1) * 1.5 + 0.75}rem` }}
+          />
+        )}
+        <div
+          className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer"
+          style={{ paddingLeft }}
+          onClick={() => onFileSelect(node)}
+        >
+          {getFileIcon(node.extension)}
+          <span className="text-sm truncate">{node.name}</span>
+          {getFileTypeBadge(node.extension)}
+        </div>
       </div>
     );
   }
@@ -50,7 +66,21 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect, onSetRo
   }
 
   return (
-    <div>
+    <div className="relative">
+      {/* Vertical line for hierarchy */}
+      {level > 0 && (
+        <div 
+          className="absolute left-0 top-0 bottom-0 w-px bg-border" 
+          style={{ left: `${(level - 1) * 1.5 + 0.75}rem` }}
+        />
+      )}
+      {/* Horizontal connector line */}
+      {level > 0 && (
+        <div 
+          className="absolute top-1/2 w-3 h-px bg-border" 
+          style={{ left: `${(level - 1) * 1.5 + 0.75}rem` }}
+        />
+      )}
       <div
         className="flex items-center gap-2 p-2 hover:bg-primary/10 rounded-md cursor-pointer group"
         style={{ paddingLeft }}
@@ -95,7 +125,14 @@ export function TreeItem({ node, level, onFileSelect, onDirectorySelect, onSetRo
         </div>
       </div>
       {isExpanded && node.children && (
-        <div>
+        <div className="relative">
+          {/* Extended vertical line for children */}
+          {level >= 0 && (
+            <div 
+              className="absolute left-0 top-0 bottom-0 w-px bg-border" 
+              style={{ left: `${level * 1.5 + 0.75}rem` }}
+            />
+          )}
           {node.children.map((child, index) => (
             <TreeItem 
               key={`${child.name}-${index}`} 
