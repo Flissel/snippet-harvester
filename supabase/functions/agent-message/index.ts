@@ -45,7 +45,7 @@ serve(async (req) => {
     let userContent = message;
     if (prompt.user_message && prompt.user_message.trim()) {
       // Replace placeholder with actual message
-      userContent = prompt.user_message.replace('{message}', message).replace('{input}', message);
+      userContent = prompt.user_message.replace(/\{message\}/g, message).replace(/\{input\}/g, message);
     }
     
     messages.push({
@@ -53,8 +53,25 @@ serve(async (req) => {
       content: userContent
     });
 
-    console.log('Using model:', prompt.model || 'gpt-4o-mini');
-    console.log('Messages:', JSON.stringify(messages, null, 2));
+    const modelToUse = prompt.model || 'gpt-4o-mini';
+    console.log('Using model:', modelToUse);
+    console.log('Messages count:', messages.length);
+
+    // Determine if we're using a newer model that needs max_completion_tokens
+    const isNewerModel = modelToUse.includes('gpt-5') || modelToUse.includes('gpt-4.1') || modelToUse.includes('o3') || modelToUse.includes('o4');
+    
+    const requestBody: any = {
+      model: modelToUse,
+      messages: messages,
+    };
+
+    if (isNewerModel) {
+      requestBody.max_completion_tokens = 2000;
+      // Newer models don't support temperature
+    } else {
+      requestBody.temperature = 0.7;
+      requestBody.max_tokens = 2000;
+    }
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -63,12 +80,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: prompt.model || 'gpt-4o-mini',
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
