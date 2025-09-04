@@ -13,19 +13,45 @@ serve(async (req) => {
   }
 
   try {
+    // COMPREHENSIVE DEBUGGING - Log everything
+    console.log('=== EDGE FUNCTION DEBUGGING START ===');
+    console.log('Request method:', req.method);
+    console.log('Request URL:', req.url);
+    
+    // Test basic functionality first
+    const testMode = req.url.includes('test=true');
+    if (testMode) {
+      console.log('TEST MODE: Returning simple response');
+      return new Response(JSON.stringify({ 
+        response: 'Test response - Edge Function is working!',
+        timestamp: new Date().toISOString()
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Debug: Log all available environment variables
-    console.log('Available env vars:', Object.keys(Deno.env.toObject()));
+    const envVars = Object.keys(Deno.env.toObject());
+    console.log('Available env vars:', envVars);
+    console.log('Total env vars count:', envVars.length);
     
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     console.log('OpenAI API key exists:', !!openAIApiKey);
     console.log('OpenAI API key length:', openAIApiKey?.length || 0);
+    console.log('OpenAI API key first 10 chars:', openAIApiKey?.substring(0, 10) || 'N/A');
     
     if (!openAIApiKey) {
       console.error('OpenAI API key not found in environment variables');
-      return new Response(JSON.stringify({ 
+      const errorResponse = { 
         error: 'OpenAI API key not configured',
-        response: 'Entschuldigung, der OpenAI API-Schlüssel ist nicht konfiguriert. Bitte wenden Sie sich an den Administrator.'
-      }), {
+        response: 'Entschuldigung, der OpenAI API-Schlüssel ist nicht konfiguriert. Bitte wenden Sie sich an den Administrator.',
+        debug: {
+          availableEnvVars: envVars,
+          timestamp: new Date().toISOString()
+        }
+      };
+      console.log('Returning error response:', errorResponse);
+      return new Response(JSON.stringify(errorResponse), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
