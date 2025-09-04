@@ -10,3 +10,6 @@ verify_jwt = true
 [functions.detect-yml-config]
 verify_jwt = false
 
+[functions.agent-message]
+verify_jwt = false
+
