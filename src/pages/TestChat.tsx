@@ -84,7 +84,7 @@ export default function TestChat() {
   }, [setSelectedPrompt, setSystemMessage, setUserMessage]);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="min-h-screen w-full p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
