@@ -111,7 +111,7 @@ export default function TestChat() {
       </div>
       
       {!isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[calc(100vh-12rem)]">
           <PromptConfiguration
             prompts={prompts}
             selectedPrompt={selectedPrompt}
