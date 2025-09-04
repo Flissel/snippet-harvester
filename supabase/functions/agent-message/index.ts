@@ -1,8 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -15,8 +13,22 @@ serve(async (req) => {
   }
 
   try {
+    // Debug: Log all available environment variables
+    console.log('Available env vars:', Object.keys(Deno.env.toObject()));
+    
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    console.log('OpenAI API key exists:', !!openAIApiKey);
+    console.log('OpenAI API key length:', openAIApiKey?.length || 0);
+    
     if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+      console.error('OpenAI API key not found in environment variables');
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI API key not configured',
+        response: 'Entschuldigung, der OpenAI API-Schlüssel ist nicht konfiguriert. Bitte wenden Sie sich an den Administrator.'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const { message, prompt, chatHistory } = await req.json();
