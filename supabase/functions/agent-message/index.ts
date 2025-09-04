@@ -35,8 +35,11 @@ serve(async (req) => {
     console.log('Available env vars:', envVars);
     console.log('Total env vars count:', envVars.length);
     
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    console.log('OpenAI API key exists:', !!openAIApiKey);
+    // Try both possible API key names
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY') || Deno.env.get('OPEN_AI_KEY');
+    console.log('Checking OPENAI_API_KEY:', !!Deno.env.get('OPENAI_API_KEY'));
+    console.log('Checking OPEN_AI_KEY:', !!Deno.env.get('OPEN_AI_KEY'));
+    console.log('Final OpenAI API key exists:', !!openAIApiKey);
     console.log('OpenAI API key length:', openAIApiKey?.length || 0);
     console.log('OpenAI API key first 10 chars:', openAIApiKey?.substring(0, 10) || 'N/A');
     
