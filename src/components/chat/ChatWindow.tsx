@@ -6,13 +6,13 @@ import { Card } from '@/components/ui/card';
 import { Loader, Send, Copy, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatWindowProps } from './types';
-import { useChatSession } from './hooks/useChatSession';
+import { useStreamingChat } from './hooks/useStreamingChat';
 import { useMessageHandler } from './hooks/useMessageHandler';
 import { MessageBubble } from './MessageBubble';
 
 export function ChatWindow({ prompt, onResetChat }: ChatWindowProps) {
   const { user } = useAuth();
-  const { messages, isGenerating, sendMessage, resetChat } = useChatSession(prompt);
+  const { messages, isGenerating, sendMessage, resetChat } = useStreamingChat(prompt);
   const { input, setInput, handleSend, useTemplate } = useMessageHandler({
     sendMessage,
     prompt,

@@ -21,7 +21,12 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             : 'bg-muted mr-4'
         }`}
       >
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        <p className="whitespace-pre-wrap">
+          {message.content}
+          {message.role === 'assistant' && !message.content && (
+            <span className="animate-pulse">●</span>
+          )}
+        </p>
       </div>
     </div>
   );

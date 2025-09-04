@@ -104,6 +104,7 @@ serve(async (req) => {
     const requestBody: any = {
       model: modelToUse,
       messages: messages,
+      stream: true,
     };
 
     if (isNewerModel) {
@@ -114,7 +115,7 @@ serve(async (req) => {
       requestBody.max_tokens = 2000;
     }
 
-    // Call OpenAI API
+    // Call OpenAI API with streaming
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -130,17 +131,60 @@ serve(async (req) => {
       throw new Error(`OpenAI API error: ${errorText}`);
     }
 
-    const data = await response.json();
-    console.log('OpenAI response:', data);
+    // Create a streaming response using Server-Sent Events
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const reader = response.body?.getReader();
+          const decoder = new TextDecoder();
 
-    if (!data.choices || !data.choices[0]) {
-      throw new Error('Invalid response from OpenAI API');
-    }
+          if (!reader) {
+            throw new Error('No response body');
+          }
 
-    const generatedResponse = data.choices[0].message.content;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-    return new Response(JSON.stringify({ response: generatedResponse }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6).trim();
+                
+                if (data === '[DONE]') {
+                  controller.enqueue(`data: [DONE]\n\n`);
+                  controller.close();
+                  return;
+                }
+
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.choices?.[0]?.delta?.content) {
+                    const content = parsed.choices[0].delta.content;
+                    controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
+                  }
+                } catch (parseError) {
+                  // Ignore parsing errors for malformed chunks
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Streaming error:', error);
+          controller.error(error);
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
   } catch (error) {
     console.error('Error in agent-message function:', error);
