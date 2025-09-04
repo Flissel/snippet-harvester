@@ -91,7 +91,7 @@ export default function Generate() {
     : subdirectoryTree);
 
   return (
-    <div className="container mx-auto p-4 h-[calc(100vh-6rem)]">
+    <div className="w-full px-2 py-4 h-[calc(100vh-4rem)]">
       <h1 className="text-2xl font-bold mb-6">Generate from GitHub</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[calc(100%-4rem)]">
