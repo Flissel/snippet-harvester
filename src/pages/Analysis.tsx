@@ -97,14 +97,21 @@ export function Analysis() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center space-y-2">
+          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!snippet) {
     return (
-      <div className="container mx-auto py-6 text-center">
-        <h1 className="text-2xl font-bold mb-4">Snippet Not Found</h1>
-        <p className="text-muted-foreground mb-4">The requested snippet could not be found.</p>
+      <div className="text-center space-y-4 py-8">
+        <h1 className="text-xl sm:text-2xl font-bold">Snippet Not Found</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">The requested snippet could not be found.</p>
         <Button variant="default" asChild>
           <Link to="/snippets">
             Back to Snippets
@@ -115,32 +122,33 @@ export function Analysis() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Analyze Snippet: {snippet.title}</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.history.back()}>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold">Analyze: {snippet.title}</h1>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={() => window.history.back()} className="flex-1 sm:flex-none">
             Back
           </Button>
           <Button 
             variant="default" 
             onClick={() => navigate('/prompts')}
+            className="flex-1 sm:flex-none"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Manage Prompts
+            <span className="hidden sm:inline">Manage</span> Prompts
           </Button>
         </div>
       </div>
 
       <Card className="p-4">
-        <h2 className="text-lg font-semibold mb-2">Configuration Points</h2>
+        <h2 className="text-base sm:text-lg font-semibold mb-2">Configuration Points</h2>
         <DraggableConfigPoints 
           onConfigPointSelected={handleConfigPointSelect}
           customConfigPoints={customConfigPoints}
         />
       </Card>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         <AnalysisCodeSection
           snippet={snippet}
           configPoints={configPoints}

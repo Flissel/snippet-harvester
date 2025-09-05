@@ -84,13 +84,13 @@ export default function TestChat() {
   }, [setSelectedPrompt, setSystemMessage, setUserMessage]);
 
   return (
-    <div className="min-h-screen w-full p-2 space-y-2">
-      <div className="flex items-center justify-between py-2">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-xl font-semibold">Test Chat with Agent</h1>
+          <h1 className="text-lg sm:text-xl font-semibold">Test Chat with Agent</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button 
@@ -99,7 +99,7 @@ export default function TestChat() {
             onClick={() => setShowLoadDialog(true)}
           >
             <FolderOpen className="h-4 w-4 mr-1" />
-            Load
+            <span className="hidden sm:inline">Load</span>
           </Button>
           <Button 
             size="sm"
@@ -107,13 +107,13 @@ export default function TestChat() {
             disabled={!selectedPrompt || !hasUnsavedChanges}
           >
             <Save className="h-4 w-4 mr-1" />
-            Save
+            <span className="hidden sm:inline">Save</span>
           </Button>
         </div>
       </div>
       
       {!isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 h-[calc(100vh-8rem)]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 min-h-[70vh]">
           <PromptConfiguration
             prompts={prompts}
             selectedPrompt={selectedPrompt}

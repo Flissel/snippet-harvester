@@ -91,10 +91,13 @@ export default function Generate() {
     : subdirectoryTree);
 
   return (
-    <div className="w-full px-2 py-4 h-[calc(100vh-4rem)]">
-      <h1 className="text-2xl font-bold mb-6">Generate from GitHub</h1>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl sm:text-3xl font-bold">Generate from GitHub</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">Import and analyze code from GitHub repositories</p>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[calc(100%-4rem)]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 min-h-[70vh]">
         <Card className="p-6 flex flex-col">
           <RepositoryForm
             repositoryUrl={repositoryUrl}

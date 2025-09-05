@@ -13,11 +13,11 @@ export default function NotFound() {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
+    <div className="flex items-center justify-center min-h-[70vh]">
+      <div className="text-center space-y-4 px-4">
+        <h1 className="text-3xl sm:text-4xl font-bold">404</h1>
+        <p className="text-lg sm:text-xl text-muted-foreground">Oops! Page not found</p>
+        <a href="/" className="inline-block text-primary hover:text-primary/80 underline underline-offset-4">
           Return to Home
         </a>
       </div>
